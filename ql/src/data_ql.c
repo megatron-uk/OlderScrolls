@@ -92,8 +92,8 @@ unsigned char data_LoadMap(unsigned short id){
 	i = fread(&levelstate.text, 1, sizeof(unsigned short), map_file);
 
 	// (32 bytes) Level name
-	memset(&levelstate.name, 0, MAX_LEVEL_NAME_SIZE + 1);
-	i = fread(&levelstate.name, 1, MAX_LEVEL_NAME_SIZE, map_file);
+	//memset(&levelstate.name, 0, MAX_LEVEL_NAME_SIZE + 1);
+	//i = fread(&levelstate.name, 1, MAX_LEVEL_NAME_SIZE, map_file);
 	
 	// =====================================
 	// North exit

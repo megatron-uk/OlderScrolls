@@ -84,9 +84,16 @@ void ui_DrawStatusBar(){
 	
 }
 
-unsigned short ui_DrawMainWindowText(unsigned short remain){
+unsigned short ui_DrawMainWindowText(unsigned short remain, char *c){
 	// Draws text into the main window with the correct colours,
 	// bounding box sizes and other main-window specific settings.
+	//
+	// This is ALL it does. If all the text cannot be drawn, it
+	// returns the number of characters (of the original string) it
+	// has printed, otherwise.
+	//
+	// A subsequent call with the same string, and a non-zero 'remain'
+	// parameter will redraw the text from that offset.
 	
 	remain = draw_String(UI_MAIN_WINDOW_TEXT_X, 
 		UI_MAIN_WINDOW_TEXT_Y, 
@@ -96,10 +103,13 @@ unsigned short ui_DrawMainWindowText(unsigned short remain){
 		screen.font_8x8, 
 		UI_MAIN_WINDOW_COLOUR, c);
 	
+	// Mark screen as dirty, ready to be repainted
 	screen.dirty = 1;
+	
+	return remain;
 }
 
-void ui_DrawSplash(){
+void ui_DrawSplashText(){
 	// Draws the game splash text in the centre of the main UI window
 	//
 	// Shows:
@@ -107,5 +117,33 @@ void ui_DrawSplash(){
 	// - engine (git) version
 	// - current datafile adventure name
 	// - current adventure story text ID 0
+	
+	// Mark screen as dirty, ready to be repainted
+	screen.dirty = 1;
+	
+	// Engine Name
+	draw_String(UI_MAIN_WINDOW_TEXT_X + 12,
+		UI_MAIN_WINDOW_TEXT_Y + (6 * 8),
+		UI_MAIN_WINDOW_MAX_CHARS,
+		1,
+		0,
+		screen.font_8x8,
+		PIXEL_GREEN, "OlderScrolls");
+	
+	draw_String(UI_MAIN_WINDOW_TEXT_X + 25,
+		UI_MAIN_WINDOW_TEXT_Y + (6 * 8),
+		UI_MAIN_WINDOW_MAX_CHARS,
+		1,
+		0,
+		screen.font_8x8,
+		PIXEL_RED, ENGINE_TARGET_NAME);
+	
+	draw_String((UI_MAIN_WINDOW_TEXT_X + 12,
+		UI_MAIN_WINDOW_TEXT_Y + (7 * 8),
+		UI_MAIN_WINDOW_MAX_CHARS,
+		1,
+		0,
+		screen.font_8x8,
+		PIXEL_GREEN, GIT_COMMIT);
 	
 }

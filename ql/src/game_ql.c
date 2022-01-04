@@ -34,6 +34,10 @@
 #include "../common/input.h"
 #define _INPUT_H
 #endif
+#ifndef _UI_H
+#include "../common/ui.h"
+#define _UI_H
+#endif
 
 FILE *story_file;
 FILE *map_file;

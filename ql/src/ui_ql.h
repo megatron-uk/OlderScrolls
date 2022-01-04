@@ -56,4 +56,4 @@ void ui_DrawStatusBar();
 void ui_DrawSplashText();
 
 // Area-specific text display routines
-unsigned short ui_DrawMainWindowText(unsigned short remain);
+unsigned short ui_DrawMainWindowText(unsigned short remain, char *c);

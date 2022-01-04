@@ -81,13 +81,13 @@ int main(void){
 	input_Wait(INPUT_RETURN);
 	
 	// Initialise game data and open datafiles
-	//game_Init();
-	
-	// Show the adventure-specific splash screen
-	//game_Splash();
+	game_Init();
 	
 	// Draw the main interface
 	ui_Draw();
+	
+	// Show the adventure-specific splash screen
+	game_Splash();
 	
 	draw_Flip();
 	
