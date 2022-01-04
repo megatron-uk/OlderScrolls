@@ -38,7 +38,7 @@ FLOPPY_NAME = "GameFloppy"
 # Targets to build/run
 #################################
 all: $(TARGET)
-full: clean $(TARGET) newdisk copydisk rundisk_128
+full: clean $(TARGET) newdisk copydisk rundisk_160
 run: rundisk
 
 #################################

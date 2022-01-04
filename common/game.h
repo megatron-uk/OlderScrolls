@@ -26,30 +26,24 @@
 #define MAX_MONSTER_TYPES 8						// The number of different types of monsters in each location
 #define REQUIREMENT_BYTES 5						// 5 bytes per requirement
 
-//typedef struct {
-//	unsigned short size;						// How long the string is
-//	unsigned char text[MAX_STORY_TEXT_SIZE];	// maximum amount of text that can be printed in the main screen
-//												// Note that this is an array of PETSCII codes, not printable ASCII
-//} TextData;
-
 // Basic game data
-struct GameState_t {
+typedef struct {
+	unsigned char text_buffer[1024]; // A single text buffer for all string/text operations
+	unsigned char name[MAX_LEVEL_NAME_SIZE];	// Name of the current adventure
 	unsigned char level;						// ID of the current location
 	unsigned char level_previous;				// ID of the immediately previous location
 	unsigned char level_visits[MAX_LOCATIONS];	// Each level has a count of how many times it has been visited
 	unsigned char level_defeated_primary[MAX_LOCATIONS];// Each level has a flag to indicate whether the primary monster(s) has been defeated
 	unsigned char level_defeated_secondary[MAX_LOCATIONS];// Each level has a flag to indicate whether the secondary monster(s) has been defeated
 	unsigned short gold;						// Record of currency
-	
-};
-extern struct GameState_t gamestate;
+} GameState_t;
 
 // Each level that we visit is loaded from disk into this structure
 // This way we can have (effectively) unlimited number of 'rooms' in 
 // our adventure and only need to load one at a time.
 //
 // This takes up approximately 500 bytes.
-struct LevelState_t {
+typedef struct {
 	unsigned short id;								// Unique ID of the location
 	unsigned char name[MAX_LEVEL_NAME_SIZE + 1];	// Name of the location
 	unsigned short text;							// The *default* story text for this level
@@ -128,8 +122,7 @@ struct LevelState_t {
 	unsigned char npc2_eval_type;						// EMPTY, AND, OR, etc.
 	unsigned short npc2_text;							// ID of text shown when talking to this NPC
 	
-};
-extern struct LevelState_t levelstate;
+} LevelState_t;
 
 // Structure representing the data associated with a single weapon
 // This is everything we need to know in order to carry out combat with this weapon
@@ -238,9 +231,9 @@ typedef struct {
 // =====================================================
 // *ALL* platforms must implement the following methods
 // =====================================================
-void game_Init(); 		// Init game data
+void game_Init(GameState_t *gamestate, LevelState_t *levelstate); 		// Init game data
 void game_Exit(); 		// De-init game data
-void game_Splash(); 	// Show a splash screen on game start
+void game_Splash(GameState_t *gamestate, LevelState_t *levelstate); 	// Show a splash screen on game start
 
 // ============================================
 // Platform specific game function implementations

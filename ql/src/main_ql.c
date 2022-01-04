@@ -51,10 +51,13 @@
 
 int main(void){
 	
-	char c;
+	unsigned char c;
 	unsigned char exit = 0;
-	int i;
-	int remain;
+	
+	GameState_t *gamestate = NULL;
+	LevelState_t *levelstate = NULL;
+	gamestate = (GameState_t *) malloc(sizeof(GameState_t));
+	levelstate = (LevelState_t *) malloc(sizeof(LevelState_t));
 	
 	printf("Engine starting up...\n");
 	
@@ -81,26 +84,25 @@ int main(void){
 	input_Wait(INPUT_RETURN);
 	
 	// Initialise game data and open datafiles
-	game_Init();
+	game_Init(gamestate, levelstate);
 	
 	// Draw the main interface
-	ui_Draw();
+	ui_Draw(gamestate, levelstate);
+	draw_Flip();
 	
 	// Show the adventure-specific splash screen
-	game_Splash();
-	
-	draw_Flip();
+	game_Splash(gamestate, levelstate);
 	
 	// Main game loop
 	//input_Wait(INPUT_RETURN);
-	while(exit == 0){
+	//while(exit == 0){
 		
 		// Run main game logic
 		// game_Main();
 		
 		// Flip screen buffer if marked as dirty
 		//draw_Flip();
-	}
+	//}
 	
 	screen_Exit();
 	game_Exit();

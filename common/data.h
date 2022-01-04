@@ -15,6 +15,11 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _GAME_H
+#include "../common/game.h"
+#define _GAME_H
+#endif
+
 #define DATA_TYPE_STORY		0x01
 #define DATA_TYPE_MAP		0x02
 #define DATA_TYPE_WEAPON	0x03
@@ -36,9 +41,9 @@
 #define DATA_LOAD_OK	0x00
 #define DATA_LOAD_ERR	0x01
 
-unsigned char data_Load(unsigned char data_type, unsigned short id);
-unsigned char data_LoadStory(unsigned short id);
-unsigned char data_LoadMap(unsigned short id);
+unsigned char data_Load(GameState_t *gamestate, LevelState_t *levelstate, unsigned char data_type, unsigned short id);
+unsigned char data_LoadStory(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
+unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
 
 // ============================================
 // Platform specific UI implementations

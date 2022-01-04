@@ -46,7 +46,7 @@ FILE *item_file;
 FILE *monster_file;
 FILE *index_file;
 
-void game_Init(){
+void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	// Load initial data for the currently selected game
 	//
 	// This does such things as:
@@ -56,27 +56,31 @@ void game_Init(){
 	
 	unsigned short i;
 	
-	//story_file = fopen(STORY_DAT, "r");
+	story_file = fopen(STORY_DAT, "r");
 	//weapon_file = fopen(WEAPON_DAT, "r");
 	//monster_file = fopen(MONSTER_DAT, "r");
 	//item_file = fopen(ITEM_DAT, "r");
 	map_file = fopen(MAP_DAT, "r");
 	
-	// Open the story data file and load entry 0 - this has the splash screen data
-	//data_Load(DATA_TYPE_STORY, 0);
+	// Initialise game state
+	gamestate->level = 1;
+	gamestate->level_previous = 1;
+	memset(gamestate->level_visits, 0, MAX_LOCATIONS); 
+	memset(gamestate->level_defeated_primary, 0, MAX_LOCATIONS); 
+	memset(gamestate->level_defeated_secondary, 0, MAX_LOCATIONS); 
+	gamestate->gold = 0;
+	
+	// Open the story data file and load entry 0 - this has the adventure name
+	data_Load(gamestate, levelstate, DATA_TYPE_STORY, 0);
+	strncpy(gamestate->name, gamestate->text_buffer, MAX_LEVEL_NAME_SIZE);
+	
+	// Open the story data file and load entry 1 - this has the splash screen data
+	data_Load(gamestate, levelstate, DATA_TYPE_STORY, 1);
 	
 	// Open the Map data file and load entry 1 - this will be our starting location
-	data_Load(DATA_TYPE_MAP, 3);
+	data_Load(gamestate, levelstate, DATA_TYPE_MAP, 1);
 	
 	// Initialise a new player character
-	
-	// Initialise game state
-	//gamestate.level = 1;
-	//gamestate.level_previous = 1;
-	//memset(gamestate.level_visits, 0, MAX_LOCATIONS); 
-	//memset(gamestate.level_defeated_primary, 0, MAX_LOCATIONS); 
-	//memset(gamestate.level_defeated_secondary, 0, MAX_LOCATIONS); 
-	//gamestate.gold = 0;
 }
 
 void game_Exit(){
@@ -103,7 +107,7 @@ void game_Exit(){
 	}
 }
 
-void game_Splash(){
+void game_Splash(GameState_t *gamestate, LevelState_t *levelstate){
 	// Shows a splash screen before the main game itself
 	//
 	// Shows basic information about OlderScrolls engine,
@@ -114,10 +118,9 @@ void game_Splash(){
 	// Start, Exit, <TO DO>, <TO DO>
 	// ... then starts the game engine proper
 	
-	//input_Clear();
-	//input_Set(INPUT_RETURN);
-	
-	ui_DrawSplashText();
+	ui_DrawSplashText(gamestate, levelstate);
+	draw_Flip();
 	
 	// Wait for user input
+	input_Wait(INPUT_RETURN);
 }

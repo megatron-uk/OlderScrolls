@@ -85,4 +85,5 @@ void input_Wait(unsigned char key){
 	input_Set(key);
 	while (input_Get() < 0){
 	}
+	input_Clear();
 }

@@ -88,6 +88,16 @@ unsigned char check_Files(){
 		fclose(f);
 	}
 	
+	// Story/text data
+	f = fopen(STORY_DAT, "r");
+	if (f == NULL){
+		printf("Error: Unable to find game data %s\n", STORY_DAT);
+		errors++;
+	} else {
+		printf("Found %s\n", STORY_DAT);
+		fclose(f);
+	}
+	
 	if (errors == 0){
 		printf("All game datafiles present\n");
 	}

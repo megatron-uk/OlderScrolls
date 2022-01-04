@@ -15,6 +15,10 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _GAME_H
+#include "../common/game.h"
+#define _GAME_H
+#endif
 #ifndef _DRAW_H
 #include "../common/draw.h"
 #define _DRAW_H
@@ -46,14 +50,13 @@
 #define UI_TITLEBAR_TEXT_X			1
 #define UI_TITLEBAR_TEXT_Y			3
 
-
-void ui_Draw();
-void ui_DrawCombat();
-void ui_DrawImage();
-void ui_DrawText();
-void ui_DrawSideBar();
-void ui_DrawStatusBar();
-void ui_DrawSplashText();
+void ui_Draw(GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawCombat(GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawImage(GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawText(GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawStatusBar(GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawSplashText(GameState_t *gamestate, LevelState_t *levelstate);
 
 // Area-specific text display routines
-unsigned short ui_DrawMainWindowText(unsigned short remain, char *c);
+unsigned short ui_DrawMainWindowText(GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, char *c);

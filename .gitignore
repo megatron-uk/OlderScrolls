@@ -11,15 +11,20 @@
 *.ko
 *.obj
 *.elf
+*.pyc
 
 # Compiled binaries
 ql/bin/*
 pet/bin/*
 msx2/bin/*
 
+# Datafile python caches
+leafy_glade/__pycache__
+sands_of_terror/__pycache__
+
 # Compiled datafiles
-ql/assets/*.dat
-ql/assets/*.idx
+*.dat
+*.idx
 
 # Linker output
 *.ilk

@@ -15,10 +15,16 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string.h>
+
 // Platform agnostic functions
 #ifndef _CONFIG_H
 #include "../common/config.h"
 #define _CONFIG_H
+#endif
+#ifndef _GAME_H
+#include "../common/game.h"
+#define _GAME_H
 #endif
 #ifndef _UI_H
 #include "../common/ui.h"
@@ -29,11 +35,7 @@
 #define _DRAW_H
 #endif
 
-// Any UI display routine needs to print, at most, all rows and all
-// columns of the main text display window.
-char ui_text_buffer[UI_MAIN_WINDOW_MAX_CHARS * UI_MAIN_WINDOW_MAX_ROWS];
-
-void ui_Draw(){
+void ui_Draw(GameState_t *gamestate, LevelState_t *levelstate){
 	// Draws the main user interface - top bar with game name and turn counter
 	// Main story/combat window
 	// Side bar with party details
@@ -64,27 +66,27 @@ void ui_Draw(){
 
 }
 
-void ui_DrawCombat(){
+void ui_DrawCombat(GameState_t *gamestate, LevelState_t *levelstate){
 	
 }
 
-void ui_DrawImage(){
+void ui_DrawImage(GameState_t *gamestate, LevelState_t *levelstate){
 	
 }
 
-void ui_DrawText(){
+void ui_DrawText(GameState_t *gamestate, LevelState_t *levelstate){
 	
 }
 
-void ui_DrawSideBar(){
+void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 	
 }
 
-void ui_DrawStatusBar(){
+void ui_DrawStatusBar(GameState_t *gamestate, LevelState_t *levelstate){
 	
 }
 
-unsigned short ui_DrawMainWindowText(unsigned short remain, char *c){
+unsigned short ui_DrawMainWindowText(GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, char *c){
 	// Draws text into the main window with the correct colours,
 	// bounding box sizes and other main-window specific settings.
 	//
@@ -109,7 +111,7 @@ unsigned short ui_DrawMainWindowText(unsigned short remain, char *c){
 	return remain;
 }
 
-void ui_DrawSplashText(){
+void ui_DrawSplashText(GameState_t *gamestate, LevelState_t *levelstate){
 	// Draws the game splash text in the centre of the main UI window
 	//
 	// Shows:
@@ -118,12 +120,17 @@ void ui_DrawSplashText(){
 	// - current datafile adventure name
 	// - current adventure story text ID 0
 	
-	// Mark screen as dirty, ready to be repainted
-	screen.dirty = 1;
-	
-	// Engine Name
+	// Engine Name	
 	draw_String(UI_MAIN_WINDOW_TEXT_X + 12,
-		UI_MAIN_WINDOW_TEXT_Y + (6 * 8),
+		UI_MAIN_WINDOW_TEXT_Y + (3 * 8),
+		UI_MAIN_WINDOW_MAX_CHARS,
+		1,
+		0,
+		screen.font_8x8,
+		PIXEL_GREEN, gamestate->name);
+	
+	draw_String(UI_MAIN_WINDOW_TEXT_X + 12,
+		UI_MAIN_WINDOW_TEXT_Y + (5 * 8),
 		UI_MAIN_WINDOW_MAX_CHARS,
 		1,
 		0,
@@ -131,19 +138,38 @@ void ui_DrawSplashText(){
 		PIXEL_GREEN, "OlderScrolls");
 	
 	draw_String(UI_MAIN_WINDOW_TEXT_X + 25,
-		UI_MAIN_WINDOW_TEXT_Y + (6 * 8),
+		UI_MAIN_WINDOW_TEXT_Y + (5 * 8),
 		UI_MAIN_WINDOW_MAX_CHARS,
 		1,
 		0,
 		screen.font_8x8,
 		PIXEL_RED, ENGINE_TARGET_NAME);
 	
-	draw_String((UI_MAIN_WINDOW_TEXT_X + 12,
-		UI_MAIN_WINDOW_TEXT_Y + (7 * 8),
+	draw_String(UI_MAIN_WINDOW_TEXT_X + 12,
+		UI_MAIN_WINDOW_TEXT_Y + (6 * 8),
 		UI_MAIN_WINDOW_MAX_CHARS,
 		1,
 		0,
 		screen.font_8x8,
-		PIXEL_GREEN, GIT_COMMIT);
+		PIXEL_GREEN, "abc123");
 	
+	// Print the introductory text
+	draw_String(UI_MAIN_WINDOW_TEXT_X,
+		UI_MAIN_WINDOW_TEXT_Y + (9 * 8),
+		UI_MAIN_WINDOW_MAX_CHARS,
+		14,
+		0,
+		screen.font_8x8,
+		PIXEL_WHITE, gamestate->text_buffer);
+	
+	draw_String(UI_MAIN_WINDOW_TEXT_X,
+		UI_MAIN_WINDOW_TEXT_Y + (23 * 8),
+		UI_MAIN_WINDOW_MAX_CHARS,
+		1,
+		0,
+		screen.font_8x8,
+		PIXEL_RED, "... Press return to start this adventure!");
+	
+	// Mark screen as dirty, ready to be repainted
+	screen.dirty = 1;
 }
