@@ -17,7 +17,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define ENGINE_TARGET_NAME	"QL"
+//#define ENGINE_TARGET_NAME	"QL"
+#define ENGINE_TARGET_NAME	"<g>OlderScrolls<C> <r>QL<C>"
 
 #define FONT_8X8	"font8x8_bmp"	// Note the underscore as present when copied to the QL filesystem
 #define WEAPON_DAT	"weapon_dat"

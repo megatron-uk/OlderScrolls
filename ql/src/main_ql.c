@@ -59,50 +59,59 @@ int main(void){
 	gamestate = (GameState_t *) malloc(sizeof(GameState_t));
 	levelstate = (LevelState_t *) malloc(sizeof(LevelState_t));
 	
-	printf("Engine starting up...\n");
+	printf("%s %s starting...\n", ENGINE_NAME, ENGINE_TARGET_NAME);
+	printf("- Game state: %d bytes\n", sizeof(GameState_t));
+	printf("- Level state: %d bytes\n", sizeof(LevelState_t));
 	
 	// Check that all game objects are present
-	check_Files();
-	/*
-	if (check_Files() != 0){
-		printf("One or more game datafiles are missing!\n");
-		return -1;
-	};
-	*/
+	c = check_Files();
+	c = 0;
+	if (c != 0){
+		printf("- Error: One or more game datafiles are missing! [Err:%d]\n", c);
+		return(-1);
+	}
 	
 	// Try to initialise screen/video memory interface
 	c = screen_Init();
 	if (c != 0){
-		printf("Screen could not be initialised! [Err:%d]\n", c);
-		return -1;
+		printf("- Error: Screen could not be initialised! [Err:%d]\n", c);
+		return(-1);
 	} else {
-		printf("Screen structures initialised\n");	
+		printf("- Screen structures initialised\n");	
 	}
 	
-	
-	printf("Press any key to begin full screen mode...\n");
-	input_Wait(INPUT_RETURN);
+	printf("\nPress any key to begin full screen mode...\n");
+	input_Wait(INPUT_CONFIRM);
 	
 	// Initialise game data and open datafiles
 	game_Init(gamestate, levelstate);
-	
-	// Draw the main interface
-	ui_Draw(gamestate, levelstate);
-	draw_Flip();
 	
 	// Show the adventure-specific splash screen
 	game_Splash(gamestate, levelstate);
 	
 	// Main game loop
-	//input_Wait(INPUT_RETURN);
-	//while(exit == 0){
+	while(exit == 0){
 		
-		// Run main game logic
-		// game_Main();
+		switch(gamestate->gamemode){
 		
-		// Flip screen buffer if marked as dirty
-		//draw_Flip();
-	//}
+			case GAME_MODE_MAP:
+				game_Map(gamestate, levelstate);
+				break;
+			
+			case GAME_MODE_COMBAT:
+				break;
+				
+			case GAME_MODE_SHOP:
+				break;
+				
+			case GAME_MODE_EXIT:
+				exit = 1;
+				break;
+				
+			default:
+				break;
+		}
+	}
 	
 	screen_Exit();
 	game_Exit();

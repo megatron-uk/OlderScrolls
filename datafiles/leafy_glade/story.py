@@ -21,8 +21,8 @@
 
 STORY = {
 	0 : "Trouble in Leafy Glade",
-	1 : "There is trouble in Leafy Glade!\n\nSomeone has been stealing from travellers as they pass through the sleepy little village.\n\nIt is up to you to solve the mystery...\n\nLeafy Glade is a short demo adventure made to test the basic functionality of the OlderScrolls engine on all hardware targets as well as various game scripting logic elements.",
-	2 : "Leafy Glade is a small village located at the junction of several popular trade routes. Its inhabitants are mostly self-sufficient farmers and vendors or handcrafted goods. For a long time Leafy Glade has traded well to travellers use the village as a stopping off point for the several trade routes that converge at the village.", 	
+	1 : "There is <r>trouble<C> in Leafy Glade!\n\nSomeone has been stealing from travellers as they pass through the sleepy little village.\n\nIt is up to you to solve the mystery...\n\nLeafy Glade is a short demo adventure made to test the basic functionality of the OlderScrolls engine on all hardware targets as well as various game scripting logic elements.",
+	2 : "Leafy Glade is a small, but bustling village located at the junction of several popular trade routes.\n\nIts inhabitants are mostly self-sufficient farmers and vendors of handcrafted goods.\nFor a long time Leafy Glade has traded well to travellers use the village as a stopping off point for the trade routes that converge at the village on the way to larger towns in the region.", 	
 	3 : "At the northern edge of Leafy Glade at the trade route marker posts which point off to the routes that travellers take on their way to the larger towns.",
 	4 : "You see a small clearing which is surrounded on three sides by deep, thick brambles. A lean-to canvas shelter is to the rear of the clearing and the remnants of a small fire smoulder in front of the shelter.",
 	5 : "You see a group of trade route markers to the NORTH",

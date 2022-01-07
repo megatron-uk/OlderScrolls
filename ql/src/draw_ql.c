@@ -57,7 +57,7 @@ unsigned char screen_Init(){
 		
 		// Couldn't allocate memory for offscreen buffer
 		// - we might be on a base model QL with only 128kb
-		printf("Offscreen buffer: No\n");
+		printf("- Offscreen buffer: 0 bytes\n");
 		
 		// Direct rendering - write direct to screen memory
 		// but this might show flickering as we write the
@@ -66,7 +66,7 @@ unsigned char screen_Init(){
 		screen.offscreen = NULL;
 		screen.buf = (unsigned short*) screen.screen;
 	} else {
-		printf("Offscreen buffer: Yes\n");
+		printf("- Offscreen buffer: %d bytes\n", SCREEN_BYTES);
 		screen.buf = (unsigned short*) screen.offscreen;
 	}
 	
@@ -97,6 +97,7 @@ unsigned char screen_Init(){
 		// Couldn't process font bitmap to table
 		return 5;
 	}
+	printf("- Font data: %d bytes\n", sizeof(fontdata_t));
 	screen.font_8x8->n_symbols = fontstatus;	
 	screen.font_8x8->unknown_symbol = 37;	// Unknown characters are replaced with '%'
 	screen.font_8x8->ascii_start = 32;		// First ascii char in set is ' '
@@ -265,7 +266,7 @@ void draw_GetXY(unsigned short x, unsigned short y, unsigned short *addr, unsign
 	return;
 }
 
-void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char pad){
+void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char pad, unsigned char mode){
 	// Draw a horizontal line of pixels
 	
 	unsigned short *p;
@@ -294,7 +295,11 @@ void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsig
 		start_mask = 0x0000;
 		if (drawing_mask_lo) start_mask = (drawing_mask_lo >> start_bits) << 8;
 		if (drawing_mask_hi) start_mask += (unsigned char) drawing_mask_hi >> start_bits;
-		*p = *p | start_mask;
+		if (mode == MODE_PIXEL_OR){
+			*p = *p | start_mask;
+		} else {
+			*p = start_mask;
+		}
 		p++;
 		c = start_p + 1;
 		if (start_bits % 2 != 0 ){
@@ -325,7 +330,11 @@ void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsig
 		}
 	}	
 	while (c < end_p){
-		*p = drawing_mask;
+		//if (mode == MODE_PIXEL_OR){
+		//	*p = *p | drawing_mask;
+		//} else {
+			*p = drawing_mask;
+		//}
 		p++;
 		c++;
 	}
@@ -335,13 +344,17 @@ void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsig
 		end_mask = 0x0000;
 		if (drawing_mask_lo) end_mask = (drawing_mask_lo << (8 - end_bits)) << 8;
 		if (drawing_mask_hi) end_mask += (unsigned char) (drawing_mask_hi << (8 - end_bits));
-		*p = *p | end_mask;
+		if (mode == MODE_PIXEL_OR){
+			*p = *p | end_mask;
+		} else {
+			*p = end_mask;
+		}
 	}
 	
 	screen.dirty = 1;
 }
 
-void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsigned short fill){
+void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char mode){
 	// Draw a vertical line of pixels
 	
 	unsigned short *p;						// Pointer to a 16bit word in screen buffer with the first and second byte of the 8x1 pixels
@@ -409,16 +422,28 @@ void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsig
 			if (multi_colour){
 				if (next_mask == 0){
 					// Draw the first colour and mask the second byte
-					*p = *p | ((drawing_mask_lo << 8) + 0x00);
+					if (mode == MODE_PIXEL_OR){
+						*p = *p | ((drawing_mask_lo << 8) + 0x00);
+					} else {
+						*p = ((drawing_mask_lo << 8) + 0x00);
+					}
 					next_mask = 1;
 				} else {
 					// Draw the second colour and mask the first byte
-					*p = *p | ((0x0000) + drawing_mask_hi);
+					if (mode == MODE_PIXEL_OR){
+						*p = *p | ((0x0000) + drawing_mask_hi);
+					} else {
+						*p = ((0x0000) + drawing_mask_hi);
+					}
 					next_mask = 0;
 				}
 			} else {
 				// Draw a single colour
-				*p = *p | drawing_mask;
+				if (mode == MODE_PIXEL_OR){
+					*p = *p | drawing_mask;
+				} else {
+					*p = drawing_mask;
+				}
 			}
 		}
 		// Skip to address of next row
@@ -432,7 +457,8 @@ void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsig
 void draw_Box(unsigned short x, unsigned short y, 
 	unsigned short length, unsigned short height,
 	unsigned short borderpx, unsigned short borderfill,
-	unsigned short centrefill){
+	unsigned short centrefill,
+	unsigned char mode){
 	// Draws a filled or unfilled box of a given size.
 	// Border and fill may be different colours.
 	// Stippled fill is offset to give a nice cross-hatching effect.
@@ -449,36 +475,6 @@ void draw_Box(unsigned short x, unsigned short y,
 	
 	draw_GetXY(x, y, &start_p, &start_bits);
 	draw_GetXY(x + length, y, &end_p, &end_bits);
-
-	// Detect if we need to offset rows for cross-hatching effect
-	if (borderpx > 1){
-		if (draw_IsStippled(borderfill)){
-			enable_pad = 1;
-			pad = 0;
-		} else {
-			enable_pad = 0;
-			pad = 0;
-		}
-	}
-	
-	// Borders
-	for (i = 0; i < borderpx; i++){
-		// Top line
-		draw_HLine(x, y + i, length, borderfill, pad);
-		// Left
-		draw_VLine(x + i, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill);
-		// Right
-		draw_VLine(x + (length - i) - 1, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill);
-		// Bottom
-		draw_HLine(x, y + height - i, length, borderfill, pad);
-		if (enable_pad){
-			if (pad == 1){
-				pad = 0;
-			} else {
-				pad = 1;
-			}
-		}
-	}
 	
 	// Fill
 	if (centrefill != PIXEL_CLEAR){
@@ -493,13 +489,43 @@ void draw_Box(unsigned short x, unsigned short y,
 			pad = 0;
 		}
 		for (i = 0; i < height - (2 * borderpx) + 1; i++){
-			draw_HLine(x + borderpx, y + borderpx + i, length - (2 * borderpx), centrefill, pad);
+			draw_HLine(x + borderpx, y + borderpx + i, length - (2 * borderpx), centrefill, pad, mode);
 			if (enable_pad){
 				if (pad == 1){
 					pad = 0;
 				} else {
 					pad = 1;
 				}
+			}
+		}
+	}
+	
+		// Detect if we need to offset rows for cross-hatching effect
+	if (borderpx > 1){
+		if (draw_IsStippled(borderfill)){
+			enable_pad = 1;
+			pad = 0;
+		} else {
+			enable_pad = 0;
+			pad = 0;
+		}
+	}
+	
+	// Borders
+	for (i = 0; i < borderpx; i++){
+		// Top line
+		draw_HLine(x, y + i, length, borderfill, pad, mode);
+		// Left
+		draw_VLine(x + i, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
+		// Right
+		draw_VLine(x + (length - i) - 1, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
+		// Bottom
+		draw_HLine(x, y + height - i, length, borderfill, pad, mode);
+		if (enable_pad){
+			if (pad == 1){
+				pad = 0;
+			} else {
+				pad = 1;
 			}
 		}
 	}
@@ -551,6 +577,8 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 	unsigned char font_symbol;
 	unsigned char current_rows = 0;
 	unsigned char current_chars = 0;
+	unsigned char skip = 0;
+	unsigned short original_fill = fill;
 	
 	// Empty string
 	if (strlen(c) < 1){
@@ -569,119 +597,159 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 	current_chars = 0;
 	current_rows = 1;
 	for (pos = offset_chars; pos < strlen(c); pos++){
-				
+		// If we started the loop after processing a tag, unset the skip variable
+		skip = 0;
 		// Next character
 		i = (unsigned char) c[pos];
-		
-		if ((current_chars == 0) && (i == 0x20)){
-			// If position 0 and a space, skip it
-			current_chars = 0;
-			
-		} else if ((i == 0x0A) || (i == 0x0D)){
-			// Newline characters
-			if (current_rows < max_rows){
-				// We have at least 1 more row of text left
-				p = (unsigned short*) screen.buf;
-				start_p += (8 * SCREEN_WORDS_PER_ROW); // Set a new start position to this new line
-				p += start_p;
-				current_chars = 0;
-				current_rows++;	
-			} else {
-				// We've exceeded number of allowed rows, return
-				// with the current position in the string.
-				screen.dirty = 1;
-				return pos;	
-			}
-		} else {
-		
-			if ((word_length(c, pos) + current_chars) <= max_chars){
-				// This character and the rest of word up to the next space or 
-				// newline CAN fit on current row
-				
-				// Find the bitmap for this character in the font table
-				if ((i >= fontdata->ascii_start) && (i < (fontdata->ascii_start + fontdata->n_symbols))){
-					font_symbol = i - fontdata->ascii_start;
-				} else {
-					font_symbol = fontdata->unknown_symbol;
-				}
-				for (font_row = 0; font_row < fontdata->height; font_row++){
-					switch(fill){
-						case PIXEL_BLACK:
-							mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
+		// Is this the start of a new tag?
+		if (i == TEXT_TAG_START){
+			// Have we got at least 2 more characters before end of string?
+			if ((pos + 2) <= (strlen(c))){
+				// Is the character +2 from our current position a closing tag?
+				if (c[pos + 2] == TEXT_TAG_END){					
+					// Figure out the tag
+					switch(c[pos + 1]){
+						case TEXT_TAG_GREEN:
+							fill = PIXEL_GREEN;
 							break;
-						case PIXEL_WHITE:
-							mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
+						case TEXT_TAG_RED:
+							fill = PIXEL_RED;
 							break;
-						case PIXEL_RED:
-							mask = (unsigned short) fontdata->symbol[font_symbol][font_row];
+						case TEXT_TAG_WHITE:
+							fill = PIXEL_WHITE;
 							break;
-						case PIXEL_GREEN:
-							mask = (unsigned short) (fontdata->symbol[font_symbol][font_row] << 8);
+						case TEXT_TAG_YELLOW:
+							// Not supported in 4 colour mode on QL
+							break;
+						case TEXT_TAG_BLUE:
+							// Not supported in 4 colour mode on QL
+							break;
+						case TEXT_TAG_COLOUR_CLEAR:
+							fill = original_fill;
+							break;
+						default:
 							break;
 					}
-					*p = *p | mask;
-					p += SCREEN_WORDS_PER_ROW;
+					
+					// Increment loop pointer to skip past these 3 characters
+					pos += 2;
+					// Set skip variable, so we don't try and print anything
+					// and instead start the loop at the new character position 
+					// from above.
+					skip = 1;
 				}
-				p = (unsigned short*) screen.buf;
-				current_chars++;
-				p += start_p + current_chars;
-			} else {
-				// This character and the rest of word up to the next space or 
-				// newline CANNOT fit on current row
+			}
+		}
+		if (!skip){	
+			if ((current_chars == 0) && (i == 0x20)){
+				// If position 0 and a space, skip it
+				current_chars = 0;
 				
+			} else if ((i == 0x0A) || (i == 0x0D)){
+				// Newline characters
 				if (current_rows < max_rows){
 					// We have at least 1 more row of text left
 					p = (unsigned short*) screen.buf;
 					start_p += (8 * SCREEN_WORDS_PER_ROW); // Set a new start position to this new line
 					p += start_p;
-					current_rows++;			
-					
-					if (i != 0x20){
-						// Find the bitmap for this character in the font table
-						if ((i >= fontdata->ascii_start) && (i <= (fontdata->ascii_start + fontdata->n_symbols))){
-							font_symbol = i - fontdata->ascii_start;
-						} else {
-							font_symbol = fontdata->unknown_symbol;
-						}
-						for(font_row = 0; font_row < fontdata->height; font_row++){
-							switch(fill){
-								case PIXEL_BLACK:
-									mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
-									break;
-								case PIXEL_WHITE:
-									mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
-									break;
-								case PIXEL_RED:
-									mask = (unsigned short) fontdata->symbol[font_symbol][font_row];
-									break;
-								case PIXEL_GREEN:
-									mask = (unsigned short) (fontdata->symbol[font_symbol][font_row] << 8);
-									break;
-							}
-							*p = *p | mask;
-							p += SCREEN_WORDS_PER_ROW;
-						}
-						p = (unsigned short*) screen.buf;
-						current_chars = 1;
-						p += start_p + current_chars;
-					} else {
-						// Don't print a leading space if it is the first
-						// character on a line. Just skip to next character.
-						// This 'left justifies' the text.
-						p = (unsigned short*) screen.buf;
-						current_chars = 0;
-						p += start_p + current_chars;
-					}
+					current_chars = 0;
+					current_rows++;	
 				} else {
-					
 					// We've exceeded number of allowed rows, return
 					// with the current position in the string.
 					screen.dirty = 1;
 					return pos;	
 				}
+			} else {
+			
+				if ((word_length(c, pos) + current_chars) <= max_chars){
+					// This character and the rest of word up to the next space or 
+					// newline CAN fit on current row
+					
+					// Find the bitmap for this character in the font table
+					if ((i >= fontdata->ascii_start) && (i < (fontdata->ascii_start + fontdata->n_symbols))){
+						font_symbol = i - fontdata->ascii_start;
+					} else {
+						font_symbol = fontdata->unknown_symbol;
+					}
+					for (font_row = 0; font_row < fontdata->height; font_row++){
+						switch(fill){
+							case PIXEL_BLACK:
+								mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
+								break;
+							case PIXEL_WHITE:
+								mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
+								break;
+							case PIXEL_RED:
+								mask = (unsigned short) fontdata->symbol[font_symbol][font_row];
+								break;
+							case PIXEL_GREEN:
+								mask = (unsigned short) (fontdata->symbol[font_symbol][font_row] << 8);
+								break;
+						}
+						*p = *p | mask;
+						p += SCREEN_WORDS_PER_ROW;
+					}
+					p = (unsigned short*) screen.buf;
+					current_chars++;
+					p += start_p + current_chars;
+				} else {
+					// This character and the rest of word up to the next space or 
+					// newline CANNOT fit on current row
+					
+					if (current_rows < max_rows){
+						// We have at least 1 more row of text left
+						p = (unsigned short*) screen.buf;
+						start_p += (8 * SCREEN_WORDS_PER_ROW); // Set a new start position to this new line
+						p += start_p;
+						current_rows++;			
+						
+						if (i != 0x20){
+							// Find the bitmap for this character in the font table
+							if ((i >= fontdata->ascii_start) && (i <= (fontdata->ascii_start + fontdata->n_symbols))){
+								font_symbol = i - fontdata->ascii_start;
+							} else {
+								font_symbol = fontdata->unknown_symbol;
+							}
+							for(font_row = 0; font_row < fontdata->height; font_row++){
+								switch(fill){
+									case PIXEL_BLACK:
+										mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
+										break;
+									case PIXEL_WHITE:
+										mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
+										break;
+									case PIXEL_RED:
+										mask = (unsigned short) fontdata->symbol[font_symbol][font_row];
+										break;
+									case PIXEL_GREEN:
+										mask = (unsigned short) (fontdata->symbol[font_symbol][font_row] << 8);
+										break;
+								}
+								*p = *p | mask;
+								p += SCREEN_WORDS_PER_ROW;
+							}
+							p = (unsigned short*) screen.buf;
+							current_chars = 1;
+							p += start_p + current_chars;
+						} else {
+							// Don't print a leading space if it is the first
+							// character on a line. Just skip to next character.
+							// This 'left justifies' the text.
+							p = (unsigned short*) screen.buf;
+							current_chars = 0;
+							p += start_p + current_chars;
+						}
+					} else {
+						
+						// We've exceeded number of allowed rows, return
+						// with the current position in the string.
+						screen.dirty = 1;
+						return pos;	
+					}
+				}
 			}
 		}
-		
 	}
 	// All characters have been printed
 	screen.dirty = 1;

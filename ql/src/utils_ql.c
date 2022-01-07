@@ -32,15 +32,15 @@ unsigned char check_Files(){
 	FILE *f;
 	unsigned char errors = 0;
 	
-	printf("Checking game datafiles...\n");
+	//printf("Checking game datafiles...\n");
 	
 	// Font file(s)
 	f = fopen(FONT_8X8, "r");
 	if (f == NULL){
-		printf("Error: Unable to find 8x8 font %s\n", FONT_8X8);
+		printf("- Error: Unable to find 8x8 font %s\n", FONT_8X8);
 		errors++;
 	} else {
-		printf("Found %s\n", FONT_8X8);
+		//printf("Found %s\n", FONT_8X8);
 		fclose(f);
 	}
 	
@@ -51,55 +51,55 @@ unsigned char check_Files(){
 	// Weapon data
 	f = fopen(WEAPON_DAT, "r");
 	if (f == NULL){
-		printf("Error: Unable to find game data %s\n", WEAPON_DAT);
+		printf("- Error: Unable to find game data %s\n", WEAPON_DAT);
 		errors++;
 	} else {
-		printf("Found %s\n", WEAPON_DAT);
+		//printf("Found %s\n", WEAPON_DAT);
 		fclose(f);
 	}
 	
 	// Monster data
 	f = fopen(MONSTER_DAT, "r");
 	if (f == NULL){
-		printf("Error: Unable to find game data %s\n", MONSTER_DAT);
+		printf("- Error: Unable to find game data %s\n", MONSTER_DAT);
 		errors++;
 	} else {
-		printf("Found %s\n", MONSTER_DAT);
+		//printf("Found %s\n", MONSTER_DAT);
 		fclose(f);
 	}
 	
 	// Map data
 	f = fopen(ITEM_DAT, "r");
 	if (f == NULL){
-		printf("Error: Unable to find game data %s\n", ITEM_DAT);
+		printf("- Error: Unable to find game data %s\n", ITEM_DAT);
 		errors++;
 	} else {
-		printf("Found %s\n", ITEM_DAT);
+		//printf("Found %s\n", ITEM_DAT);
 		fclose(f);
 	}
 	
 	// Map data
 	f = fopen(MAP_DAT, "r");
 	if (f == NULL){
-		printf("Error: Unable to find game data %s\n", MAP_DAT);
+		printf("- Error: Unable to find game data %s\n", MAP_DAT);
 		errors++;
 	} else {
-		printf("Found %s\n", MAP_DAT);
+		//printf("Found %s\n", MAP_DAT);
 		fclose(f);
 	}
 	
 	// Story/text data
 	f = fopen(STORY_DAT, "r");
 	if (f == NULL){
-		printf("Error: Unable to find game data %s\n", STORY_DAT);
+		printf("- Error: Unable to find game data %s\n", STORY_DAT);
 		errors++;
 	} else {
-		printf("Found %s\n", STORY_DAT);
+		//printf("Found %s\n", STORY_DAT);
 		fclose(f);
 	}
 	
 	if (errors == 0){
-		printf("All game datafiles present\n");
+		printf("- All game datafiles present\n");
 	}
 	return errors;
 }

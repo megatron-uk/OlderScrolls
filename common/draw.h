@@ -23,8 +23,20 @@
 
 // ============================================
 // Common defines and data structures
+// All targets need to implement these.
 // ============================================
-// TBD
+
+#define TEXT_TAG_START			0x3C	// >
+#define TEXT_TAG_END			0x3E	// >
+#define TEXT_TAG_GREEN			0x67	// g
+#define TEXT_TAG_RED			0x72	// r
+#define TEXT_TAG_WHITE			0x77	// w
+#define TEXT_TAG_YELLOW			0x79	// y
+#define TEXT_TAG_BLUE			0x62	// b
+#define TEXT_TAG_COLOUR_CLEAR	0x43	// C
+
+unsigned char screen_Init();
+void screen_Exit();
 
 // ============================================
 // Platform specific drawing implementations

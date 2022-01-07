@@ -661,9 +661,14 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 	######################################################
 	# 2. (32 bytes) Name
 	######################################################
-	tmp = "%-32s" % (location['name'])
+	byte_list = []
+	tmp = "%s" % (location['name'])
 	for c in tmp:
-		record.append(ord(c).to_bytes(1, byteorder='big'))
+		byte_list.append(ord(c).to_bytes(1, byteorder='big'))
+	for i in range(len(byte_list), 32):
+		byte_list.append(0x00.to_bytes(1, byteorder='big'))
+	for b in byte_list:
+		record.append(b)
 	print("-- +%2s bytes, name" % len(tmp))
 	
 	######################################################

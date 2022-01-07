@@ -47,16 +47,34 @@
 #define UI_MAIN_WINDOW_MAX_ROWS		24
 #define UI_MAIN_WINDOW_COLOUR		PIXEL_WHITE
 
+// Title bar
 #define UI_TITLEBAR_TEXT_X			1
 #define UI_TITLEBAR_TEXT_Y			3
+#define UI_TITLEBAR_MAX_CHARS		63
+
+// Navigation window popup
+#define UI_NAVBOX_START_X			170
+#define UI_NAVBOX_START_Y			80
+#define UI_NAVBOX_WIDTH				124
+#define UI_NAVBOX_HEIGHT			102
+#define UI_NAVBOX_TEXT_X			22
+#define UI_NAVBOX_TEXT_Y			UI_NAVBOX_START_Y + 4
+
+// Yes/No popup boxes
+#define UI_YESNO_START_X			160
+#define UI_YESNO_START_Y			160
+
 
 void ui_Draw(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawCombat(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawImage(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawText(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawStatusBar(GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawStatusBar(GameState_t *gamestate, LevelState_t *levelstate, unsigned char buttons, unsigned char labels, char *allowed_inputs);
 void ui_DrawSplashText(GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawLocationName(GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawNavigation(GameState_t *gamestate, LevelState_t *levelstate, char *input_allowed);
+void ui_DrawYesNo(unsigned char *title);
 
 // Area-specific text display routines
 unsigned short ui_DrawMainWindowText(GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, char *c);

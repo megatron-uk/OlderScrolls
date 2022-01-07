@@ -112,11 +112,10 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// North condition (min 2 bytes, possibly 7+)
 	fread(&levelstate->north_eval_type, 1, 1, map_file);
 	fread(&levelstate->north_require_number, 1, 1, map_file);
-	//memset(levelstate->north_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
+	memset(levelstate->north_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
 	if (levelstate->north_require_number != 0){
 		fread(&levelstate->north_require, COND_LENGTH, levelstate->north_require_number, map_file);
 	}
-	//printf("North  ID: %2d, Text: %2d, Eval: %2d, Length: %2d\n", levelstate->north, levelstate->north_text, levelstate->north_eval_type, levelstate->north_require_number);
 	
 	// =====================================
 	// South exit
@@ -131,11 +130,10 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// South condition (min 2 bytes, possibly 7+)
 	fread(&levelstate->south_eval_type, 1, 1, map_file);
 	fread(&levelstate->south_require_number, 1, 1, map_file);
-	//memset(levelstate->south_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
+	memset(levelstate->south_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
 	if (levelstate->south_require_number != 0){
 		fread(&levelstate->south_require, COND_LENGTH, levelstate->south_require_number, map_file);
 	}
-	//printf("South  ID: %2d, Text: %2d, Eval: %2d, Length: %2d\n", levelstate->south, levelstate->south_text, levelstate->south_eval_type, levelstate->south_require_number);
 
 	// =====================================
 	// East exit
@@ -150,11 +148,10 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// East condition (min 2 bytes, possibly 7+)
 	fread(&levelstate->east_eval_type, 1, 1, map_file);
 	fread(&levelstate->east_require_number, 1, 1, map_file);
-	//memset(levelstate->east_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
+	memset(levelstate->east_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
 	if (levelstate->east_require_number != 0){
 		fread(&levelstate->east_require, COND_LENGTH, levelstate->east_require_number, map_file);
 	}
-	//printf("East   ID: %2d, Text: %2d, Eval: %2d, Length: %2d\n", levelstate->east, levelstate->east_text, levelstate->east_eval_type, levelstate->east_require_number);
 
 	// =====================================
 	// West exit
@@ -169,11 +166,10 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// West condition (min 2 bytes, possibly 7+)
 	fread(&levelstate->west_eval_type, 1, 1, map_file);
 	fread(&levelstate->west_require_number, 1, 1, map_file);
-	//memset(levelstate->west_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
+	memset(levelstate->west_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
 	if (levelstate->west_eval_type != 0){
 		fread(&levelstate->west_require, COND_LENGTH, levelstate->west_require_number, map_file);
 	}
-	//printf("West   ID: %2d, Text: %2d, Eval: %2d, Length: %2d\n", levelstate->west, levelstate->west_text, levelstate->west_eval_type, levelstate->west_require_number);
 	
 	// =====================================
 	// Primary monsters
@@ -184,7 +180,7 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	
 	// (1 byte) number of monster ID's that follow
 	fread(&levelstate->spawn_number, 1, 1, map_file);
-	//memset(levelstate->spawn_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
+	memset(levelstate->spawn_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
 	if (levelstate->spawn_number > 0){
 		fread(&levelstate->spawn_list, levelstate->spawn_number, 1, map_file);	
 	}
@@ -195,7 +191,6 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	if (levelstate->spawn_require_number != 0){
 		fread(&levelstate->spawn_require, COND_LENGTH, levelstate->spawn_require_number, map_file);
 	}
-	//printf("Spawn 1: %3d%, Monsters: %2d, Eval: %2d, Length: %2d\n", levelstate->spawn_chance, levelstate->spawn_number, levelstate->spawn_eval_type, levelstate->spawn_require_number);
 	
 	// =====================================
 	// Secondary monsters
@@ -206,7 +201,7 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	
 	// (1 byte) number of monster ID's that follow
 	fread(&levelstate->respawn_number, 1, 1, map_file);
-	//memset(levelstate->respawn_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
+	memset(levelstate->respawn_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
 	if (levelstate->respawn_number > 0){
 		fread(&levelstate->respawn_list, levelstate->respawn_number, 1, map_file);	
 	}
@@ -217,7 +212,6 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	if (levelstate->respawn_require_number != 0){
 		fread(&levelstate->respawn_require, COND_LENGTH, levelstate->respawn_require_number, map_file);
 	}
-	//printf("Spawn 2: %3d%, Monsters: %2d, Eval: %2d, Length: %2d\n", levelstate->respawn_chance, levelstate->respawn_number, levelstate->respawn_eval_type, levelstate->respawn_require_number);
 
 	// ====================================
 	// Items/Treasure
@@ -230,8 +224,8 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	fread(&total_items, 1, 1, map_file);
 	
 	// Empty the list of weapons and items
-	//memset(levelstate->weapons_list, '\0', MAX_REWARD_ITEMS);
-	//memset(levelstate->items_list, '\0', MAX_REWARD_ITEMS);
+	memset(levelstate->weapons_list, '\0', MAX_REWARD_ITEMS);
+	memset(levelstate->items_list, '\0', MAX_REWARD_ITEMS);
 	levelstate->weapons_number = 0;
 	levelstate->items_number = 0;
 	
@@ -267,11 +261,10 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// Item spawn condition (min 2 bytes, possibly 7+)
 	fread(&levelstate->items_eval_type, 1, 1, map_file);
 	fread(&levelstate->items_require_number, 1, 1, map_file);
-	//memset(levelstate->items_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
+	memset(levelstate->items_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
 	if (levelstate->items_require_number != 0){
 		fread(&levelstate->items_require, COND_LENGTH, levelstate->items_require_number, map_file);
 	}
-	//printf("Items Total: %2d, Items: %2d, Weapons: %2d, Eval: %2d, Length: %2d\n", total_items, levelstate->items_number, levelstate->weapons_number, levelstate->items_eval_type, levelstate->items_require_number);
 	
 	
 	// ==================================================
@@ -294,10 +287,6 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// ==================================================
 	fread(&levelstate->text_after_respawn, 1, sizeof(unsigned short), map_file);
 		
-	//printf("Spawn Text  : Pre: %2d, Post: %2d\n", levelstate->text_spawn, levelstate->text_after_spawn);
-	//printf("Respawn Text: Pre: %2d, Post: %2d\n", levelstate->text_respawn, levelstate->text_after_respawn);
-
-		
 	// ==================================================
 	// NPC 1
 	// ==================================================
@@ -308,16 +297,14 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// NPC 1 spawn condition (min 2 bytes, possibly 7+)
 	fread(&levelstate->npc1_eval_type, 1, 1, map_file);
 	fread(&levelstate->npc1_require_number, 1, 1, map_file);
-	//memset(levelstate->npc1_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
+	memset(levelstate->npc1_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
 	if (levelstate->npc1_require_number != 0){
 		fread(&levelstate->npc1_require, COND_LENGTH, levelstate->npc1_require_number, map_file);
 	}
 	
 	// (2 byte) NPC 1 text ID
 	fread(&levelstate->npc1_text, 1, sizeof(unsigned short), map_file);
-	
-	//printf("NPC 1 ID: %2d, Text: %2d, Eval: %2d, Length %2d\n", levelstate->npc1, levelstate->npc1_text, levelstate->npc1_eval_type, levelstate->npc1_require_number);
-	
+		
 	// ==================================================
 	// NPC 2
 	// ==================================================
@@ -328,7 +315,7 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// NPC 1 spawn condition (min 2 bytes, possibly 7+)
 	fread(&levelstate->npc2_eval_type, 1, 1, map_file);
 	fread(&levelstate->npc2_require_number, 1, 1, map_file);
-	//memset(levelstate->npc2_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
+	memset(levelstate->npc2_require, '\0', MAX_REQUIREMENTS * REQUIREMENT_BYTES);
 	if (levelstate->npc2_require_number != 0){
 		fread(&levelstate->npc2_require, COND_LENGTH, levelstate->npc2_require_number, map_file);
 	}
@@ -336,8 +323,6 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// (2 byte) NPC 1 text ID
 	fread(&levelstate->npc2_text, 1, sizeof(unsigned short), map_file);
 	
-	//printf("NPC 2 ID: %2d, Text: %2d, Eval: %2d, Length %2d\n", levelstate->npc2, levelstate->npc2_text, levelstate->npc2_eval_type, levelstate->npc2_require_number);
-
 	fclose(index_file);
 	return DATA_LOAD_OK;
 }
@@ -367,9 +352,6 @@ unsigned char data_LoadStory(GameState_t *gamestate, LevelState_t *levelstate, u
 	// Read DATA_HEADER_RECORD_SIZE worth of bytes
 	memset(gamestate->text_buffer, '\0', record_size + 1);
 	i = fread(gamestate->text_buffer, 1, record_size, story_file);
-	printf("id: %d\n", id);
-	printf("i: [%d]\n", i);
-	printf("buf: [%s]\n", gamestate->text_buffer);
 	
 	fclose(index_file);
 	return DATA_LOAD_OK;

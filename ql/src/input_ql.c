@@ -15,6 +15,7 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string.h>
 #include <stdio.h>
 #include <qdos.h>
 
@@ -29,29 +30,26 @@
 
 unsigned char input_allowed[MAX_ALLOWED_INPUTS];
 
-short input_Get(void){
+unsigned char input_Get(void){
 	// Listens for input and returns it, if it is present as
 	// one of the allowed types for this game area.
 	//
-	// Screen should already have been initialise before calling.
+	// Screen should already have been initialised before calling.
 	
 	unsigned char c;
 	unsigned i;
 	short v;
 	
-	v = io_fbyte(screen.win, 0, &c);
+	v = io_fbyte(screen.win, 0, (char *) &c);
 	if (v != ERR_OK){
-		return -1;	
+		return 0;	
 	}
-	//if (c != 1){
-	//	printf("c: %d\n", c);
-	//}
 	for (i = 0; i < MAX_ALLOWED_INPUTS; i++){
 		if (c == input_allowed[i]){
 			return c;
 		}
 	}
-	return -1;
+	return 0;
 }
 
 void input_Set(unsigned char key){
@@ -61,8 +59,9 @@ void input_Set(unsigned char key){
 	unsigned char i;
 	
 	for (i = 0; i < MAX_ALLOWED_INPUTS; i++){
-		if (input_allowed[i] == 0x00){
+		if (input_allowed[i] == 0){
 			input_allowed[i] = key;
+			return;
 		}	
 	}
 }
@@ -70,12 +69,12 @@ void input_Set(unsigned char key){
 void input_Clear(void){
 	// Clears the list of allowed input types, ready for a new
 	// game area to be loaded.
-	
 	unsigned char i;
 	
-	for (i = 0; i < MAX_ALLOWED_INPUTS; i++){
-		input_allowed[i] = 0x00;	
-	}
+	memset(input_allowed, '\0', MAX_ALLOWED_INPUTS);
+	//for (i = 0; i < MAX_ALLOWED_INPUTS; i++){
+	//	input_allowed[i] = 0;
+	//}
 }
 
 void input_Wait(unsigned char key){
@@ -83,7 +82,7 @@ void input_Wait(unsigned char key){
 	
 	input_Clear();
 	input_Set(key);
-	while (input_Get() < 0){
+	while (input_Get() == 0){
 	}
 	input_Clear();
 }

@@ -22,9 +22,9 @@
 MAP = {
 	1 : {
         'name' 				: "Leafy Glade",     	# Name of the location
-        'text' 				: 1,                 	# Text block shown initially upon visiting the location
+        'text' 				: 2,                 	# Text block shown initially upon visiting the location
         'north' 			: 2,               		# Exiting North visits this location
-        'north_text' 		: 4,           			# Text shown if north is an available exit      
+        'north_text' 		: 5,           			# Text shown if north is an available exit      
         'north_require' 	: [], 					# Requirement to be met for north to be available
         'south' 			: -1,
         'south_text' 		: -1,
@@ -59,7 +59,7 @@ MAP = {
 	},
 	2 : {
 		'name' 				: "Trade Route Markers",   # Name of the location
-        'text' 				: 2,                		# Text block shown initially upon visiting the location
+        'text' 				: 3,                		# Text block shown initially upon visiting the location
         'north' 			: 3,                		# Exiting North visits this location
         'north_text' 		: -1,          				# Text shown if north is an available exit      
         'north_require' 	: [],       				# Requirement to be met for north to be available
@@ -96,7 +96,7 @@ MAP = {
 	},
 	3 : {
 		'name' 				: "The Bramble Bushes",     # Name of the location
-        'text' 				: 3,                 
+        'text' 				: 4,                 
         'north' 			: -1,                
         'north_text' 		: -1,               
         'north_require' 	: [],       

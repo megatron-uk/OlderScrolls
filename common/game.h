@@ -17,6 +17,11 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define GAME_MODE_MAP		1					// General mode, reading text, with movement and talk options
+#define GAME_MODE_COMBAT	2					// In combat
+#define GAME_MODE_SHOP		3					// In shop
+#define GAME_MODE_EXIT		99					// Exit from game
+
 #define MAX_REWARD_ITEMS 6						// Number of items that may be rewarded upon visiting a location, or upon defeat of primary monster(s)
 #define MAX_ITEMS 32							// The size of player inventory
 #define MAX_LEVEL_NAME_SIZE 32					// How long a level name can be
@@ -28,7 +33,8 @@
 
 // Basic game data
 typedef struct {
-	unsigned char text_buffer[1024]; // A single text buffer for all string/text operations
+	unsigned char text_buffer[1024]; 			// A single text buffer for all string/text operations
+	unsigned char gamemode;						// What mode we are in - map, combat, shop, etc
 	unsigned char name[MAX_LEVEL_NAME_SIZE];	// Name of the current adventure
 	unsigned char level;						// ID of the current location
 	unsigned char level_previous;				// ID of the immediately previous location
@@ -36,6 +42,10 @@ typedef struct {
 	unsigned char level_defeated_primary[MAX_LOCATIONS];// Each level has a flag to indicate whether the primary monster(s) has been defeated
 	unsigned char level_defeated_secondary[MAX_LOCATIONS];// Each level has a flag to indicate whether the secondary monster(s) has been defeated
 	unsigned short gold;						// Record of currency
+	// Pointer to player 1
+	// Pointer to player 2
+	// Pointer to player 3
+	// Pointer to player 4
 } GameState_t;
 
 // Each level that we visit is loaded from disk into this structure
@@ -231,9 +241,14 @@ typedef struct {
 // =====================================================
 // *ALL* platforms must implement the following methods
 // =====================================================
-void game_Init(GameState_t *gamestate, LevelState_t *levelstate); 		// Init game data
-void game_Exit(); 		// De-init game data
+void game_Init(GameState_t *gamestate, LevelState_t *levelstate); 	// Init game data
+void game_Exit(); 														// De-init game data
 void game_Splash(GameState_t *gamestate, LevelState_t *levelstate); 	// Show a splash screen on game start
+void game_Map(GameState_t *gamestate, LevelState_t *levelstate); 
+void game_Combat(GameState_t *gamestate, LevelState_t *levelstate);
+void game_Quit(GameState_t *gamestate, LevelState_t *levelstate);
+
+unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs);
 
 // ============================================
 // Platform specific game function implementations

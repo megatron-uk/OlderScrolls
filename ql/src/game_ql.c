@@ -63,6 +63,7 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	map_file = fopen(MAP_DAT, "r");
 	
 	// Initialise game state
+	gamestate->gamemode = GAME_MODE_MAP;
 	gamestate->level = 1;
 	gamestate->level_previous = 1;
 	memset(gamestate->level_visits, 0, MAX_LOCATIONS); 
@@ -72,7 +73,7 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	
 	// Open the story data file and load entry 0 - this has the adventure name
 	data_Load(gamestate, levelstate, DATA_TYPE_STORY, 0);
-	strncpy(gamestate->name, gamestate->text_buffer, MAX_LEVEL_NAME_SIZE);
+	strncpy((char *) gamestate->name, (char *) gamestate->text_buffer, MAX_LEVEL_NAME_SIZE);
 	
 	// Open the story data file and load entry 1 - this has the splash screen data
 	data_Load(gamestate, levelstate, DATA_TYPE_STORY, 1);
@@ -118,9 +119,267 @@ void game_Splash(GameState_t *gamestate, LevelState_t *levelstate){
 	// Start, Exit, <TO DO>, <TO DO>
 	// ... then starts the game engine proper
 	
+	ui_Draw(gamestate, levelstate);
 	ui_DrawSplashText(gamestate, levelstate);
 	draw_Flip();
 	
 	// Wait for user input
-	input_Wait(INPUT_RETURN);
+	input_Wait(INPUT_CONFIRM);
+}
+
+void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
+	// The main game mode - navigating the map and reading text/viewing story locations
+	// with options for navigation, talking etc.
+	
+	unsigned char c;
+	unsigned char exit = 0;
+	unsigned short remain = 0;
+	
+	// Clear input
+	input_Clear();
+	input_Set(INPUT_QUIT);
+	input_Set(INPUT_QUIT_);
+	
+	// Redraw the main screen
+	ui_Draw(gamestate, levelstate);
+	
+	// Open the Map data file and load current level
+	if (gamestate->level != gamestate->level_previous){
+		data_Load(gamestate, levelstate, DATA_TYPE_MAP, gamestate->level);
+	}
+	ui_DrawLocationName(gamestate, levelstate);
+	
+	// Apply any ongoing status effects (bleeding, poison, etc)
+	// TO DO
+	
+	// Show default map location text
+	data_LoadStory(gamestate, levelstate, levelstate->text);
+	remain = ui_DrawMainWindowText(gamestate, levelstate, 0, (char *) gamestate->text_buffer);
+	if (remain > 0){
+		// while (remain){
+			// Show 'press button to view next page'
+			// Show next page
+		//}
+	}
+	
+	// If monsters are spawned - go to combat
+	if (0){
+		// Show spawn text
+			// Primary
+			
+			// Secondary
+	
+		// Add 'fight' or 'retreat' options
+		// input_Set(INPUT_FIGHT);
+		// input_Set(INPUT_FIGHT_);
+		// input_Set(INPUT_W);
+		// input_Set(INPUT_W_);
+			
+	// else if not spawned
+	} else {
+		// Are any NPC's active?
+		// Add 'talk' options
+		//if (game_CheckTalk(gamestate, levelstate, 0, (char *) input_allowed)){
+		//	input_Set(INPUT_TALK);
+		//	input_Set(INPUT_TALK_);
+		//}
+		
+		// Are any exits active?
+		if (game_CheckMovement(gamestate, levelstate, 0, (char *) input_allowed)){
+			input_Set(INPUT_MOVE);
+			input_Set(INPUT_MOVE_);
+		}
+	}
+		
+	// Draw the available options in the status bar	
+	ui_DrawStatusBar(gamestate, levelstate, 1, 1, (char *) input_allowed);
+	draw_Flip();
+	
+	// Wait for user input
+	while(!exit){
+		c = input_Get();
+		switch(c){
+			case INPUT_MOVE:
+			case INPUT_MOVE_:
+				// ======================================
+				// Allow player to move to another location
+				// ======================================
+				game_CheckMovement(gamestate, levelstate, 1, (char *) input_allowed);
+				while(!exit){
+					c = input_Get();
+					switch(c){
+						case INPUT_N:
+						case INPUT_N_:
+							gamestate->level_previous = gamestate->level;
+							gamestate->level = levelstate->north;
+							exit = 1;
+							break;
+						case INPUT_S:
+						case INPUT_S_:
+							gamestate->level_previous = gamestate->level;
+							gamestate->level = levelstate->south;
+							exit = 1;
+							break;
+						case INPUT_E:
+						case INPUT_E_:
+							gamestate->level_previous = gamestate->level;
+							gamestate->level = levelstate->east;
+							exit = 1;
+							break;
+						case INPUT_W:
+						case INPUT_W_:
+							gamestate->level_previous = gamestate->level;
+							gamestate->level = levelstate->west;
+							exit = 1;
+							break;
+						case INPUT_CANCEL:
+							exit = 1;
+							break;
+						default:
+							break;
+					}
+				}
+				break;
+			case INPUT_FIGHT:
+			case INPUT_FIGHT_:
+				// ======================================
+				// Set combat game mode
+				// ======================================
+				//game_Combat();
+				break;
+			case INPUT_TALK:
+			case INPUT_TALK_:
+				// ======================================
+				// Set talk game mode
+				// ======================================
+				//game_Talk();
+				break;	
+			case INPUT_QUIT:
+			case INPUT_QUIT_:
+				// ======================================
+				// Set exit game mode
+				// ======================================
+				game_Quit(gamestate, levelstate);
+				exit = 1;
+				break;
+			default:
+				break;
+		}
+	}
+	return;
+}
+
+void game_Combat(GameState_t *gamestate, LevelState_t *levelstate){
+	// Combat mode - cannot exit this until the combat is resolved
+}
+
+void game_Shop(GameState_t *gamestate, LevelState_t *levelstate){
+	// At a shop
+}
+
+void game_Quit(GameState_t *gamestate, LevelState_t *levelstate){
+	// Display the 'Do you want to quit?' popup and
+	// wait for user input
+	
+	unsigned char c;
+	unsigned char exit = 0;
+	
+	// Set all the inputs we allow
+	input_Clear();
+	input_Set(INPUT_Y);
+	input_Set(INPUT_Y_);
+	input_Set(INPUT_N);
+	input_Set(INPUT_N_);
+	input_Set(INPUT_CANCEL);
+	
+	// Draw a yes/no dialogue box
+	ui_DrawYesNo((unsigned char *) "Really Quit?");
+	draw_Flip();
+	
+	// Wait for user input
+	while(!exit){
+		c = input_Get();
+		switch(c){
+			case INPUT_Y:
+			case INPUT_Y_:
+				gamestate->gamemode = GAME_MODE_EXIT;
+				exit = 1;
+				break;
+			case INPUT_N:
+			case INPUT_N_:
+			case INPUT_CANCEL:
+				exit = 1;
+				break;
+			default:
+				break;
+		}
+	}
+	return;
+}
+
+unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs){
+	// Returns a flag indicating if movement is possible.
+	// Can also optionally set the available movement options in the allowed_input array
+
+	unsigned char can_move = 0;
+	
+	if (add_inputs){
+		input_Clear();
+	}
+	if (levelstate->north || levelstate->south || levelstate->east || levelstate->west){
+		
+		// Test individual compass points
+		if (levelstate->north){
+			// Check conditions
+			// if cond_Check(north_eval_type, north_require_number, north_require, gamestate){
+				// Add option
+				if (add_inputs){
+					input_Set(INPUT_N);
+					input_Set(INPUT_N_);
+				}
+				can_move = 1;
+			//}
+		}
+		if (levelstate->south){
+			// Check conditions
+			// if cond_Check(south_eval_type, south_require_number, south_require, gamestate){
+				// Add option
+				if (add_inputs){
+					input_Set(INPUT_S);
+					input_Set(INPUT_S_);
+				}
+				can_move = 1;
+			//}
+		}
+		if (levelstate->east){
+			// Check conditions
+			// if cond_Check(east_eval_type, east_require_number, east_require, gamestate){
+				// Add option
+				if (add_inputs){
+					input_Set(INPUT_E);
+					input_Set(INPUT_E_);
+				}
+				can_move = 1;
+			//}
+		}
+		if (levelstate->west){
+			// Check conditions
+			// if cond_Check(west_eval_type, west_require_number, west_require, gamestate){
+				// Add option
+				if (add_inputs){
+					input_Set(INPUT_W);
+					input_Set(INPUT_W_);
+				}
+				can_move = 1;
+			//}
+		}
+	}
+	if (add_inputs){
+		input_Set(INPUT_CANCEL);
+		if (can_move){
+			ui_DrawNavigation(gamestate, levelstate, (char *) input_allowed);
+			draw_Flip();	
+		}
+	}
+	return can_move;
 }
