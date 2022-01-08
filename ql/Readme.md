@@ -50,28 +50,47 @@ Change to the *ql* directory and run **make full**. This will do the following:
 
 # Status
 
+*Within the sQlux emulator*, loading the "Trouble in Leafy Glade" sample dataset, showing splash screen, automatic text wrapping/re-flow and movement options for a specific location:
+
+![Splash screen of the sample Leafy Glade adventure](docs/ql_splash.png) 
+
+![Movement popup dialogue box](docs/ql_move.png)
+
 ### To Do
 
   * User Interface Functions
-    * Show splash screen on startup 
     * Display player character name(s) and stats in sidebar
-    * Show adventure/dataset name in titlebar
     * Show turn number in titlebar
+    * Show images in main window based on game events
+    * Show player party summary in sidebar
+    * Popup party dialogue with weapon/item/armour/magic interface, combat stance etc
+
+  * Game Logic
+    * Load and parse player character(s)
+    * Load and parse monsters
+    * Load and parse weapons and items 
+    * Combat engine 
+    * Talk to NPCs
+    * Shop engine
+    * Spawning of items
+    * Spawning of monsters
 
   * User Input Functions 
     * ?
-
-  * Game Data Functions
-    * Load initial game data from map file 
 
 ### Completed
 
   * User Input Functions
     * Accept and parse keyboard input
     * Accept only valid keystrokes for the module we are in (e.g. the 'move' keys shouldn't work during combat)
+    * Show movement keyboard option if exits are available
+    * Popup movement dialogue box
+    * Popup quit game dialogue box
 
   * User Interface Functions
+    * Show splash screen on startup
     * Draw the title bar, main text window, sidebar and bottom status bar
+    * Show location name in title bar
     * Display main window story text, including word wrapping and embedded newlines.
 
   * Low Level Drawing Functions
@@ -88,3 +107,8 @@ Change to the *ql* directory and run **make full**. This will do the following:
     * Read BMP header from disk
     * Read BMP datastructure from disk
     * Read and parse BMP datastructure into a font table
+
+  * Game Data Functions
+    * Load initial game data from map file
+    * Load new game data when moving to new location 
+    * Parse simple tags in story text (highlight colour)

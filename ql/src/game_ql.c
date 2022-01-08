@@ -38,6 +38,10 @@
 #include "../common/ui.h"
 #define _UI_H
 #endif
+#ifndef _CONDITIONS_H
+#include "../common/conditions.h"
+#define _CONDITIONS_H
+#endif
 
 FILE *story_file;
 FILE *map_file;
@@ -131,7 +135,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	// The main game mode - navigating the map and reading text/viewing story locations
 	// with options for navigation, talking etc.
 	
-	unsigned char c;
+	unsigned char c = 0;
 	unsigned char exit = 0;
 	unsigned short remain = 0;
 	
@@ -146,6 +150,11 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	// Open the Map data file and load current level
 	if (gamestate->level != gamestate->level_previous){
 		data_Load(gamestate, levelstate, DATA_TYPE_MAP, gamestate->level);
+		
+		// Record a visit to this location
+		if (gamestate->level_visits[gamestate->level] < 255){
+			gamestate->level_visits[gamestate->level]++;
+		}
 	}
 	ui_DrawLocationName(gamestate, levelstate);
 	
@@ -163,11 +172,25 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	}
 	
 	// If monsters are spawned - go to combat
-	if (0){
-		// Show spawn text
-			// Primary
+	c = 0;
+	c = game_CheckMonsterSpawn(gamestate, levelstate, 0, (char *) input_allowed);
+	if(c){
+		
+		// Add fight and withdraw options
+		input_Set(INPUT_FIGHT);
+		input_Set(INPUT_FIGHT_);
+		input_Set(INPUT_W);
+		input_Set(INPUT_W_);
+		
+		if (c == 1){
+			// Show primary spawn text
 			
-			// Secondary
+		}
+		
+		if (c == 2){
+			// Show secondary spawn text
+			
+		}
 	
 		// Add 'fight' or 'retreat' options
 		// input_Set(INPUT_FIGHT);
@@ -196,6 +219,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	draw_Flip();
 	
 	// Wait for user input
+	c = 0;
 	while(!exit){
 		c = input_Get();
 		switch(c){
@@ -317,10 +341,36 @@ void game_Quit(GameState_t *gamestate, LevelState_t *levelstate){
 	return;
 }
 
+unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs){
+	// Returns a flag indicating if combat is going to happen
+	// Checks both primary and secondary spawning rules
+	
+	unsigned char can_fight = 0;
+	
+	// Are there any monster ID's listed as primary spawn?
+	if (levelstate->spawn_number){
+		if (check_Cond(gamestate, levelstate, levelstate->spawn_require, levelstate->spawn_require_number, levelstate->spawn_eval_type)){
+			can_fight = 1;
+		}
+	}
+	
+	// Only if the primary spawn is false do we check secondary spawn
+	if (!can_fight){
+		if (levelstate->respawn_number){
+			if (check_Cond(gamestate, levelstate, levelstate->respawn_require, levelstate->respawn_require_number, levelstate->respawn_eval_type)){
+				can_fight = 2;
+			}
+		}
+	}
+	return can_fight;
+	
+}
+
 unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs){
 	// Returns a flag indicating if movement is possible.
 	// Can also optionally set the available movement options in the allowed_input array
 
+	unsigned char add_it = 0;
 	unsigned char can_move = 0;
 	
 	if (add_inputs){
@@ -330,48 +380,76 @@ unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstat
 		
 		// Test individual compass points
 		if (levelstate->north){
+			add_it = 1;
 			// Check conditions
-			// if cond_Check(north_eval_type, north_require_number, north_require, gamestate){
-				// Add option
+			if (levelstate->north_require_number > 0){
+				add_it = 0;
+				if (check_Cond(gamestate, levelstate, levelstate->north_require, levelstate->north_require_number, levelstate->north_eval_type)){
+					// Add option
+					add_it = 1;
+				}
+			}
+			if (add_it){
 				if (add_inputs){
 					input_Set(INPUT_N);
 					input_Set(INPUT_N_);
 				}
 				can_move = 1;
-			//}
+			}
 		}
 		if (levelstate->south){
+			add_it = 1;
 			// Check conditions
-			// if cond_Check(south_eval_type, south_require_number, south_require, gamestate){
-				// Add option
+			if (levelstate->south_require_number > 0){
+				add_it = 0;
+				if (check_Cond(gamestate, levelstate, levelstate->south_require, levelstate->south_require_number, levelstate->south_eval_type)){
+					// Add option
+					add_it = 1;
+				}
+			}
+			if (add_it){
 				if (add_inputs){
 					input_Set(INPUT_S);
 					input_Set(INPUT_S_);
 				}
 				can_move = 1;
-			//}
+			}
 		}
 		if (levelstate->east){
+			add_it = 1;
 			// Check conditions
-			// if cond_Check(east_eval_type, east_require_number, east_require, gamestate){
-				// Add option
+			if (levelstate->east_require_number > 0){
+				add_it = 0;
+				if (check_Cond(gamestate, levelstate, levelstate->east_require, levelstate->east_require_number, levelstate->east_eval_type)){
+					// Add option
+					add_it = 1;
+				}
+			}
+			if (add_it){
 				if (add_inputs){
 					input_Set(INPUT_E);
 					input_Set(INPUT_E_);
 				}
 				can_move = 1;
-			//}
+			}
 		}
 		if (levelstate->west){
+			add_it = 1;
 			// Check conditions
-			// if cond_Check(west_eval_type, west_require_number, west_require, gamestate){
-				// Add option
+			if (levelstate->west_require_number > 0){
+				add_it = 0;
+				if (check_Cond(gamestate, levelstate, levelstate->west_require, levelstate->west_require_number, levelstate->west_eval_type)){
+					// Add option
+					add_it = 1;
+				}
+			}
+			if (add_it){
 				if (add_inputs){
 					input_Set(INPUT_W);
 					input_Set(INPUT_W_);
 				}
 				can_move = 1;
-			//}
+			}
 		}
 	}
 	if (add_inputs){

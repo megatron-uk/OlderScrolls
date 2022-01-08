@@ -60,7 +60,7 @@
 //		1 pad byte
 // e.g 0x01 00 01 0A 00 // Player has STR 10 or above
 
-#define COND_PC_ATR_TYPE			0x0100
+#define COND_PC_ATR_TYPE			0x01
 
 // ==========================================
 // Test for anyone in the player party
@@ -70,7 +70,7 @@
 //		1 pad byte
 // e.g 0x02 00 06 0C 00 // Someone in party has INT 12 or above
 
-#define COND_PARTY_ATR_TYPE			0x0200
+#define COND_PARTY_ATR_TYPE			0x02
 
 // ==========================================
 // Party Membership
@@ -81,7 +81,7 @@
 // e.g. 0x03 00 02 01 00 // Party member 02 is present and alive
 // e.g. 0x03 00 02 03 00 // Party member 02 is present, but dead
 
-#define COND_PARTY_MEMBER_TYPE		0x0300
+#define COND_PARTY_MEMBER_TYPE		0x03
 
 // ==========================================
 // Locations
@@ -93,9 +93,9 @@
 // e.g. 0x04 01 00 07 01 // Location 7 has been visited NO MORE THAN once
 // e.g. 0x04 02 00 07 09 // Location 7 has been visited MORE THAN 9 times
 
-#define COND_MAP_VISIT_TYPE 	0x0400
-#define COND_MAP_VISIT_MAX		0x0401 // A map location requires to have visited a maximum number of times
-#define COND_MAP_VISIT_MIN		0x0402 // A map location requires to have visited a minimum number of times
+#define COND_MAP_VISIT_TYPE 	0x04
+#define COND_MAP_VISIT_MAX		0x01 // A map location requires to have visited a maximum number of times
+#define COND_MAP_VISIT_MIN		0x02 // A map location requires to have visited a minimum number of times
 
 // ==========================================
 // Monster spawning tests
@@ -106,9 +106,9 @@
 // e.g. 0x05 01 00 5A 01 // Primary monster at location 90 must have been defeated at least once
 // e.g. 0x05 02 00 0F 03 // Secondary monsters at location 16 must have been defeated at least 3 times
 
-#define COND_MONSTER_DEFEAT_TYPE	0x0500
-#define COND_MONSTER_PRI_DEFEATED	0x0501	// Primary monster at a given map location must have been defeated 'x' times
-#define COND_MONSTER_SEC_DEFEATED	0x0502	// Secondary monster at a given map location must have been defeated 'x' times
+#define COND_MONSTER_DEFEAT_TYPE	0x05
+#define COND_MONSTER_PRI_DEFEATED	0x01	// Primary monster at a given map location must have been defeated 'x' times
+#define COND_MONSTER_SEC_DEFEATED	0x02	// Secondary monster at a given map location must have been defeated 'x' times
 
 // ==========================================
 // NPC spawning/talking rules
@@ -118,8 +118,8 @@
 //		1 pad byte
 // e.g. 0x06 01 1E 03 00 // Must have talked to NPC 30, 3 times
 // e.g. 0x06 01 05 01 00 // Must have talked to NPC 5, 1 times
-#define COND_NPC_TYPE		0x0600
-#define COND_NPC_TALK		0x0601 // Must have talked to NPC 'id' 'x' times
+#define COND_NPC_TYPE		0x06
+#define COND_NPC_TALK		0x01 // Must have talked to NPC 'id' 'x' times
 
 // ==========================================
 // Items
@@ -130,9 +130,9 @@
 // e.g. 0x07 01 FE 01 00 // Must posess (at least 1 of) item ID 254.
 // e.g. 0x07 02 0D 07 00 // Must not have more than 7 copies of item ID 13.
 
-#define COND_ITEM_TYPE		0x0700
-#define COND_ITEM_OWN		0x0701 // Must posess the item 'id'
-#define COND_ITEM_NOTOWN	0x0702 // Must NOT posess the item 'id'
+#define COND_ITEM_TYPE		0x07
+#define COND_ITEM_OWN		0x01 // Must posess the item 'id'
+#define COND_ITEM_NOTOWN	0x02 // Must NOT posess the item 'id'
 
 // ==========================================
 // Weapons
@@ -143,6 +143,22 @@
 // e.g. 0x08 01 01 01 00 // Must posess (at least 1 of) weapon ID 1.
 // e.g. 0x08 02 05 01 00 // Must not have more than 1 of weapon ID 5.
 
-#define COND_WEAPON_TYPE	0x0800
-#define COND_WEAPON_OWN		0x0801 // Must posess the weapon 'id'
-#define COND_WEAPON_NOTOWN	0x0802 // Must NOT possess the weapon 'id'
+#define COND_WEAPON_TYPE	0x08
+#define COND_WEAPON_OWN		0x01 // Must posess the weapon 'id'
+#define COND_WEAPON_NOTOWN	0x02 // Must NOT possess the weapon 'id'
+
+// ===========================================
+// Common functions which all targets must
+// implement.
+// ===========================================
+
+unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsigned char *requires, unsigned char number, unsigned char eval_type);
+unsigned char check_NoCond(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_PlayerAttribute(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_PartyAttribute(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_PartyState(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_Map(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_Monster(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_NPC(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_Item(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_Weapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond);

@@ -42,21 +42,58 @@ See more [details](datafiles/sand_of_terror/Readme.md)
 
 ## Targets
 
-### Atari ST
-
+All target systems use the same game datafiles, but certain elements (graphics, colour codes in game text etc) may be ignored depending on the target limitations.
 
 ### Commodore PET
 
-View the Commodore PET documentation for [further details](st/Readme.md).
+The Commodore PET target is developed using CC65 and is a character-mode only implementation. It runs in the common 40 column screen mode of most PET models and uses PETSCII graphics to represent on-screen UI elements. No bitmap graphics support is possible with this target.
 
-### IBM PC
+View the Commodore PET documentation for [further details](pet/Readme.md).
 
-
-### MSX
+### MSX 2
 
 View the MSX documentation for [further details](msx/Readme.md).
 
 ### Sinclair QL
 
+The first target implementation and basis for more of the other 16bit versions since it is written in a fairly modern C dialect using a modern cross compiler. The Sinclair QL target features a high-resolution screen mode (512x256) and supports bitmap graphics during gameplay (albeit simple 1bpp dithered images).
 
 View the Sinclair QL documentation for [further details](ql/Readme.md).
+
+---
+
+## Target Platform Comparison
+
+A quick reference to the requirements and features in each *planned* target platform:
+
+
+| Platform                      | RAM (1)| Storage (2) | Screen Mode (3)| Colour (4)| Text Window (5)| Loadable Font (6)| Image Support (7)|
+|-------------------------------|--------|-------------|----------------|-----------|----------------|------------------|------------------|
+| Amstrad CPC                   | 64KB   | FDD         | 320x200        | 4         | ?              | ?                | ?                |
+| Atari XL/XE                   | 64KB   | FDD         | 320x292        | 2         | ?              | ?                | ?                |
+| Atari ST/STe                  | 512KB  | FDD, HDD    | 640x200        | 4         | ?              | ?                | ?                |
+| BBC Model B / Master          | 64KB   | FDD         | 320x256        | 2         | ?              | ?                | ?                |
+| Commodore Amiga               | 512KB  | FDD, HDD    | 640x200        | 16        | ?              | ?                | ?                |
+| [Commodore PET](pet/Readme.md)| 32KB   | FDD         | 40x25          | N/A       | 30x19          | N/A              | N/A              |
+| [MSX 2](msx/Readme.md)        | 64KB   | FDD, HDD    | 512x212        | 16        | ?              | ?                | ?                |
+| NEC PC-8801                   | 64KB   | FDD         | 640x200        | 8         | ?              | ?                | ?                |
+| NEC PC-9801 / 9821            | 1024KB | FDD, HDD    | 640x400        | 16        | ?              | 8x8 1bpp         | ?                |
+| PC / VGA                      | 640KB  | FDD, HDD    | 640x400        | 256       | ?              | 8x8 1bpp         | ?                |
+| [Sinclair QL](ql/Readme.md)   | 128KB+ | FDD, HDD    | 512x256        | 4         | 48x24          | 8x8 1bpp         | ?                |
+| Sinclair ZX Spectrum          | 48KB   | FDD         | 32x24          | 8         | ?              | N/A              | N/A              |
+| Sharp X68000                  | 1024KB | FDD, HDD    | 512x512        | 65535     | ?              | 8x8 1bpp         | ?                |
+
+
+
+
+### Key
+
+        1. Minimum memory requirement, in kilobytes. Some platforms (marked with **+**), support enhanced features if additional memory is detected.
+        2. Reccomended/supported loading mechanism. Most game datafiles are loaded into memory as needed, so a random access storage device such as FDD or HDD (or modern replacement) is reccomended. Tape devices are *not* supported. Support for ROM images is not planned.
+        3. Screen resolution that the game engine runs in.
+        4. Colour mode that the game engine runs in.
+        5. Size of the main text/story window, in characters. Larger text windows show more on-screen text without having the user page through.
+        6. Font type in use. Some platforms load a user-definable bitmap font which can be changed at runtime. Others use the font built in to the video/character ROM.
+        7. If this target supports bitmap image display (location screens, monster images during combat) during game play.
+
+

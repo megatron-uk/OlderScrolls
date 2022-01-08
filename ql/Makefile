@@ -38,14 +38,16 @@ FLOPPY_NAME = "GameFloppy"
 # Targets to build/run
 #################################
 all: $(TARGET)
-full: clean $(TARGET) newdisk copydisk rundisk_160
-run: rundisk
+full: clean $(TARGET) newdisk copydisk rundisk_128
+run: rundisk_128
+run128: rundisk_128
+run160: rundisk_160
 
 #################################
 # Object files needed to build our 
 # main application
 #################################
-OBJFILES = src/bmp_ql.o src/input_ql.o src/main_ql.o src/data_ql.o src/draw_ql.o src/ui_ql.o src/utils_ql.o src/game_ql.o
+OBJFILES = src/bmp_ql.o src/input_ql.o src/main_ql.o src/conditions_ql.o src/data_ql.o src/draw_ql.o src/ui_ql.o src/utils_ql.o src/game_ql.o
 
 #################################
 # Main application target build recipe
@@ -111,7 +113,7 @@ rundisk_160:
 	@echo " Running QL emulator"
 	@echo ""
 	@echo "- Calling emulator..."
-	sqlux -f etc/sqlux_160kb.ini -w 2x -b 'exec_w flp1_game'
+	sqlux -f etc/sqlux_160kb.ini -w 1x -b 'exec_w flp1_game'
 	
 ###############################
 # Clean up
@@ -144,6 +146,9 @@ input_ql.o: input_ql.c
 	
 main_ql.o: main_ql.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o src/main_ql.c
+	
+conditions_ql.o: conditions_ql.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c src/conditions_ql.c
 	
 data_ql.o: data_ql.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c src/data_ql.c

@@ -249,6 +249,7 @@ void game_Combat(GameState_t *gamestate, LevelState_t *levelstate);
 void game_Quit(GameState_t *gamestate, LevelState_t *levelstate);
 
 unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs);
+unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs);
 
 // ============================================
 // Platform specific game function implementations

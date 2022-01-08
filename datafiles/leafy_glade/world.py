@@ -49,13 +49,13 @@ MAP = {
         'text_respawn' 		: -1,         
         'text_after_respawn' : -1,
         'npc1' 				: 1,                 
-        'npc1_require' 		: 	["COND_EVAL_AND", 1, 
-        							["COND_MONSTER_DEFEAT_TYPE", "MONSTER_TYPE_PRIMARY", 3, 1]
-        						],       
+        'npc1_require' 		: [],       
         'npc1_text'  		: 8,          
-        'npc2' 				: -1,                
-        'npc2_require' 		: [],      
-        'npc2_text'  		: -1,         	
+        'npc2' 				: 1,                
+        'npc2_require' 		: ["COND_EVAL_AND", 1, 
+        							["COND_MONSTER_DEFEAT_TYPE", "MONSTER_TYPE_PRIMARY", 3, 1]
+        						],      
+        'npc2_text'  		: 8,         	
 	},
 	2 : {
 		'name' 				: "Trade Route Markers",   # Name of the location
