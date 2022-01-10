@@ -32,7 +32,7 @@ import traceback
 #
 ##################################################################################
 
-DEBUG = 0
+DEBUG =1
 
 MAX_REQUIREMENTS = 8
 MAX_MONSTERS = 8
@@ -86,6 +86,14 @@ ITEM_OWN_TYPE = {
 WEAPON_OWN_TYPE = {
 	"COND_ITEM_OWN" 	: 	0x01,
 	"COND_ITEM_NOTOWN" 	: 	0x02,
+}
+
+NPC_TEST_TYPE = {
+	"COND_NPC_TALK"			: 0x01,
+	"COND_NPC_MET_ALIVE"	: 0x02,
+	"COND_NPC_MET_DEAD"		: 0x03,
+	"COND_NPC_MET_TIME_LESS" : 0x04,
+	"COND_NPC_MET_TIME_MORE" : 0x05,
 }
 
 ITEM_TYPE_IDS = ["w", "i"]
@@ -147,12 +155,14 @@ CONDITIONS = {
 		'bytes'			: 5,				# Total size if 5 bytes	
 	},
 	"COND_NPC_TYPE" : {
-		'bitfield'		: [0x06, 0x01],
-		'1_type'		: "NPC_ID",			# NPC ID
-		'1_sz'			: 1,				# Param 1 is 1 byte
+		'bitfield'		: [0x06],
+		'1_type'		: "NPC_TEST_TYPE",
+		'1_sz'			: 1,				
+		'2_type'		: "NPC_ID",			# NPC ID
+		'2_sz'			: 1,				# Param 1 is 1 byte
 		'2_type'		: "INTEGER",		# Times talked
-		'2_sz'			: 1,				# Param 2 is 1 byte
-		'pad_sz'		: 1,				# Pad byte
+		'2_sz'			: 2,				# Param 2 is 2 byte
+		'pad_sz'		: 0,				# Pad byte
 		'bytes'			: 5,				# Total size if 5 bytes		
 	},
 	"COND_ITEM_TYPE" : {
@@ -1122,7 +1132,8 @@ def evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 					bitfield += [0x00]
 					bitfield += [param2]
 				else:
-					bitfield += [param2]
+					bitfield += (param2 >> 8) & 0xff
+					bitfield += param2 & 0xff
 				bitfield += [param3]
 				if 'pad_sz' in CONDITIONS[cond_type].keys():
 					for i in range(0, CONDITIONS[cond_type]['pad_sz']):
@@ -1143,17 +1154,23 @@ def evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		#######################################################
 		valid = True
 		if cond_type in ["COND_NPC_TYPE"]:
-			# Should have 2 additional params
+			# Should have 3 additional params
 			n_params = len(condition_list_entry)
-			if n_params == 3:
-				param1 = condition_list_entry[1]	# Attribute type
-				if param1 in npc_ids:
+			if n_params == 4:
+				param1 = condition_list_entry[1]	# Condition type
+				if param1 in NPC_TEST_TYPE.keys():
+					param1 = NPC_TEST_TYPE[condition_list_entry[1]]
+				else:
+					print("--- INVALID NPC TEST TYPE: [%s]" % param1)
+					valid = False
+				param2 = condition_list_entry[2]	# NPC ID
+				if param2 in npc_ids:
 					pass
 				else:
-					print("--- INVALID NPC ID: [%s]" % param1)
+					print("--- INVALID NPC ID: [%s]" % param2)
 					valid = False
-				param2 = condition_list_entry[2]	# Value
-				if (param2 >= 0) and (param2 <= 255):
+				param3 = condition_list_entry[3]	# Value
+				if (param3 >= 0) and (param3 <= 65535):
 					pass
 				else:
 					print("--- INVALID INTEGER: [%s]" % param2)
@@ -1167,6 +1184,12 @@ def evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 				bitfield = copy.deepcopy(CONDITIONS[cond_type]['bitfield'])
 				bitfield += [param1]
 				bitfield += [param2]
+				if param3 < 256:
+					bitfield += [0x00]
+					bitfield += [param3]
+				else:
+					bitfield += (param2 >> 8) & 0xff
+					bitfield += param2 & 0xff
 				if 'pad_sz' in CONDITIONS[cond_type].keys():
 					for i in range(0, CONDITIONS[cond_type]['pad_sz']):
 							bitfield.append(0x00)
@@ -1289,6 +1312,12 @@ if __name__ == "__main__":
 	adventure = "leafy_glade"
 	
 	sys.path.append(adventure)
-	generate_world(import_dir = adventure)
-	
-	generate_story(import_dir = adventure)
+	status = generate_world(import_dir = adventure)
+	if status is False:
+		print("Not continuing. Please fix errors.")
+		sys.exit(1)
+		
+	status = generate_story(import_dir = adventure)
+	if status is False:
+		print("Not continuing. Please fix errors.")
+		sys.exit(1)

@@ -81,7 +81,7 @@ MAP = {
         'items_chance' 		: 100,
         'items_list' 		: ["w1"],
         'items_require' 	: 	["COND_EVAL_AND", 1, 
-        							["COND_NPC_TYPE", 1, 1],
+        							["COND_NPC_TYPE", "COND_NPC_TALK", 1, 0],
         						],
         'text_spawn' 		: -1,           
         'text_after_spawn' : -1,    
@@ -119,11 +119,9 @@ MAP = {
         'respawn_chance' 	: -1,
         'respawn_list' 		: [],
         'respawn_require' 	: [],
-        'items_chance' 		: 2,
-        'items_list' 		: ["i1"],
-        'items_require' 	: ["COND_EVAL_AND", 1, 
-        							["COND_MONSTER_DEFEAT_TYPE", "MONSTER_TYPE_PRIMARY", 3, 0]
-        						],
+        'items_chance' 		: -1,
+        'items_list' 		: [],
+        'items_require' 	: [],
         'text_spawn' 		: 5, 
         'text_after_spawn' : 6,
         'text_respawn' 		: -1,
@@ -132,10 +130,8 @@ MAP = {
         'npc1_require' 		: [] ,
         'npc1_text'  		: -1,     
         'npc2' 				: 1,           
-        'npc2_require' 		: ["COND_EVAL_AND", 1, 
-        							["COND_MONSTER_DEFEAT_TYPE", "MONSTER_TYPE_PRIMARY", 3, 0]
-        						] ,
-        'npc2_text'  		: 5,	
+        'npc2_require' 		: [] ,
+        'npc2_text'  		: -1,	
 	}
 	
 	# 59 bytes minimum
