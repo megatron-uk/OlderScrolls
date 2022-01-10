@@ -44,7 +44,12 @@
 unsigned char data_Load(GameState_t *gamestate, LevelState_t *levelstate, unsigned char data_type, unsigned short id);
 unsigned char data_LoadStory(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
 unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
-
+unsigned char data_CreateCharacter(PlayerState_t *playerstate);
+unsigned char data_AddNPC(GameState_t *gamestate, LevelState_t *levelstate, unsigned char id);
+struct NPCList * data_FindNPC(struct NPCList *npclist, unsigned char id);
+struct NPCList * data_LastNPC(struct NPCList *npclist);
+unsigned char data_CountNPC(struct NPCList *npclist);
+	
 // ============================================
 // Platform specific UI implementations
 // ============================================

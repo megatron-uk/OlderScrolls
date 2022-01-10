@@ -49,8 +49,9 @@
 //		3 pad bytes
 // e.g. 0x01 00 00 00 00 
 
-#define NO_COND					0x0000 // No conditions
-#define COND_NO_MONSTERS		0x0001 // No monsters must be currently spawned at this location
+#define SIMPLE_COND_TYPE		0x00 // Simple condition check
+#define COND_NO_COND			0x00 // No condition, always returns true
+#define COND_NO_MONSTERS		0x01 // No monsters must be currently spawned at this location
 
 // ==========================================
 // Tests for the player 
@@ -112,14 +113,17 @@
 
 // ==========================================
 // NPC spawning/talking rules
-//		2 byte1 for the condition type
-//		1 bytes for the NPC ID the test is for
-//		1 byte for the number
-//		1 pad byte
+//		2 bytes for the condition type
+//		1 byte for the NPC ID the test is for
+//		2 bytes for the number (if applicable)
 // e.g. 0x06 01 1E 03 00 // Must have talked to NPC 30, 3 times
 // e.g. 0x06 01 05 01 00 // Must have talked to NPC 5, 1 times
-#define COND_NPC_TYPE		0x06
-#define COND_NPC_TALK		0x01 // Must have talked to NPC 'id' 'x' times
+#define COND_NPC_TYPE			0x06
+#define COND_NPC_TALK			0x01 // Must have talked to NPC 'id' 'x' times
+#define COND_NPC_ALIVE			0x02 // NPC 'id' is still alive (2 pad bytes) (by default, if not met)
+#define COND_NPC_DEAD			0x03 // NPC 'id' is dead (2 pad bytes)
+#define COND_NPC_TIMER_LESS		0x04 // Must have talked to NPC 'id' less than 'x' turns ago
+#define COND_NPC_TIMER_MORE		0x05 // Must have talked to NPC 'id' more than 'x' turns ago
 
 // ==========================================
 // Items
@@ -154,7 +158,7 @@
 
 unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsigned char *requires, unsigned char number, unsigned char eval_type);
 unsigned char check_NoCond(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
-unsigned char check_PlayerAttribute(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_PlayerAttribute(GameState_t *gamestate, LevelState_t *levelstate, char *cond, unsigned char player);
 unsigned char check_PartyAttribute(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
 unsigned char check_PartyState(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
 unsigned char check_Map(GameState_t *gamestate, LevelState_t *levelstate, char *cond);

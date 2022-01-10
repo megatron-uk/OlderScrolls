@@ -71,10 +71,9 @@ void input_Clear(void){
 	// game area to be loaded.
 	unsigned char i;
 	
-	memset(input_allowed, '\0', MAX_ALLOWED_INPUTS);
-	//for (i = 0; i < MAX_ALLOWED_INPUTS; i++){
-	//	input_allowed[i] = 0;
-	//}
+	for (i = 0; i < MAX_ALLOWED_INPUTS; i++){
+		input_allowed[i] = 0;
+	}
 }
 
 void input_Wait(unsigned char key){

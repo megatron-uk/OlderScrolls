@@ -71,3 +71,4 @@ void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsig
 void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char mode);
 void draw_Box(unsigned short x, unsigned short y, 	unsigned short length, unsigned short height, unsigned short borderpx, unsigned short borderfill, unsigned short centrefill, unsigned char mode);
 unsigned short draw_String(unsigned char x, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c);
+void draw_FontSymbol(unsigned char i, fontdata_t *fontdata, unsigned short fill, unsigned short *p);

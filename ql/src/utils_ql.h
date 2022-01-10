@@ -23,3 +23,4 @@
 
 unsigned char check_Files();
 unsigned char word_length(char *c, unsigned short pos);
+void * get_FreeBlock(unsigned int *size, unsigned int base, unsigned char increment);

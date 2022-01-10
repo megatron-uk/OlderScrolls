@@ -17,6 +17,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifndef _CONFIG_H
 #include "../common/config.h"
@@ -31,9 +32,7 @@ unsigned char check_Files(){
 
 	FILE *f;
 	unsigned char errors = 0;
-	
-	//printf("Checking game datafiles...\n");
-	
+		
 	// Font file(s)
 	f = fopen(FONT_8X8, "r");
 	if (f == NULL){
@@ -125,4 +124,32 @@ unsigned char word_length(char *c, unsigned short pos){
 	}
 	// No more spaces found
 	return count;
+}
+
+void * get_FreeBlock(unsigned int *size, unsigned int base, unsigned char increment){
+	// Returns the biggest free block of memory than can be allocated
+	
+	unsigned char *mem;
+	
+	mem = malloc(base);
+	if (mem != NULL){
+		
+		// Allocate until we are no longer able to
+		while (mem != NULL){
+			free(mem);
+			base += increment;
+			mem = malloc(base);
+		}
+		
+		// Wind back until we get a free block increment
+		while (mem == NULL){
+			base -= 1;
+			mem = malloc(base);
+		}
+		
+		*size = base;
+		return mem;
+	} 
+	*size = 0;
+	return NULL;
 }

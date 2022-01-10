@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+
+//#include <math.h>
 
 #ifndef _BMP_H
 #include "bmp_ql.h"
@@ -19,8 +20,15 @@
 #define _UTIL_H
 #endif
 
+int div_ceil(int x, int y) {
+    return x / y + (x % y > 0);
+}
+
 int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, unsigned char data){
 	/* 
+		NOTE - This QL implementation is specific for the OlderScrolls rpg engine and ONLY
+		supports 1bpp bitmap images. Any other format will return an error.
+	
 		bmp_image 	== open file handle to your bmp file
 		bmpdata 	== a bmpdata_t struct
 		header		== 1/0 to enable bmp header parsing
@@ -48,110 +56,49 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// Seek to dataoffset position in header
 		fseek(bmp_image, 0, 1);
 		status = fseek(bmp_image, DATA_OFFSET_OFFSET, SEEK_SET);
-		if (status != 0){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking data offset in header\n", __FILE__, __LINE__);
-			}
-			return BMP_ERR_READ;
-		}
+
 		// Read data offset value
 		status = fread(&bmpdata->offset, 4, 1, bmp_image);
-		if (status < 1){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at data offset header pos, got %d\n", __FILE__, __LINE__, 4, status);
-			}
-			return BMP_ERR_READ;
-		}
+
 		// offset is a little-endian 32bit, so swap it
 		bmpdata->offset = swap_int32(bmpdata->offset);
 		
 		// Seek to image width/columns position in header
 		status = fseek(bmp_image, WIDTH_OFFSET, SEEK_SET);
-		if (status != 0){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking width in header\n", __FILE__, __LINE__);
-			}
-			return BMP_ERR_READ;
-		}
+
 		// Read width value
 		status = fread(&bmpdata->width, 4, 1, bmp_image);
-		if (status < 1){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at image width header pos, got %d\n", __FILE__, __LINE__, 4, status);
-			}
-			return BMP_ERR_READ;
-		}
+
 		// width is a little-endian 32bit, so swap it
 		bmpdata->width = swap_int32(bmpdata->width);
 		
 		// Seek to image height/rows position in header
 		status = fseek(bmp_image, HEIGHT_OFFSET, SEEK_SET);
-		if (status != 0){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking height in header\n", __FILE__, __LINE__);
-			}
-			return BMP_ERR_READ;
-		}
+
 		// Read height value
 		status = fread(&bmpdata->height, 4, 1, bmp_image);
-		if (status < 1){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at image height header pos, got %d\n", __FILE__, __LINE__, 4, status);
-			}
-			return BMP_ERR_READ;
-		}
+
 		// Height is a little-endian 32bit so swap it
 		bmpdata->height = swap_int32(bmpdata->height);
 		
 		// Seek to bpp location in header
 		status = fseek(bmp_image, BITS_PER_PIXEL_OFFSET, SEEK_SET);
-		if (status != 0){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking bpp in header\n", __FILE__, __LINE__);
-			}
-			return BMP_ERR_READ;
-		}
+
 		// Read bpp value
 		status = fread(&bmpdata->bpp, 2, 1, bmp_image);
-		if (status < 1){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at bpp header pos, got %d\n", __FILE__, __LINE__, 2, status);
-			}
-			return BMP_ERR_READ;
-		}
+
 		// BPP is a little-endian 16bit, so swap it
 		bmpdata->bpp = swap_int16(bmpdata->bpp);
-		if (bmpdata->bpp != BMP_1BPP){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Unsupported pixel depth of %dbpp\n", __FILE__, __LINE__, bmpdata->bpp);
-				printf("%s.%d\t The only supported pixel depth is 1bpp on Sinclair QL\n", __FILE__, __LINE__);
-			}
-			return BMP_ERR_BPP;
-		}
 		
 		// Seek to compression field
 		status = fseek(bmp_image, COMPRESS_OFFSET, SEEK_SET);
-		if (status != 0){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking compression field in header\n", __FILE__, __LINE__);
-			}
-			return BMP_ERR_READ;
-		}		
+		
 		// Read compression value
 		status = fread(&bmpdata->compressed, sizeof(bmpdata->compressed), 1, bmp_image);
-		if (status < 1){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at compression type header pos, got %d\n", __FILE__, __LINE__, 4, status);
-			}
-			return BMP_ERR_READ;
-		}
 				
 		// compression is a little-endian 32bit so swap it
 		bmpdata->compressed = swap_int32(bmpdata->compressed);
 		if (bmpdata->compressed != BMP_UNCOMPRESSED){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Unsupported compressed BMP format\n", __FILE__, __LINE__);
-			}
 			return BMP_ERR_COMPRESSED;
 		}
 				
@@ -162,35 +109,45 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// Each row is padded to be a multiple of 4 bytes. 
 		// We calculate the padded row size in bytes
 		if (bmpdata->bpp == BMP_1BPP){
-			bmpdata->row_padded = (int)(4 * ceil((float)(bmpdata->width) / 4.0f)) / 8;
+			// Using libm and ceil() function
+			/*bmpdata->row_padded = (int)(4 * ceil((float)(bmpdata->width) / 4.0f)) / 8;
 			bmpdata->row_unpadded = (int) ceil((float)bmpdata->width / 8.0f);
 			bmpdata->size = (int) ceil((bmpdata->width * bmpdata->height) / 8.0f); 
+			bmpdata->n_pixels = bmpdata->size;*/
+			
+			// Using quotient and remainder without libm
+			if (bmpdata->width % 4 != 0){
+				bmpdata->row_padded = ((bmpdata->width / 4) + 1) / 8;
+			} else {
+				bmpdata->row_padded = (bmpdata->width / 4) / 8;
+			}
+			
+			if (bmpdata->width % 8 != 0){
+				bmpdata->row_unpadded = (bmpdata->width / 8) + 1;
+			} else {
+				bmpdata->row_unpadded = (bmpdata->width / 8);
+			}
+
+			if ((bmpdata->width * bmpdata->height) % 8 != 0){
+				bmpdata->size = ((bmpdata->width * bmpdata->height) / 8) + 1;	
+			} else {
+				bmpdata->size = ((bmpdata->width * bmpdata->height) / 8);
+			}
 			bmpdata->n_pixels = bmpdata->size;
 		} else {
-			bmpdata->row_padded = (int)(4 * ceil((float)(bmpdata->width * bmpdata->bytespp) / 4.0f)); // This needs moving from ceil/floating point!!!!
-			bmpdata->row_unpadded = bmpdata->width * bmpdata->bytespp;
-			bmpdata->size = (bmpdata->width * bmpdata->height * bmpdata->bytespp);
-			bmpdata->n_pixels = bmpdata->width * bmpdata->height;
-		}
-		
-		if (BMP_VERBOSE){
-			printf("%s.%d\t Bitmap header loaded ok!\n", __FILE__, __LINE__);
-			printf("%s.%d\t Info - Resolution: %dx%d\n", __FILE__, __LINE__, bmpdata->width, bmpdata->height);
-			printf("%s.%d\t Info - Padded row size: %d bytes\n", __FILE__, __LINE__, bmpdata->row_padded);
-			printf("%s.%d\t Info - Unpadded row size: %d bytes\n", __FILE__, __LINE__, bmpdata->row_unpadded);
-			printf("%s.%d\t Info - Colour depth: %dbpp\n", __FILE__, __LINE__, bmpdata->bpp);
-			printf("%s.%d\t Info - Storage size: %d bytes\n", __FILE__, __LINE__, bmpdata->size);
-			printf("%s.%d\t Info - Pixel data @ %x\n", __FILE__, __LINE__, (unsigned int) &bmpdata->pixels);
+			return BMP_ERR_BPP;
 		}
 	}
 	
 	if (data){
 	
+		if (bmpdata->bpp != BMP_1BPP){
+			// We dont need to byteswap 1bpp image data
+			return BMP_ERR_BPP;
+		}
+		
 		// First verify if we've actually read the header section...
 		if (bmpdata->offset <= 0){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Data offset not found or null, unable to seek to data section\n", __FILE__, __LINE__);
-			}
 			return BMP_ERR_READ;
 		}
 		
@@ -201,9 +158,6 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			bmpdata->pixels = (unsigned char*) calloc(bmpdata->n_pixels, bmpdata->bytespp);
 		} 
 		if (bmpdata->pixels == NULL){
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Unable to allocate memory for pixel data\n", __FILE__, __LINE__);
-			}
 			return BMP_ERR_MEM;
 		}
 	
@@ -219,10 +173,6 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			
 			status = fread(bmp_ptr, 1, bmpdata->row_unpadded, bmp_image);
 			if (status < 1){
-				if (BMP_VERBOSE){
-					printf("%s.%d\t Error reading file at pos %u\n", __FILE__, __LINE__, (unsigned int) ftell(bmp_image));
-					printf("%s.%d\t Error reading %d records, got %d\n", __FILE__, __LINE__, bmpdata->row_unpadded, status);
-				}
 				free(bmpdata->pixels);
 				return BMP_ERR_READ;	
 			}
@@ -235,9 +185,6 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 				// Seek the number of bytes left in this row
 				status = fseek(bmp_image, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
 				if (status != 0){
-					if (BMP_VERBOSE){
-						printf("%s.%d\t Error seeking next row of pixels\n", __FILE__, __LINE__);
-					}
 					free(bmpdata->pixels);
 					return BMP_ERR_READ;
 				}
@@ -245,19 +192,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			// Else... the fread() already left us at the next row	
 		}
 		
-		// 1bpp images
-		if (bmpdata->bpp == BMP_1BPP){
-			// We dont need to byteswap 1bpp image data
-			return BMP_OK;
-			
-		// Everything else
-		} else {
-			if (BMP_VERBOSE){
-				printf("%s.%d\t Unsupported byte mode for this pixel depth\n", __FILE__, __LINE__);
-			}
-			free(bmpdata->pixels);
-			return BMP_ERR_BPP;
-		}
+		return BMP_OK;
 	}
 	return BMP_OK;
 }
@@ -324,19 +259,18 @@ int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsi
 					// so that we're at the top left pixel of the first symbol of the new row
 					bytepos += (bmpdata->row_unpadded * (font_height - 1));
 				}
-				if (BMP_VERBOSE){
-					printf("%s.%d\t Bitmap font processed ok!\n", __FILE__, __LINE__);
-					printf("%s.%d\t Info - %d font characters addedd\n", __FILE__, __LINE__, pos);
-				}
-				return pos;
+				fontdata->n_symbols = pos;
+				return BMP_OK;
 			} else {
 				// Unsupported bpp for font
 				return BMP_ERR_BPP;
 			}
+			// No data returned from bmp data reader
 		} else {
 			return BMP_ERR_NODATA;
 		}
 	} else {
+		// Error returned from parsing bmp header reader
 		return status;	
 	}	
 }

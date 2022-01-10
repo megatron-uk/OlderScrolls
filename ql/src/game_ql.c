@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifndef _CONFIG_H
 #include "../common/config.h"
@@ -70,10 +71,14 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	gamestate->gamemode = GAME_MODE_MAP;
 	gamestate->level = 1;
 	gamestate->level_previous = 1;
-	memset(gamestate->level_visits, 0, MAX_LOCATIONS); 
-	memset(gamestate->level_defeated_primary, 0, MAX_LOCATIONS); 
-	memset(gamestate->level_defeated_secondary, 0, MAX_LOCATIONS); 
 	gamestate->gold = 0;
+	gamestate->counter = 0;
+	gamestate->p1 = (PlayerState_t *) malloc(sizeof(PlayerState_t)); 
+	gamestate->p2 = NULL;
+	gamestate->p3 = NULL;
+	gamestate->p4 = NULL;
+	gamestate->npcs = NULL;
+	gamestate->enemies = (EnemyState_t *) calloc(sizeof(EnemyState_t), 1);
 	
 	// Open the story data file and load entry 0 - this has the adventure name
 	data_Load(gamestate, levelstate, DATA_TYPE_STORY, 0);
@@ -84,8 +89,10 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	
 	// Open the Map data file and load entry 1 - this will be our starting location
 	data_Load(gamestate, levelstate, DATA_TYPE_MAP, 1);
+	gamestate->level_visits[1] = 1;
 	
 	// Initialise a new player character
+	//data_CreateCharacter(gamestate->p1);
 }
 
 void game_Exit(){
@@ -143,6 +150,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	input_Clear();
 	input_Set(INPUT_QUIT);
 	input_Set(INPUT_QUIT_);
+	input_Set(INPUT_DEBUG);
 	
 	// Redraw the main screen
 	ui_Draw(gamestate, levelstate);
@@ -223,6 +231,21 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	while(!exit){
 		c = input_Get();
 		switch(c){
+			case INPUT_DEBUG:
+				input_Clear();
+				input_Set(INPUT_CANCEL);
+				ui_DebugScreen(gamestate, levelstate);
+				draw_Flip();
+				while(!exit){
+					c = input_Get();
+					switch(c){
+						case INPUT_CANCEL:
+							exit = 1;
+							break;
+						default:
+							break;
+					}
+				}
 			case INPUT_MOVE:
 			case INPUT_MOVE_:
 				// ======================================

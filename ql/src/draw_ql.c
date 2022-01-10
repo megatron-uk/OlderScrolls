@@ -57,7 +57,7 @@ unsigned char screen_Init(){
 		
 		// Couldn't allocate memory for offscreen buffer
 		// - we might be on a base model QL with only 128kb
-		printf("- Offscreen buffer: 0 bytes\n");
+		//printf("- Offscreen buffer: 0 bytes\n");
 		
 		// Direct rendering - write direct to screen memory
 		// but this might show flickering as we write the
@@ -66,7 +66,7 @@ unsigned char screen_Init(){
 		screen.offscreen = NULL;
 		screen.buf = (unsigned short*) screen.screen;
 	} else {
-		printf("- Offscreen buffer: %d bytes\n", SCREEN_BYTES);
+		//printf("- Offscreen buffer: %d bytes\n", SCREEN_BYTES);
 		screen.buf = (unsigned short*) screen.offscreen;
 	}
 	
@@ -97,8 +97,7 @@ unsigned char screen_Init(){
 		// Couldn't process font bitmap to table
 		return 5;
 	}
-	printf("- Font data: %d bytes\n", sizeof(fontdata_t));
-	screen.font_8x8->n_symbols = fontstatus;	
+	//printf("- Font data: %d bytes\n", sizeof(fontdata_t));
 	screen.font_8x8->unknown_symbol = 37;	// Unknown characters are replaced with '%'
 	screen.font_8x8->ascii_start = 32;		// First ascii char in set is ' '
 	
@@ -483,11 +482,10 @@ void draw_Box(unsigned short x, unsigned short y,
 		// Vertical: height - (2 * borderpx)
 		if (draw_IsStippled(centrefill)){
 			enable_pad = 1;
-			pad = 0;
 		} else {
 			enable_pad = 0;
-			pad = 0;
 		}
+		pad = 0;
 		for (i = 0; i < height - (2 * borderpx) + 1; i++){
 			draw_HLine(x + borderpx, y + borderpx + i, length - (2 * borderpx), centrefill, pad, mode);
 			if (enable_pad){
@@ -504,12 +502,11 @@ void draw_Box(unsigned short x, unsigned short y,
 	if (borderpx > 1){
 		if (draw_IsStippled(borderfill)){
 			enable_pad = 1;
-			pad = 0;
 		} else {
 			enable_pad = 0;
-			pad = 0;
 		}
 	}
+	pad = 0;
 	
 	// Borders
 	for (i = 0; i < borderpx; i++){
@@ -573,22 +570,19 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 	unsigned short mask;
 	unsigned short pos;
 	unsigned char i;
-	unsigned char font_row;
-	unsigned char font_symbol;
+	
 	unsigned char current_rows = 0;
 	unsigned char current_chars = 0;
 	unsigned char skip = 0;
 	unsigned short original_fill = fill;
 	
 	// Empty string
-	if (strlen(c) < 1){
-		//printf("String is empty\n");
+	if (strlen(c) == 0){
 		return 0;
 	}
 	
 	// Calculate starting address
 	draw_GetStringXY(col, y, &start_p);
-	//printf("String at %d\n", start_p);
 	
 	// Reposition write position
 	p = (unsigned short*) screen.buf;
@@ -667,29 +661,7 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 					// newline CAN fit on current row
 					
 					// Find the bitmap for this character in the font table
-					if ((i >= fontdata->ascii_start) && (i < (fontdata->ascii_start + fontdata->n_symbols))){
-						font_symbol = i - fontdata->ascii_start;
-					} else {
-						font_symbol = fontdata->unknown_symbol;
-					}
-					for (font_row = 0; font_row < fontdata->height; font_row++){
-						switch(fill){
-							case PIXEL_BLACK:
-								mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
-								break;
-							case PIXEL_WHITE:
-								mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
-								break;
-							case PIXEL_RED:
-								mask = (unsigned short) fontdata->symbol[font_symbol][font_row];
-								break;
-							case PIXEL_GREEN:
-								mask = (unsigned short) (fontdata->symbol[font_symbol][font_row] << 8);
-								break;
-						}
-						*p = *p | mask;
-						p += SCREEN_WORDS_PER_ROW;
-					}
+					draw_FontSymbol(i, fontdata, fill, p);
 					p = (unsigned short*) screen.buf;
 					current_chars++;
 					p += start_p + current_chars;
@@ -706,29 +678,7 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 						
 						if (i != 0x20){
 							// Find the bitmap for this character in the font table
-							if ((i >= fontdata->ascii_start) && (i <= (fontdata->ascii_start + fontdata->n_symbols))){
-								font_symbol = i - fontdata->ascii_start;
-							} else {
-								font_symbol = fontdata->unknown_symbol;
-							}
-							for(font_row = 0; font_row < fontdata->height; font_row++){
-								switch(fill){
-									case PIXEL_BLACK:
-										mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
-										break;
-									case PIXEL_WHITE:
-										mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
-										break;
-									case PIXEL_RED:
-										mask = (unsigned short) fontdata->symbol[font_symbol][font_row];
-										break;
-									case PIXEL_GREEN:
-										mask = (unsigned short) (fontdata->symbol[font_symbol][font_row] << 8);
-										break;
-								}
-								*p = *p | mask;
-								p += SCREEN_WORDS_PER_ROW;
-							}
+							draw_FontSymbol(i, fontdata, fill, p);
 							p = (unsigned short*) screen.buf;
 							current_chars = 1;
 							p += start_p + current_chars;
@@ -754,4 +704,36 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 	// All characters have been printed
 	screen.dirty = 1;
 	return 0;	
+}
+
+void draw_FontSymbol(unsigned char ascii_num, fontdata_t *fontdata, unsigned short fill, unsigned short *pos){
+	// Draws a single character at screen position pointed at by p.
+	
+	unsigned char font_row;
+	unsigned char font_symbol;
+	unsigned short mask;
+	
+	if ((ascii_num >= fontdata->ascii_start) && (ascii_num < (fontdata->ascii_start + fontdata->n_symbols))){
+		font_symbol = ascii_num - fontdata->ascii_start;
+	} else {
+		font_symbol = fontdata->unknown_symbol;
+	}
+	for(font_row = 0; font_row < fontdata->height; font_row++){
+		switch(fill){
+			case PIXEL_BLACK:
+				mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
+				break;
+			case PIXEL_WHITE:
+				mask = (fontdata->symbol[font_symbol][font_row] << 8) + fontdata->symbol[font_symbol][font_row];
+				break;
+			case PIXEL_RED:
+				mask = (unsigned short) fontdata->symbol[font_symbol][font_row];
+				break;
+			case PIXEL_GREEN:
+				mask = (unsigned short) (fontdata->symbol[font_symbol][font_row] << 8);
+				break;
+		}
+		*pos = *pos | mask;
+		pos += SCREEN_WORDS_PER_ROW;
+	}
 }

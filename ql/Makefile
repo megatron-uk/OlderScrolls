@@ -5,7 +5,7 @@
 # compiler location to the path
 #################################
 SHELL := /bin/bash
-PREFIX = /opt/toolchains/qdos
+PREFIX = /opt/toolchains/qdos-gcc
 PATH := ${PREFIX}/bin:$(PATH)
 
 #################################
@@ -15,7 +15,6 @@ PATH := ${PREFIX}/bin:$(PATH)
 CC = qcc
 LD = qld
 AS = as68
-CPP = qcpp
 
 #################################
 # Compiler flags
@@ -23,8 +22,8 @@ CPP = qcpp
 ASFLAGS = 
 LDFLAGS = -v
 INCLUDES = -I./src
-CFLAGS = ${INCLUDES} -O -DTARGET_QL
-LIBS = -lm
+CFLAGS = ${INCLUDES} -O -seperate=yes -peep=all -DTARGET_QL
+LIBS = 
 
 #################################
 # What our application is named
@@ -41,7 +40,9 @@ all: $(TARGET)
 full: clean $(TARGET) newdisk copydisk rundisk_128
 run: rundisk_128
 run128: rundisk_128
-run160: rundisk_160
+run192: rundisk_192
+run256: rundisk_256
+run640: rundisk_640
 
 #################################
 # Object files needed to build our 
@@ -107,13 +108,29 @@ rundisk_128:
 	@echo "- Calling emulator..."
 	sqlux -f etc/sqlux_128kb.ini -w 2x -b 'exec_w flp1_game'
 	
-rundisk_160:
+rundisk_192:
 	@echo ""
 	@echo "=========================="
 	@echo " Running QL emulator"
 	@echo ""
 	@echo "- Calling emulator..."
-	sqlux -f etc/sqlux_160kb.ini -w 1x -b 'exec_w flp1_game'
+	sqlux -f etc/sqlux_192kb.ini -w 2x -b 'exec_w flp1_game'
+
+rundisk_256:
+	@echo ""
+	@echo "=========================="
+	@echo " Running QL emulator"
+	@echo ""
+	@echo "- Calling emulator..."
+	sqlux -f etc/sqlux_256kb.ini -w 2x -b 'exec_w flp1_game'
+
+rundisk_640:
+	@echo ""
+	@echo "=========================="
+	@echo " Running QL emulator"
+	@echo ""
+	@echo "- Calling emulator..."
+	sqlux -f etc/sqlux_640kb.ini -w 2x -b 'exec_w flp1_game'
 	
 ###############################
 # Clean up
@@ -138,29 +155,31 @@ clean:
 # an object file, to be linked
 # as a single binary, above.
 ################################
-bmp_ql.o: bmp_ql.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o src/bmp_ql.c
+DEPS = src/%.h
 
-input_ql.o: input_ql.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o src/input_ql.c
-	
-main_ql.o: main_ql.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o src/main_ql.c
-	
-conditions_ql.o: conditions_ql.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c src/conditions_ql.c
-	
-data_ql.o: data_ql.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c src/data_ql.c
-	
-draw_ql.o: draw_ql.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c src/draw_ql.c
+bmp_ql.o: bmp_ql.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@
 
-game_ql.o: game_ql.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c src/game_ql.c
+input_ql.o: input_ql.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@
 	
-ui_ql.o: ui_ql.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c src/ui_ql.c
+main_ql.o: main_ql.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@
 	
-utils_ql.o: utils_ql.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c src/utils_ql.c
+conditions_ql.o: conditions_ql.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@
+	
+data_ql.o: data_ql.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@
+	
+draw_ql.o: draw_ql.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@
+
+game_ql.o: game_ql.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@
+	
+ui_ql.o: ui_ql.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@
+	
+utils_ql.o: utils_ql.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@

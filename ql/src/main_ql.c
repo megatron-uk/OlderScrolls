@@ -56,12 +56,10 @@ int main(void){
 	
 	GameState_t *gamestate = NULL;
 	LevelState_t *levelstate = NULL;
-	gamestate = (GameState_t *) malloc(sizeof(GameState_t));
+	gamestate = (GameState_t *) calloc(sizeof(GameState_t), 1);
 	levelstate = (LevelState_t *) malloc(sizeof(LevelState_t));
 	
-	printf("%s %s starting...\n", ENGINE_NAME, ENGINE_TARGET_NAME);
-	printf("- Game state: %d bytes\n", sizeof(GameState_t));
-	printf("- Level state: %d bytes\n", sizeof(LevelState_t));
+	printf("%s starting...\n", ENGINE_NAME);
 	
 	// Check that all game objects are present
 	c = check_Files();

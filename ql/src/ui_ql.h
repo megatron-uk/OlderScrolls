@@ -62,7 +62,7 @@
 
 // Yes/No popup boxes
 #define UI_YESNO_START_X			160
-#define UI_YESNO_START_Y			160
+#define UI_YESNO_START_Y			170
 
 
 void ui_Draw(GameState_t *gamestate, LevelState_t *levelstate);
@@ -75,6 +75,7 @@ void ui_DrawSplashText(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawLocationName(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawNavigation(GameState_t *gamestate, LevelState_t *levelstate, char *input_allowed);
 void ui_DrawYesNo(unsigned char *title);
+void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate);
 
 // Area-specific text display routines
 unsigned short ui_DrawMainWindowText(GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, char *c);

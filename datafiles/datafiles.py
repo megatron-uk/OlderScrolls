@@ -22,6 +22,8 @@ import copy
 import sys
 import traceback
 
+DEBUG =1
+
 ##################################################################################
 #
 # This section contains definitions that MUST match those found in the following
@@ -29,17 +31,25 @@ import traceback
 #
 # - conditions.h
 # - monsters.h
+# - game.h
+#
+# Deviating from the values defined in the OlderScrolls source code will result
+# in data files loading incorrectly, if at all.
 #
 ##################################################################################
 
-DEBUG =1
+MAX_REQUIREMENTS = 8		# as per game.h
+MAX_MONSTER_TYPES = 6		# as per game.h
+MAX_REWARD_ITEMS = 6 		# as per game.h
+MAX_LEVEL_NAME_SIZE = 32	# as per game.h
+MAX_STORY_TEXT_SIZE = 1024	# as per game.h
+MAX_LOCATIONS = 256			# as per game.h
 
-MAX_REQUIREMENTS = 8
-MAX_MONSTERS = 8
-MAX_REWARD_ITEMS = 6 
-
-# First byte of a condition is the evaluation type OR-ed with the number of conditions
-# These are the upper 4 bits, the lower 4 bits identifies the number of conditions (e.g. 1 - 15)
+##################################################################################
+#
+# Condition checks and their available options
+# 
+##################################################################################
 CONDITION_RULES = {
 	"COND_EVAL_EMPTY"	: 0x00,	# The condition set is EMPTY, do not attempt to evaluate
 	"COND_EVAL_AND"		: 0x10,	# All conditions must evaluate to true. The default.
@@ -101,11 +111,11 @@ ITEM_TYPE_IDS = ["w", "i"]
 CONDITIONS = {
 	"NO_COND" : {					# No conditions applied
 		'bitfield'		: [0x00, 0x00, 0x00, 0x00, 0x00],
-		'bytes' 		: 5,		# Total size of check is 6 bytes
+		'bytes' 		: 5,		# Total size of check is 5 bytes
 	},
 	"COND_NO_MONSTERS" : {			# No monsters currently spawned
 		'bitfield'		: [0x00, 0x01, 0x00, 0x00, 0x00],
-		'bytes' 		: 5,		# Total size of check is 6 bytes
+		'bytes' 		: 5,		# Total size of check is 5 bytes
 	},
 	"COND_PC_ATR_TYPE" 	: {			# PC has above 'x' STR/WIS/CON/etc
 		'bitfield'		: [0x01, 0x00],			# Initial bitfield, 2 bytes
@@ -224,8 +234,6 @@ def generate_story(import_dir = None):
 	
 	valid = True
 	for i in text_ids:
-		#print("Story Text ID: %d" % i)
-		#print("- %d bytes" % len(game_story.STORY[i]))
 		pos = 0
 		for c in game_story.STORY[i]:
 			pos += 1
@@ -242,13 +250,35 @@ def generate_story(import_dir = None):
 		print("GOOD: All text appears valid")			
 	else:
 		return False
-			
-	print("")
+		
 	print("###################################################################################")
 	print("#")
 	print("# Step 2.")
 	print("#")
-	print("# Verify that we don't have any characters that are non-ASCII or outside < 32, or > 126")
+	print("# Check string lengths")
+	print("#")
+	print("###################################################################################")
+	print("")
+	print("Check 2: Checking string lengths...")
+	
+	valid = True
+	for i in text_ids:
+		if len(game_story.STORY[i]) < MAX_STORY_TEXT_SIZE:
+			pass
+		else:
+			print("Story Text ID: %d" % i)
+			print("- ERROR: Text is more than [%s] bytes long [%s bytes]" % (len(game_story.STORY[i]), MAX_STORY_TEXT_SIZE))
+	if valid:
+		print("GOOD: All text appears valid")			
+	else:
+		return False	
+		
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 3.")
+	print("#")
+	print("# Write game data files")
 	print("#")
 	print("###################################################################################")
 	print("")
@@ -334,6 +364,9 @@ def generate_world(import_dir = None):
 	
 	weapon_ids = list(game_weapons.WEAPONS.keys())
 	weapon_ids.sort()
+	
+	# TO DO!!!
+	player_ids = []
 	
 	print("")
 	print("###################################################################################")
@@ -483,7 +516,7 @@ def generate_world(import_dir = None):
 					else:
 						for cond in eval_conds:
 							#print("-- %s" % (cond))
-							bitfield = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, cond)
+							bitfield = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, cond)
 							if bitfield:
 								pass
 							else:
@@ -584,7 +617,7 @@ def generate_world(import_dir = None):
 		
 		print("")
 		print("- Processing location %s" % i)
-		record = location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, i, game_world.MAP[i])
+		record = location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, i, game_world.MAP[i])
 		if record:
 			# Convert list of bytes into a single byte array
 			new_record = b"".join(record)
@@ -639,7 +672,7 @@ def generate_world(import_dir = None):
 		return False
 	print("...done!")
 
-def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, location_id, location):
+def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, location_id, location):
 	""" Turn a location into a list of bytes that can be written to disk """
 	
 	total_conditions = 0
@@ -672,10 +705,13 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 	# 2. (32 bytes) Name
 	######################################################
 	byte_list = []
+	if len(location['name']) > MAX_LEVEL_NAME_SIZE:
+		print("ERROR! Level name [%s] for location [%d] is greater than %d bytes!!!" % (location['name'], location_id, MAX_LEVEL_NAME_SIZE))
+		return False
 	tmp = "%s" % (location['name'])
 	for c in tmp:
 		byte_list.append(ord(c).to_bytes(1, byteorder='big'))
-	for i in range(len(byte_list), 32):
+	for i in range(len(byte_list), MAX_LEVEL_NAME_SIZE):
 		byte_list.append(0x00.to_bytes(1, byteorder='big'))
 	for b in byte_list:
 		record.append(b)
@@ -719,7 +755,7 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 			# 5 bytes - Per condition
 			for cond in location[compass_require][2:]:
 				total_conditions += 1
-				cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, cond)
+				cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, cond)
 				if len(cond_record) != 5:
 					print("ERROR! Condition record for %s did not convert to 5 bytes!!!" % compass_require)
 					print("ERROR! %s" % cond_record)
@@ -792,7 +828,7 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 			# 5 bytes - Per condition
 			for cond in location[spawn_require][2:]:
 				total_conditions += 1
-				cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, cond)
+				cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, cond)
 				if len(cond_record) != 5:
 					print("ERROR! Condition record for '%s' did not convert to 5 bytes!!!" % spawn_require)
 					print("ERROR! %s" % cond_record)
@@ -868,7 +904,7 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		# 5 bytes - Per condition
 		for cond in location['items_require'][2:]:
 			total_conditions += 1
-			cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, cond)
+			cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, cond)
 			if len(cond_record) != 5:
 				print("ERROR! Condition record for '%s' did not convert to 5 bytes!!!" % spawn_require)
 				print("ERROR! %s" % cond_record)
@@ -980,7 +1016,7 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		# 5 bytes - Per condition
 		for cond in location['npc2_require'][2:]:
 			total_conditions += 1
-			cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, cond)
+			cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, cond)
 			if len(cond_record) != 5:
 				print("ERROR! Condition record for 'npc1_require' did not convert to 5 bytes!!!")
 				print("ERROR! %s" % cond_record)
@@ -1007,7 +1043,7 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 	
 	
 
-def evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, condition_list_entry):
+def evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, condition_list_entry):
 	""" Attempt to lookup all the elements of a condition requirement """
 	
 	# Condition type is always the first element of the list
@@ -1077,8 +1113,21 @@ def evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		#######################################################
 		# Party membership conditions
 		#######################################################
+		valid = True
 		if cond_type in ["COND_PARTY_MEMBER_TYPE"]:
-			pass
+			# Should have 2 additional params
+			n_params = len(condition_list_entry)
+			if n_params == 3:
+				param1 = condition_list_entry[1]	# id of the playable character
+				if param1 in players.keys():
+					pass
+				else:
+					print("--- INVALID PLAYER CHARACTER ID: [%s]" % param1)
+					valid = False
+				param2 = condition_list_entry[2]	# tested value (present, dead, dismissed, etc)
+			else:
+				valid = False
+				print("--- INVALID NUMBER OF PARAMETERS [%s]" % n_params)
 		
 		#######################################################
 		# Location visit conditions
@@ -1188,8 +1237,8 @@ def evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 					bitfield += [0x00]
 					bitfield += [param3]
 				else:
-					bitfield += (param2 >> 8) & 0xff
-					bitfield += param2 & 0xff
+					bitfield += (param3 >> 8) & 0xff
+					bitfield += param3 & 0xff
 				if 'pad_sz' in CONDITIONS[cond_type].keys():
 					for i in range(0, CONDITIONS[cond_type]['pad_sz']):
 							bitfield.append(0x00)

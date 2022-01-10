@@ -22,7 +22,25 @@
 # These classes should match the definitions 
 # from the OlderScrolls engine 'monsters.h' header.
 MONSTER_CLASSES = {
-		"HUMAN_UNTRAINED" : 0x10,		
+		"HUMAN_UNTRAINED" 		: 0x10,	
+		"HUMAN_GENERIC_MELEE"	: 0x11,
+		"HUMAN_GENERIC_RANGED"	: 0x12,
+		"HUMAN_GENERIC_MAGIC"	: 0x13,
+		"HUMAN_BARBARIAN"		: 0x14,			
+		"HUMAN_BARD"			: 0x15,
+		"HUMAN_CLERIC"			: 0x16,
+		"HUMAN_DRUID"			: 0x17,
+		"HUMAN_FIGHTER"			: 0x18,
+		"HUMAN_PALADIN"			: 0x19,
+		"HUMAN_RANGER"			: 0x1A,
+		"HUMAN_ROGUE"			: 0x1B,
+		"HUMAN_SORCERER"		: 0x1C,
+		"HUMAN_WARLOCK"			: 0x1D,
+		"HUMAN_WIZARD"			: 0x1E,
+		"BEAST_WILD"			: 0x20,
+		"BEAST_MELEE"			: 0x21,
+		"BEAST_RANGED"			: 0x22,
+		"BEAST_MAGIC"			: 0x23,
 }
 
 # NPC characters
@@ -48,12 +66,31 @@ MONSTER = {
         'status' 	: 0,					# Starting bitfield of status effects
         'head'		: -1,					# Items equipped
         'neck'		: -1,					#
-        'clock'		: -1,					#
         'body'		: -1,					#
         'arms'		: -1,					#
         'legs'		: -1,					#
-        'feet'		: -1,					#
         'hand_r'	: 1,					# Weapon held in right hand
         'hand_l'	: -1,					# Weapon held in left hand
+	},
+	2 : {
+        'name' 		: "Wild Dog",     		
+        'class'		: "BEAST_WILD",			 
+        'level'		: 1,					
+        'profile'	: 0xD000,				 
+        'str' 		: 5,					
+        'dex' 		: 8,					
+        'con' 		: 4,					
+        'wis' 		: 1,										
+        'intl' 		: 2,					
+        'chr' 		: 1,					
+        'hp' 		: 15,					
+        'status' 	: 0,					
+        'head'		: -1,					
+        'neck'		: -1,					
+        'body'		: -1,					
+        'arms'		: -1,					
+        'legs'		: -1,					
+        'hand_r'	: -1,					
+        'hand_l'	: -1,					
 	},
 }

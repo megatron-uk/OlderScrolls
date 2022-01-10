@@ -18,6 +18,7 @@
 // Keys that we listen for
 #define INPUT_CANCEL	0x1B		// Escape key
 #define INPUT_CONFIRM	0x0A		// Return key
+#define INPUT_DEBUG		0x2F		// A 'secret' debug key ('/') that shows system info/status
 
 #define INPUT_MOVE		0x4D		// uppercase 'M'
 #define INPUT_MOVE_		0x6D		// lowercase 'm'

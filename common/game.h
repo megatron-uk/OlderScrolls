@@ -17,35 +17,145 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define GAME_MODE_MAP		1					// General mode, reading text, with movement and talk options
-#define GAME_MODE_COMBAT	2					// In combat
-#define GAME_MODE_SHOP		3					// In shop
-#define GAME_MODE_EXIT		99					// Exit from game
+#include "../common/monsters.h"
 
-#define MAX_REWARD_ITEMS 6						// Number of items that may be rewarded upon visiting a location, or upon defeat of primary monster(s)
-#define MAX_ITEMS 32							// The size of player inventory
-#define MAX_LEVEL_NAME_SIZE 32					// How long a level name can be
-#define MAX_STORY_TEXT_SIZE 512					// The buffer which holds the text to be shown on screen about a location
-#define MAX_LOCATIONS 256						// The maximum number of levels we can track - stories should not have more than this!
-#define MAX_REQUIREMENTS 8						// Actions can have prerequisites (or even multiple prerequisities) before they happen
-#define MAX_MONSTER_TYPES 8						// The number of different types of monsters in each location
-#define REQUIREMENT_BYTES 5						// 5 bytes per requirement
+#define GAME_MODE_MAP		1		// General mode, reading text, with movement and talk options
+#define GAME_MODE_COMBAT	2		// In combat
+#define GAME_MODE_SHOP		3		// In shop
+#define GAME_MODE_EXIT		99		// Exit from game
+
+#define MAX_PLAYER_NAME 	32
+#define MAX_SHORT_NAME 		6
+#define MAX_REWARD_ITEMS 	6		// Number of items that may be rewarded upon visiting a location, or upon defeat of primary monster(s)
+#define MAX_ITEMS 			32		// The size of player inventory
+#define MAX_LEVEL_NAME_SIZE 32		// How long a level name can be
+#define MAX_STORY_TEXT_SIZE 1024	// The buffer which holds the text to be shown on screen about a location
+#define MAX_LOCATIONS 		256		// The maximum number of levels we can track - stories should not have more than this!
+#define MAX_REQUIREMENTS 	8		// Actions can have prerequisites (or even multiple prerequisities) before they happen
+#define MAX_MONSTER_TYPES 	6		// The number of different types of monsters in each location
+#define REQUIREMENT_BYTES 	5		// 5 bytes per requirement
+
+#define FORMATION_FRONT		0x00
+#define FORMATION_MID		0x01
+#define FORMATION_REAR		0x02
+
+// Structure representing the data associated with a single weapon
+// This is everything we need to know in order to carry out combat with this weapon
+// critical range, damage type
+typedef struct {
+	unsigned char item_id;
+	unsigned char weapon_type;		// 1H, 2H, etc
+	unsigned char weapon_class;		// Simple, martial, ranged, magical etc
+	unsigned char weapon_size;		// small, medium, large, huge, etc
+	unsigned char rarity;			// Common, uncommon, rare, legendary
+	unsigned char name[18];			// Name of weapon, e.g. "Longsword"
+	unsigned char crit_min;			// Minimum roll for critical, e.g 19
+	unsigned char crit_max;			// Maximum roll for critical, e.g. 20
+	unsigned char crit_multi;		// Number of rolls if critical, e.g. 2x
+	unsigned char damage_types[3];	// Up to 3 damage types per weapon
+	unsigned char dmg1_type;		// e.g. PHYSICAL
+	unsigned char dmg1_min;			// minimum range of damage, e.g. 1
+	unsigned char dmg1_max;			// minimum range of damage, e.g. 6
+	unsigned char dmg1_rolls;		// number of rolls of this damage type, e.g. 1
+	unsigned char dmg2_type;		// e.g. SLASHING
+	unsigned char dmg2_min;			// minimum range of damage, e.g. 1
+	unsigned char dmg2_max;			// minimum range of damage, e.g. 6
+	unsigned char dmg2_rolls;		// number of rolls of this damage type, e.g. 1
+	unsigned char dmg3_type;		// e.g. PIERCING
+	unsigned char dmg3_min;			// minimum range of damage, e.g. 1
+	unsigned char dmg3_max;			// minimum range of damage, e.g. 6
+	unsigned char dmg3_rolls;		// number of rolls of this damage type, e.g. 1
+} WeaponState_t;
+
+// Data for a single spell
+typedef struct {
+	unsigned char spell_id;
+} SpellState_t;
+
+// Structure representing the status of a single NPC or PC
+typedef struct {
+	char name[MAX_PLAYER_NAME];						// Full player character name, e.g. Argus the Dread
+	char short_name[MAX_SHORT_NAME];					// Player character name, e.g. Argus
+	
+	unsigned char player_class;			// HUMAN_ROGUE, HUMAN_UNTRAINED, BEAST_MAGIC etc, see monsters.h
+	
+	unsigned short profile;				// Melee, Ranged, Magic Attack, Magic Support behaviour
+										// 4 bits each for how aggressive the character is in that area.
+	
+	// Core stats
+	unsigned char str;					// 0-20
+	unsigned char dex;					// 0-20
+	unsigned char con;					// 0-20
+	unsigned char wis;					// 0-20
+	unsigned char intl;					// 0-20
+	unsigned char chr;					// 0-20
+	
+	// Hitpoints and status effects
+	unsigned char hp;					// Hit points
+	unsigned long status;				// 32bit bitfield of status effects - see status.h
+	
+	// Equipped items
+	unsigned char head;					// head
+	unsigned char neck;					// neck/pendant
+	unsigned char body;					// body
+	unsigned char arms;					// arms
+	unsigned char legs;					// legs
+	unsigned char hands[2];				// hands
+	
+	// Location in party when combat begins
+	unsigned char formation;			// front/middle/rear
+										// front gets a bonus to non-ranged attacks on the enemy front row
+										// middle gets no bonuses or penalties
+										// rear gets bonus to defence, but penalty to non-ranged attacks
+	
+	// Item store for this player
+	unsigned short items[MAX_ITEMS];		// items
+	
+	// Individual player stats
+	unsigned short kills;				// Record of how many kills this player has made so far
+	unsigned short spells_cast;			// Record of how many spells this player has cast
+	unsigned short hits_taken;			// Record of how much damage this player has taken so far
+	unsigned short hits_caused;			// Record of how much damage this player has inflicted so far
+	
+	WeaponState_t weapon_right;			// Data for the weapon currently in the right hand
+	WeaponState_t weapon_left;			// Data for the weapon currently in the left hand
+	
+} PlayerState_t;
+
+// This structure is initialised each time we begin combat with 
+// one or more enemy
+typedef struct {
+	unsigned char current_enemy;				// array entry of current enemy
+	PlayerState_t enemies[MAX_MONSTER_TYPES];	// array of enemy characters
+} EnemyState_t;
+
+// A list of NPCs we encounter, the 
+struct NPCList {
+	unsigned char id;					// ID of NPC
+	unsigned char talked_count;			// Number of times talked
+	unsigned short talked_time;			// Last turn number we talked to them
+	unsigned short death_time;			// Time of death / turn number
+	struct NPCList *next;				// Pointer to next NPC record
+};
 
 // Basic game data
 typedef struct {
-	unsigned char text_buffer[1024]; 			// A single text buffer for all string/text operations
-	unsigned char gamemode;						// What mode we are in - map, combat, shop, etc
-	unsigned char name[MAX_LEVEL_NAME_SIZE];	// Name of the current adventure
-	unsigned char level;						// ID of the current location
-	unsigned char level_previous;				// ID of the immediately previous location
-	unsigned char level_visits[MAX_LOCATIONS];	// Each level has a count of how many times it has been visited
-	unsigned char level_defeated_primary[MAX_LOCATIONS];// Each level has a flag to indicate whether the primary monster(s) has been defeated
-	unsigned char level_defeated_secondary[MAX_LOCATIONS];// Each level has a flag to indicate whether the secondary monster(s) has been defeated
-	unsigned short gold;						// Record of currency
-	// Pointer to player 1
-	// Pointer to player 2
-	// Pointer to player 3
-	// Pointer to player 4
+	unsigned char text_buffer[MAX_STORY_TEXT_SIZE];			// A single text buffer for all string/text operations
+	unsigned char gamemode;										// What mode we are in - map, combat, shop, etc
+	unsigned char name[MAX_LEVEL_NAME_SIZE];					// Name of the current adventure
+	unsigned char level;										// ID of the current location
+	unsigned char level_previous;								// ID of the immediately previous location
+	unsigned char level_visits[MAX_LOCATIONS];					// Each level has a count of how many times it has been visited
+	unsigned char level_defeated_primary[MAX_LOCATIONS];		// Each level has a flag to indicate whether the primary monster(s) has been defeated
+	unsigned char level_defeated_secondary[MAX_LOCATIONS];		// Each level has a flag to indicate whether the secondary monster(s) has been defeated
+	unsigned short counter;										// Game turn/timer/counter
+	unsigned short gold;										// Record of currency
+	PlayerState_t *p1;											// Pointer to player 1
+	PlayerState_t *p2;											// Pointer to player 2
+	PlayerState_t *p3;											// Pointer to player 3
+	PlayerState_t *p4;											// Pointer to player 4
+	struct NPCList *npcs;										// Pointer to a linked-list of NPC's we have met
+	struct EnemyState_t *enemies;								// Pointer to the enemystate structure
 } GameState_t;
 
 // Each level that we visit is loaded from disk into this structure
@@ -109,6 +219,10 @@ typedef struct {
 	
 	unsigned short text_respawn;					// ID of text label shown when monsters respawn
 	unsigned short text_after_respawn;				// ID of text label shown after respawned monsters are killed
+
+	// Monsters-have-spawned indicator
+	unsigned char spawned;							// Flag set once either type of monster spawn
+	
 	
 	// Items may appear after defeating monsters
 	unsigned char weapons_list[MAX_REWARD_ITEMS];		// List of items rewarded upon visiting location, or upon defeating primary monsters, if present
@@ -126,6 +240,7 @@ typedef struct {
 	unsigned char npc1_require_number;
 	unsigned char npc1_eval_type;						// EMPTY, AND, OR, etc.
 	unsigned short npc1_text;							// ID of text shown when talking to this NPC
+	
 	unsigned char npc2;									// ID of NPC
 	unsigned char npc2_require[MAX_REQUIREMENTS * REQUIREMENT_BYTES];	// To see this NPC, these requirements must be met
 	unsigned char npc2_require_number;
@@ -133,110 +248,6 @@ typedef struct {
 	unsigned short npc2_text;							// ID of text shown when talking to this NPC
 	
 } LevelState_t;
-
-// Structure representing the data associated with a single weapon
-// This is everything we need to know in order to carry out combat with this weapon
-// critical range, damage type
-typedef struct {
-	unsigned char item_id;
-	unsigned char weapon_type;		// 1H, 2H, etc
-	unsigned char weapon_class;		// Simple, martial, ranged, magical etc
-	unsigned char weapon_size;		// small, medium, large, huge, etc
-	unsigned char rarity;			// Common, uncommon, rare, legendary
-	unsigned char name[18];			// Name of weapon, e.g. "Longsword"
-	unsigned char crit_min;			// Minimum roll for critical, e.g 19
-	unsigned char crit_max;			// Maximum roll for critical, e.g. 20
-	unsigned char crit_multi;		// Number of rolls if critical, e.g. 2x
-	unsigned char damage_types[3];	// Up to 3 damage types per weapon
-	unsigned char dmg1_type;		// e.g. PHYSICAL
-	unsigned char dmg1_min;			// minimum range of damage, e.g. 1
-	unsigned char dmg1_max;			// minimum range of damage, e.g. 6
-	unsigned char dmg1_rolls;		// number of rolls of this damage type, e.g. 1
-	unsigned char dmg2_type;		// e.g. SLASHING
-	unsigned char dmg2_min;			// minimum range of damage, e.g. 1
-	unsigned char dmg2_max;			// minimum range of damage, e.g. 6
-	unsigned char dmg2_rolls;		// number of rolls of this damage type, e.g. 1
-	unsigned char dmg3_type;		// e.g. PIERCING
-	unsigned char dmg3_min;			// minimum range of damage, e.g. 1
-	unsigned char dmg3_max;			// minimum range of damage, e.g. 6
-	unsigned char dmg3_rolls;		// number of rolls of this damage type, e.g. 1
-} WeaponState;
-
-// Data for a single spell
-typedef struct {
-	unsigned char spell_id;
-} SpellState;
-
-// Structure representing the status of a single NPC or PC
-typedef struct {
-	char name[32];						// Full player character name, e.g. Argus the Dread
-	char short_name[6];					// Player character name, e.g. Argus
-	
-	// Core stats
-	unsigned char str;				// 0-20
-	unsigned char dex;				// 0-20
-	unsigned char con;				// 0-20
-	unsigned char wis;				// 0-20
-	unsigned char intl;				// 0-20
-	unsigned char chr;				// 0-20
-	
-	// Hitpoints and status effects
-	unsigned short hp;				// Hit points
-	unsigned long status;				// 32bit bitfield of status effects - see status.h
-	
-	// Equipped items
-	unsigned char head;					// head
-	unsigned char neck;					// neck/pendant
-	unsigned char cloak;				// cloak
-	unsigned char body;					// body
-	unsigned char arms;					// arms
-	unsigned char legs;					// legs
-	unsigned char feet;					// feet
-	unsigned char hand_r;				// right hand
-	unsigned char hand_l;				// left hand
-	
-	// Location in party when combat begins
-	unsigned char formation;			// front/middle/rear
-										// front gets a bonus to non-ranged attacks on the enemy front row
-										// middle gets no bonuses or penalties
-										// rear gets bonus to defence, but penalty to non-ranged attacks
-	
-	// Item store for this player
-	unsigned char items[MAX_ITEMS];		// items
-	
-	// Individual player stats
-	unsigned short kills;				// Record of how many kills this player has made so far
-	unsigned short spells_cast;			// Record of how many spells this player has cast
-	unsigned long damage_taken;			// Record of how much damage this player has taken so far
-	unsigned long damage_caused;		// Record of how much damage this player has inflicted so far
-	
-	WeaponState weapon_right;			// Data for the weapon currently in the right hand
-	WeaponState weapon_left;			// Data for the weapon currently in the left hand
-	
-} PlayerState;
-
-// Holds a small number of recently loaded weapon items so that they
-// can be loaded from ram, and not from disk
-typedef struct {
-	WeaponState wep1;					// Data structure for a weapon
-	unsigned char wep1_lasthit;			// Counter of the number of searches since this was last used
-	WeaponState wep2;
-	unsigned char wep2_lasthit;
-	WeaponState wep3;
-	unsigned char wep3_lasthit;
-	WeaponState wep4;
-	unsigned char wep4_lasthit;
-	WeaponState wep5;
-	unsigned char wep5_lasthit;
-	WeaponState wep6;
-	unsigned char wep6_lasthit;
-} WeaponStateCache;
-
-// Holds a small number of recently loaded armour items so that they
-// can be loaded from ram, and not from disk
-typedef struct {
-	unsigned char armour1_lasthit;		// Count of the number of searches since this was last hit
-} ArmourStateCache;
 
 // =====================================================
 // *ALL* platforms must implement the following methods
