@@ -5,7 +5,7 @@
 # compiler location to the path
 #################################
 SHELL := /bin/bash
-PREFIX = /opt/toolchains/qdos-gcc
+PREFIX = /opt/toolchains/qdos
 PATH := ${PREFIX}/bin:$(PATH)
 
 #################################

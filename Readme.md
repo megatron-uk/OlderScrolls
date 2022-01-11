@@ -67,21 +67,21 @@ View the Sinclair QL documentation for [further details](ql/Readme.md).
 A quick reference to the requirements and features in each *planned* target platform:
 
 
-| Platform                      | RAM (1)| Storage (2) | Screen Mode (3)| Colour (4)| Text Window (5)| Loadable Font (6)| Image Support (7)|
-|-------------------------------|--------|-------------|----------------|-----------|----------------|------------------|------------------|
-| Amstrad CPC                   | 64KB   | FDD         | 320x200        | 4         | ?              | ?                | ?                |
-| Atari XL/XE                   | 64KB   | FDD         | 320x292        | 2         | ?              | ?                | ?                |
-| Atari ST/STe                  | 512KB  | FDD, HDD    | 640x200        | 4         | ?              | ?                | ?                |
-| BBC Model B / Master          | 64KB   | FDD         | 320x256        | 2         | ?              | ?                | ?                |
-| Commodore Amiga               | 512KB  | FDD, HDD    | 640x200        | 16        | ?              | ?                | ?                |
-| [Commodore PET](pet/Readme.md)| 32KB   | FDD         | 40x25          | N/A       | 30x19          | N/A              | N/A              |
-| [MSX 2](msx/Readme.md)        | 64KB   | FDD, HDD    | 512x212        | 16        | ?              | ?                | ?                |
-| NEC PC-8801                   | 64KB   | FDD         | 640x200        | 8         | ?              | ?                | ?                |
-| NEC PC-9801 / 9821            | 1024KB | FDD, HDD    | 640x400        | 16        | ?              | 8x8 1bpp         | ?                |
-| PC / VGA                      | 640KB  | FDD, HDD    | 640x400        | 256       | ?              | 8x8 1bpp         | ?                |
-| [Sinclair QL](ql/Readme.md)   | 128KB+ | FDD, HDD    | 512x256        | 4         | 48x24          | 8x8 1bpp         | ?                |
-| Sinclair ZX Spectrum          | 48KB   | FDD         | 32x24          | 8         | ?              | N/A              | N/A              |
-| Sharp X68000                  | 1024KB | FDD, HDD    | 512x512        | 65535     | ?              | 8x8 1bpp         | ?                |
+| Platform                      | Compiler |    RAM (1)| Storage (2) | Screen Mode (3)| Colour (4)| Text Window (5)| Loadable Font (6)| Image Support (7)|
+|-------------------------------|----------|--------|-------------|----------------|-----------|----------------|------------------|------------------|
+| [Amstrad CPC](cpc/Readme.md)  | z88dk    | 64KB   | FDD         | 320x200        | 4         | ?              | ?                | ?                |
+| Atari XL/XE                   | cc65     | 64KB   | FDD         | 40x24          | 4         | ?              | ?                | N/A              |
+| Atari ST/STe                  | gcc      | 512KB  | FDD, HDD    | 640x200        | 4         | ?              | ?                | ?                |
+| BBC Model B / Master          |          | 64KB   | FDD         | 40x25          | 8         | ?              | N/A              | N/A              |
+| Commodore Amiga               | gcc      | 512KB  | FDD, HDD    | 640x200        | 16        | ?              | ?                | ?                |
+| [Commodore PET](pet/Readme.md)| cc65     | 32KB   | FDD         | 40x25          | N/A       | 30x19          | N/A              | N/A              |
+| [MSX 2](msx2/Readme.md)        | z88dk    | 64KB   | FDD, HDD    | 512x212        | 16        | ?              | ?                | ?                |
+| NEC PC-8801                   | z88dk    | 64KB   | FDD         | 640x200        | 8         | ?              | ?                | ?                |
+| NEC PC-9801 / 9821            | gcc      | 1024KB | FDD, HDD    | 640x400        | 16        | ?              | 8x8 1bpp         | ?                |
+| PC / VGA                      | gcc      | 640KB  | FDD, HDD    | 640x400        | 256       | ?              | 8x8 1bpp         | ?                |
+| [Sinclair QL](ql/Readme.md)   | c68      | 128KB+ | FDD, HDD    | 512x256        | 4         | 48x24          | 8x8 1bpp         | ?                |
+| Sinclair ZX Spectrum          | z88dk    | 128KB  | FDD         | 32x24          | 8         | ?              | N/A              | N/A              |
+| Sharp X68000                  | gcc      | 1024KB | FDD, HDD    | 512x512        | 65535     | ?              | 8x8 1bpp         | ?                |
 
 
 

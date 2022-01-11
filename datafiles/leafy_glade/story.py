@@ -22,10 +22,10 @@
 STORY = {
 	0 : "Trouble in Leafy Glade",
 	1 : "There is <r>trouble<C> in Leafy Glade!\n\nSomeone has been stealing from travellers as they pass through the sleepy little village.\n\nIt is up to you to solve the mystery...\n\nLeafy Glade is a short demo adventure made to test the basic functionality of the OlderScrolls engine on all hardware targets as well as various game scripting logic elements.",
-	2 : "Leafy Glade is a small, but bustling village located at the junction of several popular trade routes.\n\nIts inhabitants are mostly self-sufficient farmers and vendors of handcrafted goods.\nFor a long time Leafy Glade has traded well to travellers use the village as a stopping off point for the trade routes that converge at the village on the way to larger towns in the region.", 	
-	3 : "At the northern edge of Leafy Glade at the trade route marker posts which point off to the routes that travellers take on their way to the larger towns.",
+	2 : "You are standing in the centre of the market in Leafy Glade.\n\nLeafy Glade is a small, but bustling village located at the junction of several popular trade routes.\n\nIts inhabitants are mostly self-sufficient farmers and vendors of handcrafted goods.\n\nFor a long time Leafy Glade has traded well to travellers use the village as a stopping off point for the trade routes that converge at the village on the way to larger towns in the region.", 	
+	3 : "At the northern edge of Leafy Glade at the trade route marker posts which point off to the routes that travellers take on their way to the larger towns. You could head <g>north<C> here.",
 	4 : "You see a small clearing which is surrounded on three sides by deep, thick brambles. A lean-to canvas shelter is to the rear of the clearing and the remnants of a small fire smoulder in front of the shelter.",
-	5 : "You see a group of trade route markers to the NORTH",
+	5 : "You see a group of trade route markers to the <g>north<C>",
 	6 : "A shady looking character is standing in the clearing close to you.\n\n'Who do you think YOU are?'\n'Get away from here - you are not taking my hard earned loot!'",
 	7 : "The motionless body of a thief lays close to the entrance of the clearing.",
 	8 : "'You, yes you!'\nThe well dressed figure motions you closer.\n'I have a job for you. Take this stick and go and beat some sense into that thief who has been robbing visitors to our village. Unless we can stop this ongoing theft, no-one will want to stay at our village.'\n\nHe offers a sturdy wooden stick to you.",

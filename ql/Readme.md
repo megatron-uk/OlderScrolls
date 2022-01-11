@@ -37,6 +37,7 @@ Prequisities for building:
 
   * [xtc68](https://github.com/stronnag/xtc68) C68 cross-compiler
   * [qltools](https://github.com/SinclairQL/qltools) QL floppy disk/image utility
+  * GNU Make
 
 Change to the *ql* directory and run **make full**. This will do the following:
 
