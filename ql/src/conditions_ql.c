@@ -34,9 +34,10 @@
 unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsigned char *requires, unsigned char number, unsigned char eval_type){
 
 	unsigned char result = 0;
-	unsigned char i;
 	unsigned char total_false = 0;
 	unsigned char total_true = 0;
+	unsigned char i;
+	unsigned char ii;
 	unsigned char cond[COND_LENGTH];
 	
 	// Test each group of COND_LENGTH bytes in turn, incrementing
@@ -130,7 +131,7 @@ unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsig
 unsigned char check_NoCond(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
 	// Simple condition check
 	
-	unsigned char check_type;
+	unsigned char check_type = 0;
 	
 	// 1 byte
 	check_type = cond[1];
@@ -155,10 +156,14 @@ unsigned char check_NoCond(GameState_t *gamestate, LevelState_t *levelstate, cha
 unsigned char check_PlayerAttribute(GameState_t *gamestate, LevelState_t *levelstate, char *cond, unsigned char player){
 	// Check one aspect of a player attribute
 	
-	unsigned char check_attribute;
-	unsigned char check_value;
+	unsigned char check_attribute = 0;
+	unsigned char check_value = 0;
 	PlayerState_t *pc;
 	
+	check_attribute = cond[2];
+	check_value = cond[3];
+	
+	// Select the player character
 	switch(player){
 		case 1:
 			pc = gamestate->p1;
@@ -187,9 +192,7 @@ unsigned char check_PlayerAttribute(GameState_t *gamestate, LevelState_t *levels
 			return 0;
 	}
 	
-	check_attribute = cond[2];
-	check_value = cond[3];
-	
+	// Check the attribute
 	switch(check_attribute){
 		
 		case COND_TYPE_STR:
@@ -248,9 +251,9 @@ unsigned char check_PartyState(GameState_t *gamestate, LevelState_t *levelstate,
 unsigned char check_Map(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
 	// Check visit to a location
 	
-	unsigned char check_type;
-	unsigned short check_attribute;
-	unsigned char check_value;
+	unsigned char check_type = 0;
+	unsigned short check_attribute = 0;
+	unsigned char check_value = 0;
 	
 	check_type = cond[1];
 	check_attribute = (cond[2] << 2) + cond[3];
@@ -275,9 +278,9 @@ unsigned char check_Map(GameState_t *gamestate, LevelState_t *levelstate, char *
 unsigned char check_Monster(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
 	// Check on the monster defeat status of a given location and primary/secondary spawn type
 	
-	unsigned char defeat_type;
-	unsigned short defeat_location_id;
-	unsigned char defeat_count;
+	unsigned char defeat_type = 0;
+	unsigned short defeat_location_id = 0;
+	unsigned char defeat_count = 0;
 	
 	// 1 byte
 	defeat_type = cond[1];
@@ -315,9 +318,9 @@ unsigned char check_Monster(GameState_t *gamestate, LevelState_t *levelstate, ch
 unsigned char check_NPC(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
 	// Check on the status of an NPC, if we have visited them, if they are alive, etc
 	
-	unsigned char check_type;
-	unsigned char check_npc_id;
-	unsigned short check_value;
+	unsigned char check_type = 0;
+	unsigned char check_npc_id = 0;
+	unsigned short check_value = 0;
 	struct NPCList *npc;
 	
 	// 1 byte
@@ -381,8 +384,66 @@ unsigned char check_NPC(GameState_t *gamestate, LevelState_t *levelstate, char *
 	return 0;
 }
 
+unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond, char *item_weapon){
+	
+	unsigned char check_type = 0;
+	unsigned char check_item_id = 0;
+	unsigned char i;
+	unsigned char player;
+	char pc_item_type;
+	unsigned char pc_item_id;
+	PlayerState_t *pc;
+	
+	check_type = cond[2];
+	check_item_id = cond[3];
+	
+	for (player = 1; player <= 4; player++){
+		switch(player){
+			case 1:
+				pc = gamestate->p1;
+			case 2:
+				if (gamestate->p2){
+					pc = gamestate->p2;
+				} else {
+					pc = NULL;
+				}
+				break;
+			case 3:
+				if (gamestate->p3){
+					pc = gamestate->p3;
+				} else {
+					pc = NULL;;
+				}
+				break;
+			case 4:
+				if (gamestate->p4){
+					pc = gamestate->p4;
+				} else {
+					pc = NULL;;
+				}
+				break;
+		}
+		if (pc != NULL){
+			for (i = 0; i < MAX_ITEMS; i++){
+				pc_item_type = (pc->items[i] & 0xff00) >> 2;
+				pc_item_id = (unsigned char) (pc->items[i] & 0x00ff);
+				
+				if ((pc_item_id == check_item_id) && (pc_item_type == *item_weapon)){
+					if (check_type == COND_ITEM_OWN) return 1;
+					if (check_type == COND_ITEM_NOTOWN) return 0;
+				}		
+			}
+		}
+	}
+	return 0;	
+}
+
 unsigned char check_Item(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
+	
+	return check_ItemWeapon(gamestate, levelstate, cond, "i");
 }
 
 unsigned char check_Weapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
+	
+	return check_ItemWeapon(gamestate, levelstate, cond, "w");
 }

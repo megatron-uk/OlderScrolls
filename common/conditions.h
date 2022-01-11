@@ -129,10 +129,9 @@
 // Items
 //		2 bytes for the condition type
 //		1 byte for the item ID the test is for
-//		1 byte for the number
-//		1 pad byte
-// e.g. 0x07 01 FE 01 00 // Must posess (at least 1 of) item ID 254.
-// e.g. 0x07 02 0D 07 00 // Must not have more than 7 copies of item ID 13.
+//		2 pad byte
+// e.g. 0x07 01 FE 00 00 // Must posess item ID 254.
+// e.g. 0x07 02 0D 00 00 // Must not posess item ID 13.
 
 #define COND_ITEM_TYPE		0x07
 #define COND_ITEM_OWN		0x01 // Must posess the item 'id'
@@ -142,10 +141,9 @@
 // Weapons
 //		2 bytes for the condition type
 //		1 byte for the weapon ID the test is for
-//		1 byte for the number
-//		1 pad byte
-// e.g. 0x08 01 01 01 00 // Must posess (at least 1 of) weapon ID 1.
-// e.g. 0x08 02 05 01 00 // Must not have more than 1 of weapon ID 5.
+//		2 pad byte
+// e.g. 0x08 01 01 00 00 // Must posess weapon ID 1.
+// e.g. 0x08 02 05 00 00 // Must not posess weapon ID 5.
 
 #define COND_WEAPON_TYPE	0x08
 #define COND_WEAPON_OWN		0x01 // Must posess the weapon 'id'
@@ -166,3 +164,4 @@ unsigned char check_Monster(GameState_t *gamestate, LevelState_t *levelstate, ch
 unsigned char check_NPC(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
 unsigned char check_Item(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
 unsigned char check_Weapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
+unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond, char *item_weapon);
