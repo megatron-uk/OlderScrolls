@@ -366,11 +366,12 @@ void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate){
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%5d<C> Graphics buffer\n", (screen.indirect * SCREEN_BYTES));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%5d<C> Game, Enemies, text buffer\n", sizeof(GameState_t) + sizeof(EnemyState_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%5d<C> Level/Map data\n", sizeof(LevelState_t));
+	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%5d<C> Font data\n", sizeof(fontdata_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%5d<C> per Player, (total: %d)\n", sizeof(PlayerState_t), (players * sizeof(PlayerState_t)));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%5d<C> per NPC, (total: %d)\n", sizeof(struct NPCList), (npcs * sizeof(struct NPCList)));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%5d<C> per Weapon\n", sizeof(WeaponState_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%5d<C> per Spell\n", sizeof(SpellState_t));
-	draw_String(1, 15, 48, 9, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+	draw_String(1, 15, 48, 11, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
 	
 	// Calculate largest free blocks of memory that remain
 	sprintf((char *)gamestate->text_buffer, "<g>Memory Free<C>\n");
@@ -401,7 +402,7 @@ void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate){
 	}
 	
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> bytes total\n", total_bytes);
-	draw_String(1, 88, 48, 6, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+	draw_String(1, 96, 48, 6, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
 	
 	// Free any memory allocated!
 	if (mem){
@@ -424,7 +425,7 @@ void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate){
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%3d<C> Locations discovered\n", locations);
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%3d<C> Primary spawns\n", primary);
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%3d<C> Secondary spawns\n", secondary);
-	draw_String(1, 144, 48, 6, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+	draw_String(1, 156, 48, 6, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
 	
 	screen.dirty = 1;
 	draw_Flip();

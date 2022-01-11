@@ -49,6 +49,14 @@
 #define _GAME_H
 #endif
 
+// Options to the C68 runtime environment
+long _stack = 2 * 1024L; 		// Set size of stack, in kb. Defaults to 4kb.
+long _mneed = 4 * 1024L; 		// Minimum heap size allowed
+long _memincr = 2 * 1024L; 		// When heap exhausted, requests to QDOS are in this size
+long _memqdos = 10 * 1024L; 	// Minimum amount of memory that is allowed to remain for QDOS ...
+								// ... this defaults to 20kb, so reducing it to 10kb gives us another
+								// 10kb of heap to play with.
+
 int main(void){
 	
 	unsigned char c;

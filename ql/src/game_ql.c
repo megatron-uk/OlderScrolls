@@ -81,14 +81,15 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	gamestate->enemies = (EnemyState_t *) calloc(sizeof(EnemyState_t), 1);
 	
 	// Open the story data file and load entry 0 - this has the adventure name
-	data_Load(gamestate, levelstate, DATA_TYPE_STORY, 0);
+	data_LoadStory(gamestate, levelstate, 0);
 	strncpy((char *) gamestate->name, (char *) gamestate->text_buffer, MAX_LEVEL_NAME_SIZE);
 	
 	// Open the story data file and load entry 1 - this has the splash screen data
-	data_Load(gamestate, levelstate, DATA_TYPE_STORY, 1);
+	data_LoadStory(gamestate, levelstate, 1);
+	sprintf(gamestate->text_buffer, gamestate->buf);
 	
 	// Open the Map data file and load entry 1 - this will be our starting location
-	data_Load(gamestate, levelstate, DATA_TYPE_MAP, 1);
+	data_LoadMap(gamestate, levelstate, 1);
 	gamestate->level_visits[1] = 1;
 	
 	// Initialise a new player character
@@ -157,7 +158,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	
 	// Open the Map data file and load current level
 	if (gamestate->level != gamestate->level_previous){
-		data_Load(gamestate, levelstate, DATA_TYPE_MAP, gamestate->level);
+		data_LoadMap(gamestate, levelstate, gamestate->level);
 		
 		// Record a visit to this location
 		if (gamestate->level_visits[gamestate->level] < 255){
@@ -166,22 +167,21 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	}
 	ui_DrawLocationName(gamestate, levelstate);
 	
-	// Apply any ongoing status effects (bleeding, poison, etc)
-	// TO DO
-	
 	// Show default map location text
 	data_LoadStory(gamestate, levelstate, levelstate->text);
-	remain = ui_DrawMainWindowText(gamestate, levelstate, 0, (char *) gamestate->text_buffer);
-	if (remain > 0){
-		// while (remain){
-			// Show 'press button to view next page'
-			// Show next page
-		//}
-	}
+	sprintf(gamestate->text_buffer, gamestate->buf);
 	
-	// If monsters are spawned - go to combat
-	c = 0;
-	c = game_CheckMonsterSpawn(gamestate, levelstate, 0, (char *) input_allowed);
+	// Have primary monsters spawned here previously?
+	// Display additional after_spawn text
+	
+	// Have secondary monsters spawned here previously?
+	// Display additional after_respawn text
+	
+	// Apply any ongoing status effects (bleeding, poison, etc)
+	// Display any status effect text
+	
+	// If monsters are spawned - go to combat, but print before_spawn or before_respawn text
+	c = game_CheckMonsterSpawn(gamestate, levelstate, 0, 1, (char *) input_allowed);
 	if(c){
 		
 		// Add fight and withdraw options
@@ -208,6 +208,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 			
 	// else if not spawned
 	} else {
+		
 		// Are any NPC's active?
 		// Add 'talk' options
 		//if (game_CheckTalk(gamestate, levelstate, 0, (char *) input_allowed)){
@@ -215,23 +216,48 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 		//	input_Set(INPUT_TALK_);
 		//}
 		
-		// Are any exits active?
-		if (game_CheckMovement(gamestate, levelstate, 0, (char *) input_allowed)){
+		// Are there any shops in this location?
+		// Add 'barter' options
+		//if (game_CheckShop(gamestate, levelstate, 0, (char *) input_allowed)){
+		//	input_Set(INPUT_BARTER);
+		//	input_Set(INPUT_BARTER_);
+		//}
+		
+		// Are there any rest spots (inn/temple/friendly tribe) here?
+		// Add 'rest' options
+		//if (game_CheckRest(gamestate, levelstate, 0, (char *) input_allowed)){
+		//	input_Set(INPUT_REST);
+		//	input_Set(INPUT_REST_);
+		//}
+		
+		// Are any exits active? - draw the text and make movement active
+		if (game_CheckMovement(gamestate, levelstate, 0, 1, (char *) input_allowed)){
 			input_Set(INPUT_MOVE);
 			input_Set(INPUT_MOVE_);
 		}
 	}
-		
+	
+	// Draw the main window text now
+	remain = ui_DrawMainWindowText(gamestate, levelstate, 0, (char *) gamestate->text_buffer);
+	if (remain > 0){
+		// while (remain){
+			// Show 'press button to view next page'
+			// Show next page
+		//}
+	}
+	
 	// Draw the available options in the status bar	
 	ui_DrawStatusBar(gamestate, levelstate, 1, 1, (char *) input_allowed);
 	draw_Flip();
 	
 	// Wait for user input
-	c = 0;
 	while(!exit){
 		c = input_Get();
 		switch(c){
 			case INPUT_DEBUG:
+				// ======================================
+				// Show the memory/used game/progress screen
+				// ======================================
 				input_Clear();
 				input_Set(INPUT_CANCEL);
 				ui_DebugScreen(gamestate, levelstate);
@@ -251,7 +277,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 				// ======================================
 				// Allow player to move to another location
 				// ======================================
-				game_CheckMovement(gamestate, levelstate, 1, (char *) input_allowed);
+				game_CheckMovement(gamestate, levelstate, 1, 0, (char *) input_allowed);
 				while(!exit){
 					c = input_Get();
 					switch(c){
@@ -293,6 +319,10 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 				// Set combat game mode
 				// ======================================
 				//game_Combat();
+				// if alive
+				// 		Redraw the ui
+				// else
+				//		show game over screen
 				break;
 			case INPUT_TALK:
 			case INPUT_TALK_:
@@ -300,7 +330,24 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 				// Set talk game mode
 				// ======================================
 				//game_Talk();
+				// exit = 1;
 				break;	
+			//case INPUT_BARTER:
+			//case INPUT_BARTER_:
+				// ======================================
+				// Set shop game mode
+				// ======================================
+				//game_Shop();
+				// exit = 1;
+				//break;
+			//case INPUT_REST:
+			//case INPUT_REST_:
+				// ======================================
+				// Set rest game mode
+				// ======================================
+				//game_Rest();
+				// exit = 1;
+				//break;	
 			case INPUT_QUIT:
 			case INPUT_QUIT_:
 				// ======================================
@@ -364,7 +411,7 @@ void game_Quit(GameState_t *gamestate, LevelState_t *levelstate){
 	return;
 }
 
-unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs){
+unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text, char* allowed_inputs){
 	// Returns a flag indicating if combat is going to happen
 	// Checks both primary and secondary spawning rules
 	
@@ -389,12 +436,14 @@ unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *level
 	
 }
 
-unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs){
+unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text, char* allowed_inputs){
 	// Returns a flag indicating if movement is possible.
-	// Can also optionally set the available movement options in the allowed_input array
+	// Adds compass points to input options if set
+	// Prints direction text to main ui if set
 
 	unsigned char add_it = 0;
 	unsigned char can_move = 0;
+	char first = 0x0A;
 	
 	if (add_inputs){
 		input_Clear();
@@ -418,6 +467,11 @@ unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstat
 					input_Set(INPUT_N_);
 				}
 				can_move = 1;
+				if (add_text){
+					data_LoadStory(gamestate, levelstate, levelstate->north_text);
+					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
+					first = 0;
+				}
 			}
 		}
 		if (levelstate->south){
@@ -436,6 +490,11 @@ unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstat
 					input_Set(INPUT_S_);
 				}
 				can_move = 1;
+				if (add_text){
+					data_LoadStory(gamestate, levelstate, levelstate->south_text);
+					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
+					first = 0;
+				}
 			}
 		}
 		if (levelstate->east){
@@ -454,6 +513,11 @@ unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstat
 					input_Set(INPUT_E_);
 				}
 				can_move = 1;
+				if (add_text){
+					data_LoadStory(gamestate, levelstate, levelstate->east_text);
+					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
+					first = 0;
+				}
 			}
 		}
 		if (levelstate->west){
@@ -472,6 +536,11 @@ unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstat
 					input_Set(INPUT_W_);
 				}
 				can_move = 1;
+				if (add_text){
+					data_LoadStory(gamestate, levelstate, levelstate->west_text);
+					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
+					first = 0;
+				}
 			}
 		}
 	}
