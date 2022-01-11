@@ -41,7 +41,6 @@
 #define DATA_LOAD_OK	0x00
 #define DATA_LOAD_ERR	0x01
 
-unsigned char data_Load(GameState_t *gamestate, LevelState_t *levelstate, unsigned char data_type, unsigned short id);
 unsigned char data_LoadStory(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
 unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
 unsigned char data_CreateCharacter(PlayerState_t *playerstate);

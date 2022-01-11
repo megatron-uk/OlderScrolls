@@ -29,7 +29,7 @@
 #define MAX_REWARD_ITEMS 	6		// Number of items that may be rewarded upon visiting a location, or upon defeat of primary monster(s)
 #define MAX_ITEMS 			32		// The size of player inventory
 #define MAX_LEVEL_NAME_SIZE 32		// How long a level name can be
-#define MAX_STORY_TEXT_SIZE 1024	// The buffer which holds the text to be shown on screen about a location
+#define MAX_STORY_TEXT_SIZE 1024 	// The buffer which holds the text to be shown on screen about a location
 #define MAX_LOCATIONS 		256		// The maximum number of levels we can track - stories should not have more than this!
 #define MAX_REQUIREMENTS 	8		// Actions can have prerequisites (or even multiple prerequisities) before they happen
 #define MAX_MONSTER_TYPES 	6		// The number of different types of monsters in each location
@@ -140,7 +140,8 @@ struct NPCList {
 
 // Basic game data
 typedef struct {
-	unsigned char text_buffer[MAX_STORY_TEXT_SIZE];			// A single text buffer for all string/text operations
+	char text_buffer[MAX_STORY_TEXT_SIZE + 513];		// A single text buffer to composite any text used for display in the main window. This is 1.5x the size of a normal text string
+	char buf[MAX_STORY_TEXT_SIZE + 1];				// To load strings into
 	unsigned char gamemode;										// What mode we are in - map, combat, shop, etc
 	unsigned char name[MAX_LEVEL_NAME_SIZE];					// Name of the current adventure
 	unsigned char level;										// ID of the current location
@@ -259,8 +260,8 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate);
 void game_Combat(GameState_t *gamestate, LevelState_t *levelstate);
 void game_Quit(GameState_t *gamestate, LevelState_t *levelstate);
 
-unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs);
-unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, char* allowed_inputs);
+unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text, char* allowed_inputs);
+unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text, char* allowed_inputs);
 
 // ============================================
 // Platform specific game function implementations

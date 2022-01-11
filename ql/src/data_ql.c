@@ -41,20 +41,6 @@
 #endif
 #include "../common/conditions.h"
 
-unsigned char data_Load(GameState_t *gamestate, LevelState_t *levelstate, unsigned char data_type, unsigned short id){
-	
-	switch(data_type){
-		case DATA_TYPE_STORY:
-			return data_LoadStory(gamestate, levelstate, id);
-			break;
-		case DATA_TYPE_MAP:
-			return data_LoadMap(gamestate, levelstate, id);
-			break;
-		default:
-			break;
-	}
-}
-
 unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id){
 	// Load a gameworld map from disk, parsing it and inserting
 	// the data into the global 'levelstate' struct.
@@ -354,8 +340,8 @@ unsigned char data_LoadStory(GameState_t *gamestate, LevelState_t *levelstate, u
 	fseek(story_file, record_offset, SEEK_SET);
 		
 	// Read DATA_HEADER_RECORD_SIZE worth of bytes
-	memset(gamestate->text_buffer, '\0', record_size + 1);
-	i = fread(gamestate->text_buffer, 1, record_size, story_file);
+	memset(gamestate->buf, '\0', record_size + 1);
+	i = fread(gamestate->buf, 1, record_size, story_file);
 	
 	fclose(index_file);
 	return DATA_LOAD_OK;
