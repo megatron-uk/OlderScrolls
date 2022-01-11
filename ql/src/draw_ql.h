@@ -35,6 +35,7 @@ struct Screen_t {
         unsigned char indirect;		// Flag to indicate use of off-screen or direct video memory writes
         unsigned char dirty;		// Flag to indicate buffer has been changed
         fontdata_t *font_8x8;		// 8x8 font bitmap
+        bmpdata_t *bmp;				// Bitmap loader
 };
 extern struct Screen_t screen;		// Global, all functions have visibility of screen data
 

@@ -74,12 +74,12 @@ unsigned char screen_Init(){
 	screen.f = fopen(SCREEN_MODE, "rw");
 	
 	// Initialise any fonts
-	bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
-	if (bmp == NULL){
+	screen.bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
+	if (screen.bmp == NULL){
 		// Couldn't allocate memory for bitmap
 		return 2;	
 	}
-	bmp->pixels = NULL;
+	screen.bmp->pixels = NULL;
 	
 	// Load and process the 8x8 font
 	f = fopen(FONT_8X8, "rb");
@@ -92,7 +92,7 @@ unsigned char screen_Init(){
 		// Couldn't allocate memory for font table
 		return 4;	
 	}
-	fontstatus = bmp_ReadFont(f, bmp, screen.font_8x8, 1, 1, 8, 8);
+	fontstatus = bmp_ReadFont(f, screen.bmp, screen.font_8x8, 1, 1, 8, 8);
 	if (fontstatus < 0){
 		// Couldn't process font bitmap to table
 		return 5;
@@ -101,8 +101,8 @@ unsigned char screen_Init(){
 	screen.font_8x8->unknown_symbol = 37;	// Unknown characters are replaced with '%'
 	screen.font_8x8->ascii_start = 32;		// First ascii char in set is ' '
 	
-	// Destroy the temporary bmp loader
-	bmp_Destroy(bmp);
+	// Destroy the bmp pixel memory
+	free(screen.bmp->pixels);
 	fclose(f);
 	
 	return 0;
@@ -117,9 +117,6 @@ void screen_Exit(){
 	
 	// Close any io channel handles
 	fclose(screen.f);
-	
-	// Destroy any open fonts
-	bmp_DestroyFont(screen.font_8x8);
 }
 
 void draw_Clear(){
