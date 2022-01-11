@@ -75,8 +75,5 @@ unsigned char 	symbol[96][BMP_FONT_MAX_HEIGHT];
 } fontdata_t;
 
 void bmp_Destroy(bmpdata_t *bmpdata);
-void bmp_DestroyFont(fontdata_t *fontdata);
 int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char data, unsigned char font_width, unsigned char font_height);
 int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, unsigned char data);
-int bmp_ReadImageHeader(FILE *bmp_image, bmpdata_t *bmpdata);
-int bmp_ReadImageData(FILE *bmp_image, bmpdata_t *bmpdata);

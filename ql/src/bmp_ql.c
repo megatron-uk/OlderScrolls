@@ -32,7 +32,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		bmp_image 	== open file handle to your bmp file
 		bmpdata 	== a bmpdata_t struct
 		header		== 1/0 to enable bmp header parsing
-		data			== 1/0 to enable bmp pixel extraction (cannot do this without first parsing the header)
+		data		== 1/0 to enable bmp pixel extraction (cannot do this without first parsing the header)
 	
 		Example use:
 	
@@ -47,10 +47,10 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		fclose(f);
 	*/
 	
-	unsigned char *bmp_ptr, *bmp_ptr_old;	// Represents which row of pixels we are reading at any time
+	unsigned char *bmp_ptr;		// Represents which row of pixels we are reading at any time
 	unsigned int i;				// A loop counter
 	int	status;					// Generic status for calls from fread/fseek etc.
-	unsigned char 	pixel;		// A single pixel
+	unsigned char pixel;		// A single pixel
 
 	if (header){
 		// Seek to dataoffset position in header
@@ -60,7 +60,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// Read data offset value
 		status = fread(&bmpdata->offset, 4, 1, bmp_image);
 
-		// offset is a little-endian 32bit, so swap it
+		// offset is a little-endian 32bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->offset = swap_int32(bmpdata->offset);
 		
 		// Seek to image width/columns position in header
@@ -69,7 +69,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// Read width value
 		status = fread(&bmpdata->width, 4, 1, bmp_image);
 
-		// width is a little-endian 32bit, so swap it
+		// width is a little-endian 32bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->width = swap_int32(bmpdata->width);
 		
 		// Seek to image height/rows position in header
@@ -78,7 +78,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// Read height value
 		status = fread(&bmpdata->height, 4, 1, bmp_image);
 
-		// Height is a little-endian 32bit so swap it
+		// Height is a little-endian 32bit,, and Sinclair QL is big-endian so swap it
 		bmpdata->height = swap_int32(bmpdata->height);
 		
 		// Seek to bpp location in header
@@ -87,7 +87,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// Read bpp value
 		status = fread(&bmpdata->bpp, 2, 1, bmp_image);
 
-		// BPP is a little-endian 16bit, so swap it
+		// BPP is a little-endian 16bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->bpp = swap_int16(bmpdata->bpp);
 		
 		// Seek to compression field
@@ -96,7 +96,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// Read compression value
 		status = fread(&bmpdata->compressed, sizeof(bmpdata->compressed), 1, bmp_image);
 				
-		// compression is a little-endian 32bit so swap it
+		// compression is a little-endian 32bit,, and Sinclair QL is big-endian so swap it
 		bmpdata->compressed = swap_int32(bmpdata->compressed);
 		if (bmpdata->compressed != BMP_UNCOMPRESSED){
 			return BMP_ERR_COMPRESSED;
@@ -142,7 +142,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 	if (data){
 	
 		if (bmpdata->bpp != BMP_1BPP){
-			// We dont need to byteswap 1bpp image data
+			// We ONLY support 1bpp images in this stripped-down bmp library for the QL.
 			return BMP_ERR_BPP;
 		}
 		
@@ -197,28 +197,16 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 	return BMP_OK;
 }
 
-int bmp_ReadImageHeader(FILE *bmp_image, bmpdata_t *bmpdata){
-	// Just read the header information about a BMP image into a bmpdata structure
-	return bmp_ReadImage(bmp_image, bmpdata, 1, 0);	
-}
-
-int bmp_ReadImageData(FILE *bmp_image, bmpdata_t *bmpdata){
-	// Just load the pixel data into an already defined bmpdata structure
-	return bmp_ReadImage(bmp_image, bmpdata, 0, 1);	
-}
-
-
 int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char data, unsigned char font_width, unsigned char font_height){
 	// Read a font from disk - really a wrapper around the bitmap reader
 	unsigned int h, w;
-	unsigned int bytepos;
-	unsigned int heightpos;
-	unsigned int pos;
-	unsigned char status;
-	unsigned int width_chars;
-	unsigned int height_chars;
-	unsigned int row_bytepos;
-	unsigned char b;
+	unsigned char status = 0;
+	unsigned int width_chars = 0;
+	unsigned int height_chars = 0;
+	unsigned int row_bytepos = 0;
+	unsigned int bytepos = 0;		// position in bmp image data of the top left pixel of the current symbol
+	unsigned int heightpos = 0;		// vertical offsetof into bmp image data
+	unsigned int pos = 0;			// character/symbol position (0, 1, 2, ... 32)
 	
 	status = bmp_ReadImage(bmp_image, bmpdata, header, data);
 	if (status == BMP_OK){
@@ -226,7 +214,6 @@ int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsi
 		fontdata->height = font_height;
 		if (data != 0){
 			// Process BMP pixels to planar font array
-			pos = 0;
 			width_chars = bmpdata->width / font_width;
 			height_chars = bmpdata->height / font_height;
 			if (bmpdata->bpp == BMP_1BPP){			
@@ -235,10 +222,7 @@ int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsi
 				// a single byte for that row.
 				// Since this is a 1bpp image, only store a single plane
 				// of bytes.
-				
-				pos = 0; 			// character/symbol position (0, 1, 2, ... 32)
-				bytepos = 0; 		// position in bmp image data of the top left pixel of the current symbol
-				heightpos = 0;	// vertical offsetof into bmp image data
+
 				// For every row of symbols
 				for(h = 0; h < height_chars; h++){
 					// FOr every symbol in the row
@@ -246,12 +230,10 @@ int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsi
 						// For every row of pixels in a symbol
 						for(heightpos = 0; heightpos < font_height; heightpos++){
 							row_bytepos = bytepos + (bmpdata->row_unpadded * heightpos);
-							b = bmpdata->pixels[row_bytepos];
-							fontdata->symbol[pos][heightpos] = (unsigned char) b;
+							fontdata->symbol[pos][heightpos] = (unsigned char) bmpdata->pixels[row_bytepos];
 						}
 						// Jump to next symbol in row
 						bytepos += 1;
-						
 						// Increment symbol number
 						pos++;
 					}
@@ -282,11 +264,4 @@ void bmp_Destroy(bmpdata_t *bmpdata){
 		free(bmpdata->pixels);	
 	}
 	free(bmpdata);	
-}
-
-void bmp_DestroyFont(fontdata_t *fontdata){
-	// Destroy a fontdata structure and free any memory allocated
-	
-	free(fontdata);
-	
 }
