@@ -21,6 +21,12 @@
 
 ITEMS = {
 	1 : {
-		'name' : "Potion",	
+		'name' 			: "Potion",
+		'class_limit' 	: -1,
+		'type'			: "ITEM_TYPE_CONSUMEABLE",
+		'slot'			: -1,
+		'buy'			: 10,
+		'sell'			: 5,
+		'effect'		: []
 	}
 }

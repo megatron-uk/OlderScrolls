@@ -6,8 +6,7 @@ The datafiles used in the game adventures are stored in Python dictionaries as t
   * map.py
   * weapon.py
   * item.py
-  * monster.py
-  * npc.py
+  * monster.py (contains players, npc's and monsters)
 
 **NOTE:**
 
@@ -177,14 +176,7 @@ Contains all of the weapon definitions used within this specific adventure. The 
 
 ### Processed Datafile Structure
 
-When the Python script is processed, it generates files of the following format:
-
-  * 1536 byte **index file** (weapon.idx)
-    * Containing **exactly** 256 records
-      * Each **record** has...
-        * 1x 16bit (unsigned) size field (should *always* be 256)
-        * 1x 32bit (unsigned) offset field (from start of file)
-      * There must be at least **1** record with data. Following records *may* be blank.
+When the Python script is processed, it generates a single file *(no index file is needed as all records are fixed-length)* of the following format:
 
   * 256 byte to 65536 byte **data file** (weapon.dat).
     * Containing **up to** 256 data records
@@ -218,41 +210,50 @@ When the Python script is processed, it generates files of the following format:
 
 ### Description
 
+The *monster.py* file is something of a misnomer - the datafile contains the definitions of additional player party characters (i.e. people you can 'recruit'), non-playable characters (i.e. people you can 'talk' to), as well as typical monsters you encounter in the game.
+
+The reason for this is simple; *all three classes share exactly the same data structure*.
+
 ### Example
+
+    MONSTER = {
+	1 : {
+        'name' 		: "Ruffian",     		# Name as displayed to the player
+        'sprite_type' : "SPRITE_NORMAL",	# 32x32 sprites are normal size
+        'sprite_name' : "human1_b",		# Name of bitmap file used in combat screens
+        'portrait_name' : "human1_b",		# Name of bitmap file used in text dialogue
+        'class'		: "HUMAN_UNTRAINED",	# Class 
+        'level'		: 1,					# Level
+        'profile'	: 0xA000,				# Attack/behaviour profile, 4 bits each for how aggressive 
+        									# the monster is in melee, ranged, magic attack, magic support
+        'str' 		: 10,					# Standard attributes - they may be modified by the level and class of the monster
+        'dex' 		: 7,					# - as above
+        'con' 		: 11,					# - as above
+        'wis' 		: 3,					# - as above					
+        'intl' 		: 4,					# - as above
+        'chr' 		: 2,					# - as above
+        'hp' 		: 99,					# Starting hitpoints
+        'status' 	: 0,					# Starting bitfield of status effects
+        'head'		: -1,					# Item equipped to head (e.g. helmet, hat) - must be present in items.py
+        'neck'		: -1,					# Item equipped to neck (e.g. amulet) - must be present in items.py
+        'body'		: -1,					# Item equipped to body (e.g. bronze cuirass) - must be present in items.py
+        'arms'		: -1,					# Item equipped to arms (e.g. iron pauldrons) - must be present in items.py
+        'legs'		: -1,					# Item equipped to legs (e.g. plate greaves) - must be present in items.py
+        'hand_r'	: -1,					# Item on right hand (e.g. ring) - must be present in items.py
+        'hand_l'	: -1,					# Item on left hand (e.g. ring) - must be present in items.py
+        'weapon_r' : 1,					    # ID of weapon in right hand - must be present in weapons.py
+        'weapon_l' : -1,					# ID of weapon in left hand - must be present in weapons.py
+        'formation' : 0,					# Front / Middle / Rear alignment in combat
+        'spells'	: [0,0,0,0,0],			# List of all spells that this monster has access to - must be present in weapons.py
+	},
 
 ### Processed Datafile Structure
 
-When the Python script is processed, it generates files of the following format:
-
-  * 1536 byte **index file** (monster.idx)
-    * Containing **exactly** 256 records
-      * Each **record** has...
-        * 1x 16bit (unsigned) size field (should *always* be 256)
-        * 1x 32bit (unsigned) offset field (from start of file)
-      * There must be at least **1** record with data. Following records *may* be blank.
+When the Python script is processed, it generates a three files *(no index file is needed as all records are fixed-length)* of the following format, one for each of NPC's, Party Members and Monsters:
 
   * TBC **data file** (monster.dat)
-
----
-
-## npc.py
-
-### Description
-
-### Example
-
-### Processed Datafile Structure
-
-When the Python script is processed, it generates files of the following format:
-
-  * 1536 byte **index file** (npc.idx)
-    * Containing **exactly** 256 records
-      * Each **record** has...
-        * 1x 16bit (unsigned) size field
-        * 1x 32bit (unsigned) offset field (from start of file)
-      * There must be at least **1** record with data. Following records *may* be blank.
-
   * TBC **data file** (npc.dat)
+  * TBC **data file** (party.dat)
 
 ---
 
@@ -265,13 +266,6 @@ When the Python script is processed, it generates files of the following format:
 ### Processed Datafile Structure
 
 When the Python script is processed, it generates files of the following format:
-
-  * 1536 byte **index file** (items.idx)
-    * Containing **exactly** 256 records
-      * Each **record** has...
-        * 1x 16bit (unsigned) size field (should *always* be 256)
-        * 1x 32bit (unsigned) offset field (from start of file)
-      * There must be at least **1** record with data. Following records *may* be blank.
 
   * TBC **data file** (items.dat)
 

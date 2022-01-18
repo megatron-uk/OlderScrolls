@@ -18,9 +18,12 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
 import copy
 import sys
+import string
 import traceback
+from PIL import Image	# For verifying sprite bitmap dimensions and colour depth
 
 DEBUG =1
 
@@ -39,11 +42,24 @@ DEBUG =1
 ##################################################################################
 
 MAX_REQUIREMENTS = 8		# as per game.h
-MAX_MONSTER_TYPES = 6		# as per game.h
+MAX_MONSTER_TYPES = 4		# as per game.h
 MAX_REWARD_ITEMS = 6 		# as per game.h
 MAX_LEVEL_NAME_SIZE = 32	# as per game.h
 MAX_STORY_TEXT_SIZE = 1024	# as per game.h
 MAX_LOCATIONS = 256			# as per game.h
+MAX_PLAYER_NAME = 18		# as per game.h
+MAX_SHORT_NAME = 6			# as per game.h
+MAX_CHARACTERS = 256		# as per game.h
+MAX_BMP_FILENAME = 8		# Limit filenames to 8 characters and no '.' to be valid on all targets
+ALLOWED_FILENAME_CHARS = string.ascii_lowercase + string.digits + "_"
+BMP_SOURCES	= "/bmp/"		# bitmap images for this dataset should be within
+							# a sub-directory of the adventure folder, named '/bmp/'
+							# e.g. ./leafy_glade/bmp/
+							# Target-specific bmp datafiles will then be automatically
+							# placed in ./leafy_glade/out/ql, ./leafy_glade/out/atarixl, etc.
+							# alongside the normal datafiles.
+
+OUT_DIR	= "/out/"
 
 ##################################################################################
 #
@@ -72,79 +88,79 @@ CONDITIONS_PC_TYPE = {
 }
 
 PARTY_MEMBER_STATUS = {
-	"COND_PARTY_PRESENT" 	: 0x01,
-	"COND_PARTY_DIMISSED" 	: 0x02,
-	"COND_PARTY_DEAD"		: 0x03,
+	"COND_PARTY_PRESENT" 	: 0x01, # The given party member 'x' is present in the party
+	"COND_PARTY_DIMISSED" 	: 0x02, # The given party member 'x' has been recruited, but is not currently in the party 
+	"COND_PARTY_DEAD"		: 0x03, # The given party member 'x' has the status 'dead'
 }
 
 VISIT_TYPE = {
 	"COND_MAP_VISIT_TYPE"		: 0x00,
-	"COND_MAP_VISIT_TYPE_MAX"	: 0x01,
-	"COND_MAP_VISIT_TYPE_MIN"	: 0x02,
+	"COND_MAP_VISIT_TYPE_MAX"	: 0x01, # The given location has been visited less than or equal to this number of times
+	"COND_MAP_VISIT_TYPE_MIN"	: 0x02, # The given location has been visited more than or equal to this number of times
 }
 
 MONSTER_LOCATION_TYPE = {
-	"MONSTER_TYPE_PRIMARY"		: 0x01,
-	"MONSTER_TYPE_SECONDARY"	: 0x02,
+	"MONSTER_TYPE_PRIMARY"		: 0x01, # The primary monster spawn at this location has been encountered/defeated 'x' times
+	"MONSTER_TYPE_SECONDARY"	: 0x02, # The secondary monster spawn at this location has been encountered/defeated 'x' times
 }
 
 ITEM_OWN_TYPE = {
-	"COND_ITEM_OWN" 	: 	0x01,
-	"COND_ITEM_NOTOWN" 	: 	0x02,
+	"COND_ITEM_OWN" 	: 	0x01, # The given item is present in the player or party inventory
+	"COND_ITEM_NOTOWN" 	: 	0x02, # The given item is not present in the player or party inventory
 }
 
 WEAPON_OWN_TYPE = {
-	"COND_ITEM_OWN" 	: 	0x01,
-	"COND_ITEM_NOTOWN" 	: 	0x02,
+	"COND_ITEM_OWN" 	: 	0x01, # The given weapon is present in the player or party inventory
+	"COND_ITEM_NOTOWN" 	: 	0x02, # The given weapon is present in the player or party inventory
 }
 
 NPC_TEST_TYPE = {
-	"COND_NPC_TALK"			: 0x01,
-	"COND_NPC_MET_ALIVE"	: 0x02,
-	"COND_NPC_MET_DEAD"		: 0x03,
-	"COND_NPC_MET_TIME_LESS" : 0x04,
-	"COND_NPC_MET_TIME_MORE" : 0x05,
+	"COND_NPC_TALK"			: 0x01,	# An NPC has been met and talked to (irrespective of times)
+	"COND_NPC_ALIVE"		: 0x02,	# An NPC is still alive (if not met, assumed still alive)
+	"COND_NPC_DEAD"			: 0x03,	# An NPC is dead (if not met, assumed still alive) 
+	"COND_NPC_TIMER_LESS" 	: 0x04, # An NPC has been met/last talked less than or equal to 'x' turns ago
+	"COND_NPC_TIMER_MORE" 	: 0x05, # An NPC has been met/last talked more than or equal to 'x' turns ago
 }
 
 ITEM_TYPE_IDS = ["w", "i"]
 
 CONDITIONS = {
-	"NO_COND" : {					# No conditions applied
+	"NO_COND" : {								# No conditions applied
 		'bitfield'		: [0x00, 0x00, 0x00, 0x00, 0x00],
-		'bytes' 		: 5,		# Total size of check is 5 bytes
+		'bytes' 		: 5,					# Total size of check is 5 bytes
 	},
-	"COND_NO_MONSTERS" : {			# No monsters currently spawned
+	"COND_NO_MONSTERS" : {						# No monsters currently spawned
 		'bitfield'		: [0x00, 0x01, 0x00, 0x00, 0x00],
-		'bytes' 		: 5,		# Total size of check is 5 bytes
+		'bytes' 		: 5,					# Total size of check is 5 bytes
 	},
-	"COND_PC_ATR_TYPE" 	: {			# PC has above 'x' STR/WIS/CON/etc
+	"COND_PC_ATR_TYPE" 	: {						# PC has above 'x' STR/WIS/CON/etc
 		'bitfield'		: [0x01, 0x00],			# Initial bitfield, 2 bytes
 		'1_type'		: "CONDITIONS_PC_TYPE",	# PC Lookup, type STR
-		'1_sz'			: 1,				# Param 1 is 1 bytes
-		'2_type'		: "INTEGER",		# Must be an integer
-		'2_sz'			: 1,				# Param 2 is 1 bytes
-		'pad_sz'		: 1,				# Extra padding byte
-		'bytes' 		: 5,				# Total size of check is 5 bytes
+		'1_sz'			: 1,					# Param 1 is 1 bytes
+		'2_type'		: "INTEGER",			# Must be an integer
+		'2_sz'			: 1,					# Param 2 is 1 bytes
+		'pad_sz'		: 1,					# Extra padding byte
+		'bytes' 		: 5,					# Total size of check is 5 bytes
 	},
-	"COND_PARTY_ATR_TYPE": {		# PC has above 'x' STR/WIS/CON/etc
+	"COND_PARTY_ATR_TYPE": {					# PC has above 'x' STR/WIS/CON/etc
 		'bitfield'		: [0x02, 0x00],
 		'1_type'		: "CONDITIONS_PC_TYPE",	# PC Lookup, type STR
-		'1_sz'			: 1,				# Param 1 is 1 bytes
-		'2_type'		: "INTEGER",		# Integer parameter
-		'2_sz'			: 1,				# Param 2 is 1 bytes
-		'pad_sz'		: 1,				# Extra padding byte 
-		'bytes' 		: 5,				# Total size of check is 5 bytes
+		'1_sz'			: 1,					# Param 1 is 1 bytes
+		'2_type'		: "INTEGER",			# Integer parameter
+		'2_sz'			: 1,					# Param 2 is 1 bytes
+		'pad_sz'		: 1,					# Extra padding byte 
+		'bytes' 		: 5,					# Total size of check is 5 bytes
 	},
-	"COND_PARTY_MEMBER_TYPE": {		# Party character presence check
+	"COND_PARTY_MEMBER_TYPE": {					# Party character presence check
 		'bitfield'		: [0x03, 0x00],
-		'1_type'		: "PARTY_MEMBER_ID",# Lookup for a player party character ID
-		'1_sz'			: 1,				# Param 1 is 1 bytes
+		'1_type'		: "PARTY_MEMBER_ID",	# Lookup for a player party character ID
+		'1_sz'			: 1,					# Param 1 is 1 bytes
 		'2_type'		: "PARTY_MEMBER_STATUS",# Status ID
-		'2_sz'			: 1,				# Param 2 is 1 bytes
-		'pad_sz'		: 1,				# Extra padding byte 
-		'bytes' 		: 5,				# Total size of check is 5 bytes
+		'2_sz'			: 1,					# Param 2 is 1 bytes
+		'pad_sz'		: 1,					# Extra padding byte 
+		'bytes' 		: 5,					# Total size of check is 5 bytes
 	},
-	"COND_MAP_VISIT_TYPE" : {		# A check on whether a location has been visited
+	"COND_MAP_VISIT_TYPE" : {				# A check on whether a location has been visited
 		'bitfield'		: [0x04],
 		'1_type'		: "VISIT_TYPE",		# VISIT, VISIT_TYPE_MAX, VISIT_TYPE_MIN
 		'1_sz'			: 1,				# Param 1 is 1 byte
@@ -200,11 +216,306 @@ CONDITIONS = {
 	
 }
 
+# These classes should match the definitions 
+# from the OlderScrolls engine 'monsters.h' header.
+MONSTER_CLASSES = {
+	"HUMAN_UNTRAINED" 		: 0x10,	
+	"HUMAN_GENERIC_MELEE"	: 0x11,
+	"HUMAN_GENERIC_RANGED"	: 0x12,
+	"HUMAN_GENERIC_MAGIC"	: 0x13,
+	"HUMAN_BARBARIAN"		: 0x14,			
+	"HUMAN_BARD"			: 0x15,
+	"HUMAN_CLERIC"			: 0x16,
+	"HUMAN_DRUID"			: 0x17,
+	"HUMAN_FIGHTER"			: 0x18,
+	"HUMAN_PALADIN"			: 0x19,
+	"HUMAN_RANGER"			: 0x1A,
+	"HUMAN_ROGUE"			: 0x1B,
+	"HUMAN_SORCERER"		: 0x1C,
+	"HUMAN_WARLOCK"			: 0x1D,
+	"HUMAN_WIZARD"			: 0x1E,
+	"BEAST_WILD"			: 0x20,
+	"BEAST_MELEE"			: 0x21,
+	"BEAST_RANGED"			: 0x22,
+	"BEAST_MAGIC"			: 0x23,
+}
+
+# These classes should match the definitions
+# of the possible sprite sizes as found in the
+# OlderScrolls engine 'draw.h"
+SPRITE_CLASSES = {
+	"SPRITE_CLASS_NONE"			: 0,
+	"SPRITE_CLASS_NORMAL"		: 1,
+	"SPRITE_CLASS_LARGE"		: 2,
+	"SPRITE_CLASS_PORTRAIT" 	: 3,
+}
+
+SPRITE_SIZES = {
+	"SPRITE_CLASS_NORMAL" 		: { 'w' : 32, 'h' : 32 },
+	"SPRITE_CLASS_LARGE" 		: { 'w' : 96, 'h' : 96 },
+	"SPRITE_CLASS_PORTRAIT" 	: { 'w' : 32, 'h' : 32 },
+}
+
+MAX_STATS = {
+	'str' 	: { 'min' : 1, 'max' : 20 },
+	'dex' 	: { 'min' : 1, 'max' : 20 },
+	'con' 	: { 'min' : 1, 'max' : 20 },
+	'wis' 	: { 'min' : 1, 'max' : 20 },
+	'intl' 	: { 'min' : 1, 'max' : 20 },
+	'chr' 	: { 'min' : 1, 'max' : 20 },
+	'hp' 	: { 'min' : 1, 'max' : 255 },
+	'level' : { 'min' : 1, 'max' : 10 },
+}
+
+ITEM_TYPES = {
+	'ITEM_TYPE_CONSUMEABLE' 	: 1,
+	'ITEM_TYPE_ARMOUR'			: 2,
+	'ITEM_TYPE_SPELL'			: 4,
+	'ITEM_TYPE_QUEST'			: 8,
+}
+
+ITEM_SLOT_TYPES = {
+	'SLOT_TYPE_NONE'			: 0,
+	'SLOT_TYPE_HEAD'			: 1,
+	'SLOT_TYPE_NECK'			: 2,
+	'SLOT_TYPE_BODY'			: 4,
+	'SLOT_TYPE_ARMS'			: 8,
+	'SLOT_TYPE_LEGS'			: 16,
+	'SLOT_TYPE_HAND'			: 32,
+}
+
+
 ##################################################################################
 #
 # Functions to parse and sanity-check an adventure start here...
 #
 ##################################################################################
+
+def filename_is_valid(filename = None):
+	""" Check that a filename matches the criteria to work on all targets """
+	
+	if "." in filename:
+		return False
+	
+	for f in filename:
+		if f not in ALLOWED_FILENAME_CHARS:
+			return False
+			
+	return True
+	
+
+def generate_characters(import_dir = None):
+	""" Generates party, npc and monster datafiles from a monster.py file """
+	
+	print("")
+	print("*** Parsing Character Data ***")
+	
+	try:
+		game_characters = module = __import__(import_dir + ".monster", globals(), locals(), ["MONSTER"])
+		game_items = module = __import__(import_dir + ".items", globals(), locals(), ["ITEMS"])
+		game_weapons = module = __import__(import_dir + ".weapons", globals(), locals(), ["WEAPON"])
+	except Exception as e:
+		print("Error: %s" % e)
+		traceback.print_exc(file=sys.stdout)
+		return False
+	
+	party_ids = list(game_characters.PARTY.keys())
+	party_ids.sort()
+	
+	npc_ids = list(game_characters.NPC.keys())
+	npc_ids.sort()
+	
+	monster_ids = list(game_characters.MONSTER.keys())
+	monster_ids.sort()
+	
+	item_ids = list(game_items.ITEMS.keys())
+	item_ids.sort()
+	
+	weapon_ids = list(game_weapons.WEAPONS.keys())
+	weapon_ids.sort()
+
+	for char_type in ["NPC", "PARTY", "MONSTER"]:
+	
+		if char_type == "NPC":
+			char_ids = npc_ids
+			char_entries = game_characters.NPC
+			
+		if char_type == "PARTY":
+			char_ids = party_ids
+			char_entries = game_characters.PARTY
+			
+		if char_type == "MONSTER":
+			char_ids = monster_ids
+			char_entries = game_characters.MONSTER
+
+		if len(char_ids) > 0:
+			
+			print("###################################################################################")
+			print("#")
+			print("# Step 1.")
+			print("#")
+			print("# Check %s characters [x%s]" % (char_type, len(char_ids)))
+			print("#")
+			print("###################################################################################")
+			
+			#
+			# Check names are all within allowable length
+			#
+			
+			print("")
+			print("Check 1a: Checking %s name string lengths..." % char_type)
+		
+			valid = True
+			for char_id in char_ids:
+				l = len(char_entries[char_id]['name']) 
+				if l <= MAX_PLAYER_NAME:
+					if DEBUG:
+						print("%s Character ID: %3d - %s" % (char_type, char_id, char_entries[char_id]['name']))
+				else:
+					valid = False
+					print("%s Character ID: %d" % (char_type, char_id))
+					print("- ERROR: Name [%s] is more than [%s] bytes long [%s bytes]" % (char_entries[char_id]['name'], MAX_PLAYER_NAME, l))
+			
+			if valid:
+				print("GOOD: All character names appear valid")
+			else:
+				return False
+				
+			#
+			# Check we haven't hit any limits in numbers of npc/enemy/player characters
+			#
+			
+			valid = True
+			print("")
+			print("Check 1b: Checking number of %s characters..." % char_type)
+			l = len(char_ids)
+			if l <= MAX_CHARACTERS:
+				if DEBUG:
+					print("%s Characters: Total %3d, OK" % (char_type, l))
+				else:
+					valid = False
+					print("%s Characters: Total %d !!!" % (char_type, l))
+					print("- ERROR: More characters defined [%d] than allowable in game logic [%d]" % (l, MAX_CHARACTERS))
+			
+			if valid:
+				print("GOOD: All characters listed within limit")
+			else:
+				return False
+		
+			#
+			# Check we have valid sprint/bitmap size defines and that bitmap source images are present
+			#
+		
+			valid = True
+			print("")
+			print("Check 1c: Checking %s sprite/portrait bitmaps..." % char_type)
+			
+			for char_id in char_ids:
+				sprite_type = char_entries[char_id]['sprite_type']
+				if sprite_type in SPRITE_CLASSES:
+					if DEBUG:
+						print("%s Character ID: %3d, sprite class %s, OK" % (char_type, char_id, sprite_type))
+				else:
+					valid = False
+					print("%s Character ID: %3d" % (char_type, char_id))
+					print("- ERROR: This character does not have a valid sprite class defined [%s]" % sprite_type)
+			
+				# Check filename
+					
+				sprite_file = char_entries[char_id]['sprite_name']
+				l = len(sprite_file)
+				if l == 0:
+					valid = False
+					print("%s Character ID: %3d" % (char_type, char_id))
+					print("- ERROR: This character does not have a valid sprite filename defined [%s]" % sprite_file)					
+				elif (l > MAX_BMP_FILENAME):
+					valid = False
+					print("%s Character ID: %3d" % (char_type, char_id))
+					print("- ERROR: This character has a sprite filename [%s] longer than [%s] bytes" % (sprite_file, l))
+				elif (l <= MAX_BMP_FILENAME) and (l > 0):
+					if filename_is_valid(sprite_file):
+						if DEBUG:
+							print("%s Character ID: %3d, sprite filename [%s], OK" % (char_type, char_id, sprite_file))
+					else:
+						valid = False
+						print("%s Character ID: %3d" % (char_type, char_id))
+						print("- ERROR: This character has an invalid sprite filename [%s]" % (sprite_file))
+						print("- ERROR: Allowed filename bytes are: [%s]" % ALLOWED_FILENAME_CHARS)
+						print("- ERROR: Allowed filename length is: [%s]" % MAX_BMP_FILENAME)				
+		
+				# Check file is present!
+				if os.path.exists(import_dir + BMP_SOURCES + sprite_file):
+					if DEBUG:
+						print("%s Character ID: %3d, sprite filename [%s] found, OK" % (char_type, char_id, sprite_file))
+						
+					# Check file dimensions match the class stated for this character (e.g. 32x32 or whatever)
+					try:
+						img = Image.open(import_dir + BMP_SOURCES + sprite_file)
+						my_sizes = SPRITE_SIZES[sprite_type]
+						if (img.width == my_sizes['w']) and (img.height == my_sizes['h']):
+							if DEBUG:
+								print("%s Character ID: %3d, sprite dimensions [%sx%s] match class [%s], OK" % (char_type, char_id, img.width, img.height, sprite_type))
+						else:
+							valid = False
+							print("%s Character ID: %d" % (char_type, char_id))
+							print("- ERROR: This character has an invalid sprite size of [%sx%s] which does not match class [%s]" % (img.width, img.height, sprite_type))
+							print("- ERROR: Allowed dimensions for this sprite class are [%sx%s]" % (my_sizes['w'], my_sizes['h']))
+						img.close()
+					except Exception as e:
+						valid = False
+						print("%s Character ID: %3d" % (char_type, char_id))
+						print("- ERROR: This character has an sprite filename which could not be opened [%s]" % sprite_file)
+				else:
+					valid = False
+					print("%s Character ID: %3d" % (char_type, char_id))
+					print("- ERROR: This character has a sprite filename which was not found [%s]" % sprite_file)
+					print("- ERROR: Sprite files for this adventure should be found in: [%s]" % (import_dir + BMP_SOURCES))
+		
+				print("-")
+		
+			if valid:
+				print("GOOD: All characters have valid sprite classes and bitmaps are present")
+			else:
+				return False
+			
+			valid = True
+			print("")
+			print("Check 1d: Checking %s item numbers and slot acceptance..." % char_type)
+			
+			valid = True
+			print("")
+			print("Check 1e: Checking %s weapon numbers and class suitability..." % char_type)
+				
+			valid = True
+			print("")
+			print("Check 1f: Checking %s stats..." % char_type)
+				
+			for char_id in char_ids:
+				for stat_type in MAX_STATS.keys():
+					stat_min = MAX_STATS[stat_type]['min']
+					stat_max = MAX_STATS[stat_type]['max']
+					if stat_type in char_entries[char_id].keys():
+						stat_value = char_entries[char_id][stat_type]
+						if (stat_value >= stat_min) and (stat_value <= stat_max):
+							if DEBUG:
+								print("%s Character ID: %3d, stat [%5s] value [%3s], OK" % (char_type, char_id, stat_type, stat_value))
+						else:
+							valid = False
+							print("%s Character ID: %3d" % (char_type, char_id))
+							print("- ERROR: This character has an out of bounds stat entry for [%s], [%s]" % (stat_type, stat_value))
+							print("- ERROR: This stat should be present and in the range [%s - %s]" % (stat_min, stat_max))
+					else:
+						valid = False
+						print("%s Character ID: %3d" % (char_type, char_id))
+						print("- ERROR: This character has no stat entry for [%s]" % stat_type)
+						print("- ERROR: This stat should be present and in the range [%s - %s]" % (stat_min, stat_max))
+				print("-")
+			if valid:
+				print("GOOD: All characters have valid stat entries")
+			else:
+				return False
+		
+				
 
 def generate_story(import_dir = None):
 	""" Generates a story/game world location datafile from a map.py file """
@@ -267,7 +578,7 @@ def generate_story(import_dir = None):
 			pass
 		else:
 			print("Story Text ID: %d" % i)
-			print("- ERROR: Text is more than [%s] bytes long [%s bytes]" % (len(game_story.STORY[i]), MAX_STORY_TEXT_SIZE))
+			print("- ERROR: Text is more than [%s] bytes long [%s bytes]" % (MAX_STORY_TEXT_SIZE, len(game_story.STORY[i])))
 	if valid:
 		print("GOOD: All text appears valid")			
 	else:
@@ -300,7 +611,7 @@ def generate_story(import_dir = None):
 		offset += new_record['size']
 		
 	try:
-		f = open(import_dir + "/story.dat", "wb")
+		f = open(import_dir + OUT_DIR + "/story.dat", "wb")
 		offset = 0
 		for record in records:
 			print("- ID: %3d at offset %5d" % (record['id'], record['offset']))
@@ -315,7 +626,7 @@ def generate_story(import_dir = None):
 	print("")
 	print("Pass 2: Writing Index")
 	try:
-		f = open(import_dir + "/story.idx", "wb")
+		f = open(import_dir + OUT_DIR + "/story.idx", "wb")
 		for record in records:
 			index = []
 			index += record['size'].to_bytes(2, byteorder='big')
@@ -641,7 +952,7 @@ def generate_world(import_dir = None):
 	print("")
 	print("Pass 1: Writing data...")
 	try:
-		f = open(import_dir + "/world.dat", "wb")
+		f = open(import_dir + OUT_DIR + "/world.dat", "wb")
 		offset = 0
 		for record in records:
 			record['offset'] = offset
@@ -658,7 +969,7 @@ def generate_world(import_dir = None):
 	print("")
 	print("Pass 2: Writing Index")
 	try:
-		f = open(import_dir + "/world.idx", "wb")
+		f = open(import_dir + OUT_DIR + "/world.idx", "wb")
 		for record in records:
 			index = []
 			index += record['size'].to_bytes(2, byteorder='big')
@@ -1359,14 +1670,29 @@ if __name__ == "__main__":
 	print("===============================")
 	
 	adventure = "leafy_glade"
-	
 	sys.path.append(adventure)
-	status = generate_world(import_dir = adventure)
-	if status is False:
-		print("Not continuing. Please fix errors.")
-		sys.exit(1)
+	
+	#status = generate_world(import_dir = adventure)
+	#if status is False:
+	#	print("Not continuing. Please fix errors in world map file.")
+	#	sys.exit(1)
 		
-	status = generate_story(import_dir = adventure)
+	#status = generate_story(import_dir = adventure)
+	#if status is False:
+	#	print("Not continuing. Please fix errors in story file.")
+	#	sys.exit(1)
+		
+	status = generate_characters(import_dir = adventure)
 	if status is False:
-		print("Not continuing. Please fix errors.")
-		sys.exit(1)
+		print("Not continuing. Please fix errors in monster file.")
+		sys.exit(1)	
+		
+	#status = generate_items(import_dir = adventure)
+	#if status is False:
+	#	print("Not continuing. Please fix errors in item file.")
+	#	sys.exit(1)
+	
+	#status = generate_weapons(import_dir = adventure)
+	#if status is False:
+	#	print("Not continuing. Please fix errors in weapon file.")
+	#	sys.exit(1)
