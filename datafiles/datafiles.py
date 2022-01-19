@@ -25,7 +25,7 @@ import string
 import traceback
 from PIL import Image	# For verifying sprite bitmap dimensions and colour depth
 
-DEBUG =1
+DEBUG =0
 
 ##################################################################################
 #
@@ -275,15 +275,17 @@ ITEM_TYPES = {
 }
 
 ITEM_SLOT_TYPES = {
-	'SLOT_TYPE_NONE'			: 0,
-	'SLOT_TYPE_HEAD'			: 1,
-	'SLOT_TYPE_NECK'			: 2,
-	'SLOT_TYPE_BODY'			: 4,
-	'SLOT_TYPE_ARMS'			: 8,
-	'SLOT_TYPE_LEGS'			: 16,
-	'SLOT_TYPE_HAND'			: 32,
+	'SLOT_TYPE_NONE' : {	'val' : 0, 'slots' : [] },
+	'SLOT_TYPE_HEAD' : {	'val' : 1, 'slots' : ['head'] },
+	'SLOT_TYPE_NECK' : {	'val' : 2, 'slots' : ['neck'] },
+	'SLOT_TYPE_BODY' : {	'val' : 4, 'slots' : ['body'] },
+	'SLOT_TYPE_ARMS' : {	'val' : 8, 'slots' : ['arms'] },
+	'SLOT_TYPE_LEGS' : {	'val' : 16, 'slots' : ['legs'] },
+	'SLOT_TYPE_HAND' : {	'val' : 32, 'slots' : ['hand_l', 'hand_r'] },
 }
 
+SLOT_NAMES = ["head", "neck", "body", "arms", "legs", "hand_r", "hand_l"]
+WEAPON_SLOTS = ["weapon_r", "weapon_l"]
 
 ##################################################################################
 #
@@ -392,10 +394,10 @@ def generate_characters(import_dir = None):
 			if l <= MAX_CHARACTERS:
 				if DEBUG:
 					print("%s Characters: Total %3d, OK" % (char_type, l))
-				else:
-					valid = False
-					print("%s Characters: Total %d !!!" % (char_type, l))
-					print("- ERROR: More characters defined [%d] than allowable in game logic [%d]" % (l, MAX_CHARACTERS))
+			else:
+				valid = False
+				print("%s Characters: Total %d !!!" % (char_type, l))
+				print("- ERROR: More characters defined [%d] than allowable in game logic [%d]" % (l, MAX_CHARACTERS))
 			
 			if valid:
 				print("GOOD: All characters listed within limit")
@@ -470,21 +472,95 @@ def generate_characters(import_dir = None):
 					print("%s Character ID: %3d" % (char_type, char_id))
 					print("- ERROR: This character has a sprite filename which was not found [%s]" % sprite_file)
 					print("- ERROR: Sprite files for this adventure should be found in: [%s]" % (import_dir + BMP_SOURCES))
-		
-				print("-")
+				
+				if DEBUG:
+					print("-")
 		
 			if valid:
 				print("GOOD: All characters have valid sprite classes and bitmaps are present")
 			else:
 				return False
 			
+			#
+			# Check any equipped items have valid item numbers
+			# and are appropriate for the class of this character
+			#
+			
 			valid = True
 			print("")
 			print("Check 1d: Checking %s item numbers and slot acceptance..." % char_type)
 			
+			for char_id in char_ids:
+				for slot_type in SLOT_NAMES:
+					slot_item_id = char_entries[char_id][slot_type]
+					if slot_item_id > 0:
+						if slot_item_id in item_ids:
+							
+							# Load the item record
+							item = game_items.ITEMS[slot_item_id]
+
+							# Look up where that class of item can be slotted
+							item_slot = item['slot']
+							if item_slot in ITEM_SLOT_TYPES.keys():
+								if slot_type in ITEM_SLOT_TYPES[item_slot]['slots']:
+									if DEBUG:
+										print("%s Character ID: %3d, item slot: [%6s], item id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
+								else:
+									print("%s Character ID: %3d, item slot: [%6s], invalid item id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
+									print("- ERROR: This character has an assigned item that has to go in one of these slots: %s" % ITEM_SLOT_TYPES[item_slot]['slots'])
+							else:
+								valid = False
+								print("%s Character ID: %3d, item slot: [%6s], invalid item id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
+								print("- ERROR: This character has an assigned item [id:%3d, %s] that cannot go in a character slot!" % (slot_item_id, item['name']))
+						else:
+							valid = False
+							print("%s Character ID: %3d, item slot: [%6s], invalid item id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
+							print("- ERROR: This character has an item slot with an invalid item ID, not found in items.py!")
+					else:
+						if DEBUG:
+							print("%s Character ID: %3d, item slot: [%6s], empty" % (char_type, char_id, slot_type))
+				if DEBUG:
+					print("-")	 
+			
+			if valid:
+				print("GOOD: All characters have valid item ids")
+			else:
+				return False
+			
+			#
+			# Check any equipped weapons have valid weapon numbers
+			# and are appropriate for the class of this character
+			#
+			
 			valid = True
 			print("")
 			print("Check 1e: Checking %s weapon numbers and class suitability..." % char_type)
+			
+			for char_id in char_ids:
+				for slot_type in WEAPON_SLOTS:
+					slot_item_id = char_entries[char_id][slot_type]
+					if slot_item_id > 0:
+						if slot_item_id in weapon_ids:
+							if DEBUG:
+								print("%s Character ID: %3d, weapon slot: [%6s], weapon id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
+						else:
+							valid = False
+							print("%s Character ID: %3d, weapon slot: [%6s], invalid weapon id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
+							print("- ERROR: This character has a weapon slot with an invalid weapon ID, not found in weapons.py!")
+					else:
+						if DEBUG:
+							print("%s Character ID: %3d, weapon slot: [%6s], empty" % (char_type, char_id, slot_type))
+				if DEBUG:
+					print("-")
+			
+			if valid:
+				print("GOOD: All characters have valid weapon ids")
+			else:
+				return False
+			
+			#
+			# Check that the character attributes are within bounds
+			#
 				
 			valid = True
 			print("")
@@ -509,7 +585,8 @@ def generate_characters(import_dir = None):
 						print("%s Character ID: %3d" % (char_type, char_id))
 						print("- ERROR: This character has no stat entry for [%s]" % stat_type)
 						print("- ERROR: This stat should be present and in the range [%s - %s]" % (stat_min, stat_max))
-				print("-")
+				if DEBUG:
+					print("-")
 			if valid:
 				print("GOOD: All characters have valid stat entries")
 			else:
