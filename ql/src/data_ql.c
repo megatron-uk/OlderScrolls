@@ -350,8 +350,9 @@ unsigned char data_LoadWeapon(WeaponState_t *weaponstate, unsigned char id){
 	return DATA_LOAD_OK;
 }
 
-unsigned char data_CreateCharacter(PlayerState_t *playerstate){
+unsigned char data_CreateCharacter(PlayerState_t *playerstate, ssprite_t *playersprite){
 	// Create a new player, party or enemy character
+	// and load their sprite/portrait data
 	
 	unsigned char i;
 	unsigned char w = 0;

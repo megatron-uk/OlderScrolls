@@ -93,7 +93,7 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	gamestate->level_visits[1] = 1;
 	
 	// Initialise a new player character
-	//data_CreateCharacter(gamestate->p1);
+	data_CreateCharacter(gamestate->p1, screen.p1);
 }
 
 void game_Exit(){
@@ -146,11 +146,12 @@ void game_Splash(GameState_t *gamestate, LevelState_t *levelstate){
 		return;
 	}
 	
+	/*
 	draw_Box(0, UI_SIDEBAR_PORTRAIT_Y1, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	//draw_Box(1, UI_SIDEBAR_PORTRAIT_Y2, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	draw_Box(1, UI_SIDEBAR_PORTRAIT_Y2, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
 	draw_Box(2, UI_SIDEBAR_PORTRAIT_Y3, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
 	draw_Box(7, UI_SIDEBAR_PORTRAIT_Y4, 34, 33, 1, PIXEL_RED, PIXEL_BLACK, MODE_PIXEL_OR);
-	
+	*/
 	draw_BitmapAsyncFull(1, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
 	draw_BitmapAsyncFull(2, UI_SIDEBAR_PORTRAIT_Y2, screen.bmp, f, screen.bmpstate);
 	draw_BitmapAsyncFull(3, UI_SIDEBAR_PORTRAIT_Y3, screen.bmp, f, screen.bmpstate);
@@ -163,15 +164,15 @@ void game_Splash(GameState_t *gamestate, LevelState_t *levelstate){
 		// Couldn't open image
 		return;
 	}
-	
-	//draw_Box(70, UI_SIDEBAR_PORTRAIT_Y1, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	/*
+	draw_Box(70, UI_SIDEBAR_PORTRAIT_Y1, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
 	draw_Box(71, UI_SIDEBAR_PORTRAIT_Y2, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	//draw_Box(72, UI_SIDEBAR_PORTRAIT_Y3, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	//draw_Box(73, UI_SIDEBAR_PORTRAIT_Y4, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	
+	draw_Box(72, UI_SIDEBAR_PORTRAIT_Y3, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	draw_Box(73, UI_SIDEBAR_PORTRAIT_Y4, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	*/
 	draw_BitmapAsyncFull(71, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
-	draw_BitmapAsyncFull(72, UI_SIDEBAR_PORTRAIT_Y2, screen.bmp, f, screen.bmpstate);
-	draw_BitmapAsyncFull(73, UI_SIDEBAR_PORTRAIT_Y3, screen.bmp, f, screen.bmpstate);
+	draw_BitmapAsyncFull(103, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
+	draw_BitmapAsyncFull(135, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
 	draw_BitmapAsyncFull(74, UI_SIDEBAR_PORTRAIT_Y4, screen.bmp, f, screen.bmpstate);
 	
 	draw_Flip();

@@ -590,11 +590,11 @@ void draw_GetStringXY(unsigned short col, unsigned short y, unsigned short *addr
 	// rather difficult to place text characters at non divisible-by-8
 	// locations
 	
-	// draw_GetStringXY() works on text columns and rows, rather than 
+	// draw_GetStringXY() works on text columns (8px font) and screen rows, rather than 
 	// individual pixel addresses. 
 	// e.g. x=10, y=2
 	// 80 pixels from the left
-	// 16 pixels down
+	// 2 pixels down
 	
 	*addr = col + ((y - 1)  * SCREEN_WORDS_PER_ROW);
 	
@@ -810,10 +810,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 	unsigned char pix_pos = 0;
 	unsigned char start_bits = 0;
 	unsigned char end_bits = 0;
-	unsigned char remain_bits = 0;
-	
-	
-	
+	unsigned char remain_bits = 0;	
 	
 	// Only supporting 1bpp and 4bpp (first four colours) mode BMP on the QL
 	if ((bmpdata->bpp != BMP_1BPP) && (bmpdata->bpp != BMP_4BPP)){
@@ -858,7 +855,6 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 				if (status < 1){
 					bmpstate->width_bytes = 0;
 					bmpstate->rows_remaining = 0;
-					//printf("Async error reading pixel data at row %d\n", bmpstate->rows_remaining);
 					return BMP_ERR_READ;
 				}
 				nibble1 = bmp_pixel >> 4; 		// Get pixel 1 from the byte
@@ -946,7 +942,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 	draw_GetXY(x + bmpdata->width, y + bmpstate->rows_remaining, &end_addr, &end_bits);
 	remain_bits = 8 - start_bits;
 	
-	// Reposition write position
+	// Reposition screen write position for current x/y position
 	p = (unsigned short*) screen.buf;
 	p += start_addr;
 	last_word = (bmpdata->width / 8);
@@ -954,12 +950,9 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 	// Write any starting pixels if not on a 8 pixel boundary
 	if (start_bits != 0){
 		
-		//pixel_left = (unsigned char)((bmpstate->pixels[0] & 0xff00) >> 8) << remain_bits;
-		//pixel_right = (unsigned char)(bmpstate->pixels[0] & 0x00ff) << remain_bits;
-		//mask = (pixel_left << 8) + pixel_right;
-		
-		mask = ((bmpstate->pixels[0] & 0xff00) >> remain_bits) << 8; 	// Get upper byte, shift right by start bits and store back as upper byte again
-		mask += (bmpstate->pixels[0] & 0x00ff) >> remain_bits;			// Get lower byte, shift right by start bits and add back again
+		pixel_left = (unsigned char)((bmpstate->pixels[0] & 0xff00) >> 8) >> start_bits;
+		pixel_right = (unsigned char)(bmpstate->pixels[0] & 0x00ff) >> start_bits;
+		mask = (pixel_left << 8) + pixel_right;
 		
 		// OR with any existing leading bits; safest
 		*p = *p | mask;
@@ -975,7 +968,6 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 	}
 	// Construct the mask for the last word if it doesn't end on a 8 pixel boundary
 	if (end_bits != 0){
-		//printf("end bits %d\n", end_bits);
 		i_end = 1;
 	}
 	
