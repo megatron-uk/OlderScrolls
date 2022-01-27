@@ -37,7 +37,6 @@ unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsig
 	unsigned char total_false = 0;
 	unsigned char total_true = 0;
 	unsigned char i;
-	unsigned char ii;
 	unsigned char cond[COND_LENGTH];
 	
 	// Test each group of COND_LENGTH bytes in turn, incrementing
@@ -80,7 +79,6 @@ unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsig
 				break;
 			default:
 				return 0;
-				break;
 		}
 		
 		// Increment result counters
@@ -101,7 +99,6 @@ unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsig
 			} else {
 				return 0;
 			}
-			break;
 		case COND_EVAL_OR:
 			// At least one condition must be true
 			if (total_true > 0){
@@ -246,6 +243,7 @@ unsigned char check_PartyAttribute(GameState_t *gamestate, LevelState_t *levelst
 }
 
 unsigned char check_PartyState(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
+	return 0;
 }
 
 unsigned char check_Map(GameState_t *gamestate, LevelState_t *levelstate, char *cond){

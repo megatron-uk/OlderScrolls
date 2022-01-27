@@ -73,7 +73,7 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	gamestate->level_previous = 1;
 	gamestate->gold = 0;
 	gamestate->counter = 0;
-	gamestate->p1 = (PlayerState_t *) malloc(sizeof(PlayerState_t)); 
+	gamestate->p1 = (PlayerState_t *) calloc(sizeof(PlayerState_t), 1); 
 	gamestate->p2 = NULL;
 	gamestate->p3 = NULL;
 	gamestate->p4 = NULL;
@@ -131,9 +131,52 @@ void game_Splash(GameState_t *gamestate, LevelState_t *levelstate){
 	// Start, Exit, <TO DO>, <TO DO>
 	// ... then starts the game engine proper
 	
+	FILE *f;
+	//draw_Clear();
 	ui_Draw(gamestate, levelstate);
-	ui_DrawSplashText(gamestate, levelstate);
+	//ui_DrawSplashText(gamestate, levelstate);
+	
+	//draw_HLine(8, 50, 384, PIXEL_WHITE, 0, MODE_PIXEL_SET);
+	//draw_VLine(8, 16, 184, PIXEL_WHITE, MODE_PIXEL_SET);
+	
+	// Load and process the 8x8 font
+	f = fopen("orc_bmp", "rb");
+	if (f == NULL){
+		// Couldn't open image
+		return;
+	}
+	
+	draw_Box(0, UI_SIDEBAR_PORTRAIT_Y1, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	//draw_Box(1, UI_SIDEBAR_PORTRAIT_Y2, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	draw_Box(2, UI_SIDEBAR_PORTRAIT_Y3, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	draw_Box(7, UI_SIDEBAR_PORTRAIT_Y4, 34, 33, 1, PIXEL_RED, PIXEL_BLACK, MODE_PIXEL_OR);
+	
+	draw_BitmapAsyncFull(1, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
+	draw_BitmapAsyncFull(2, UI_SIDEBAR_PORTRAIT_Y2, screen.bmp, f, screen.bmpstate);
+	draw_BitmapAsyncFull(3, UI_SIDEBAR_PORTRAIT_Y3, screen.bmp, f, screen.bmpstate);
+	draw_BitmapAsyncFull(8, UI_SIDEBAR_PORTRAIT_Y4, screen.bmp, f, screen.bmpstate);
+	
+	fclose(f);
+	
+	f = fopen("ball_bmp", "rb");
+	if (f == NULL){
+		// Couldn't open image
+		return;
+	}
+	
+	//draw_Box(70, UI_SIDEBAR_PORTRAIT_Y1, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	draw_Box(71, UI_SIDEBAR_PORTRAIT_Y2, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	//draw_Box(72, UI_SIDEBAR_PORTRAIT_Y3, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	//draw_Box(73, UI_SIDEBAR_PORTRAIT_Y4, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
+	
+	draw_BitmapAsyncFull(71, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
+	draw_BitmapAsyncFull(72, UI_SIDEBAR_PORTRAIT_Y2, screen.bmp, f, screen.bmpstate);
+	draw_BitmapAsyncFull(73, UI_SIDEBAR_PORTRAIT_Y3, screen.bmp, f, screen.bmpstate);
+	draw_BitmapAsyncFull(74, UI_SIDEBAR_PORTRAIT_Y4, screen.bmp, f, screen.bmpstate);
+	
 	draw_Flip();
+	
+	fclose(f);
 	
 	// Wait for user input
 	input_Wait(INPUT_CONFIRM);
@@ -144,7 +187,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	// with options for navigation, talking etc.
 	
 	unsigned char c = 0;
-	unsigned char exit = 0;
+	unsigned char e = 0;
 	unsigned short remain = 0;
 	
 	// Clear input
@@ -181,7 +224,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	// Display any status effect text
 	
 	// If monsters are spawned - go to combat, but print before_spawn or before_respawn text
-	c = game_CheckMonsterSpawn(gamestate, levelstate, 0, 1, (char *) input_allowed);
+	c = game_CheckMonsterSpawn(gamestate, levelstate, 0, 1);
 	if(c){
 		
 		// Add fight and withdraw options
@@ -209,6 +252,8 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	// else if not spawned
 	} else {
 		
+		data_AddNPC(gamestate, levelstate, 1);
+		
 		// Are any NPC's active?
 		// Add 'talk' options
 		//if (game_CheckTalk(gamestate, levelstate, 0, (char *) input_allowed)){
@@ -231,7 +276,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 		//}
 		
 		// Are any exits active? - draw the text and make movement active
-		if (game_CheckMovement(gamestate, levelstate, 0, 1, (char *) input_allowed)){
+		if (game_CheckMovement(gamestate, levelstate, 0, 1)){
 			input_Set(INPUT_MOVE);
 			input_Set(INPUT_MOVE_);
 		}
@@ -247,11 +292,11 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	}
 	
 	// Draw the available options in the status bar	
-	ui_DrawStatusBar(gamestate, levelstate, 1, 1, (char *) input_allowed);
+	ui_DrawStatusBar(gamestate, levelstate, 1, 1);
 	draw_Flip();
 	
 	// Wait for user input
-	while(!exit){
+	while(!e){
 		c = input_Get();
 		switch(c){
 			case INPUT_DEBUG:
@@ -262,11 +307,11 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 				input_Set(INPUT_CANCEL);
 				ui_DebugScreen(gamestate, levelstate);
 				draw_Flip();
-				while(!exit){
+				while(!e){
 					c = input_Get();
 					switch(c){
 						case INPUT_CANCEL:
-							exit = 1;
+							e = 1;
 							break;
 						default:
 							break;
@@ -277,36 +322,36 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 				// ======================================
 				// Allow player to move to another location
 				// ======================================
-				game_CheckMovement(gamestate, levelstate, 1, 0, (char *) input_allowed);
-				while(!exit){
+				game_CheckMovement(gamestate, levelstate, 1, 0);
+				while(!e){
 					c = input_Get();
 					switch(c){
 						case INPUT_N:
 						case INPUT_N_:
 							gamestate->level_previous = gamestate->level;
 							gamestate->level = levelstate->north;
-							exit = 1;
+							e = 1;
 							break;
 						case INPUT_S:
 						case INPUT_S_:
 							gamestate->level_previous = gamestate->level;
 							gamestate->level = levelstate->south;
-							exit = 1;
+							e = 1;
 							break;
 						case INPUT_E:
 						case INPUT_E_:
 							gamestate->level_previous = gamestate->level;
 							gamestate->level = levelstate->east;
-							exit = 1;
+							e = 1;
 							break;
 						case INPUT_W:
 						case INPUT_W_:
 							gamestate->level_previous = gamestate->level;
 							gamestate->level = levelstate->west;
-							exit = 1;
+							e = 1;
 							break;
 						case INPUT_CANCEL:
-							exit = 1;
+							e = 1;
 							break;
 						default:
 							break;
@@ -330,7 +375,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 				// Set talk game mode
 				// ======================================
 				//game_Talk();
-				// exit = 1;
+				// e = 1;
 				break;	
 			//case INPUT_BARTER:
 			//case INPUT_BARTER_:
@@ -338,7 +383,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 				// Set shop game mode
 				// ======================================
 				//game_Shop();
-				// exit = 1;
+				// e = 1;
 				//break;
 			//case INPUT_REST:
 			//case INPUT_REST_:
@@ -346,7 +391,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 				// Set rest game mode
 				// ======================================
 				//game_Rest();
-				// exit = 1;
+				// e = 1;
 				//break;	
 			case INPUT_QUIT:
 			case INPUT_QUIT_:
@@ -354,7 +399,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 				// Set exit game mode
 				// ======================================
 				game_Quit(gamestate, levelstate);
-				exit = 1;
+				e = 1;
 				break;
 			default:
 				break;
@@ -376,7 +421,7 @@ void game_Quit(GameState_t *gamestate, LevelState_t *levelstate){
 	// wait for user input
 	
 	unsigned char c;
-	unsigned char exit = 0;
+	unsigned char e = 0;
 	
 	// Set all the inputs we allow
 	input_Clear();
@@ -391,18 +436,18 @@ void game_Quit(GameState_t *gamestate, LevelState_t *levelstate){
 	draw_Flip();
 	
 	// Wait for user input
-	while(!exit){
+	while(!e){
 		c = input_Get();
 		switch(c){
 			case INPUT_Y:
 			case INPUT_Y_:
 				gamestate->gamemode = GAME_MODE_EXIT;
-				exit = 1;
+				e = 1;
 				break;
 			case INPUT_N:
 			case INPUT_N_:
 			case INPUT_CANCEL:
-				exit = 1;
+				e = 1;
 				break;
 			default:
 				break;
@@ -411,7 +456,7 @@ void game_Quit(GameState_t *gamestate, LevelState_t *levelstate){
 	return;
 }
 
-unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text, char* allowed_inputs){
+unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text){
 	// Returns a flag indicating if combat is going to happen
 	// Checks both primary and secondary spawning rules
 	
@@ -436,7 +481,7 @@ unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *level
 	
 }
 
-unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text, char* allowed_inputs){
+unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text){
 	// Returns a flag indicating if movement is possible.
 	// Adds compass points to input options if set
 	// Prints direction text to main ui if set
@@ -547,7 +592,7 @@ unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstat
 	if (add_inputs){
 		input_Set(INPUT_CANCEL);
 		if (can_move){
-			ui_DrawNavigation(gamestate, levelstate, (char *) input_allowed);
+			ui_DrawNavigation(gamestate, levelstate);
 			draw_Flip();	
 		}
 	}

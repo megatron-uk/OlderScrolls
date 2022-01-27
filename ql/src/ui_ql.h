@@ -39,6 +39,11 @@
 #define UI_SIDEBAR_START_X			400
 #define UI_SIDEBAR_START_Y			12
 #define UI_SIDEBAR_HEIGHT			195
+#define UI_SIDEBAR_PORTRAIT_X		(SCREEN_WIDTH) - 32 
+#define UI_SIDEBAR_PORTRAIT_Y1		UI_SIDEBAR_START_Y + 2
+#define UI_SIDEBAR_PORTRAIT_Y2		UI_SIDEBAR_START_Y + 2 + 32 + 16
+#define UI_SIDEBAR_PORTRAIT_Y3		UI_SIDEBAR_START_Y + 2 + 64 + 32
+#define UI_SIDEBAR_PORTRAIT_Y4		UI_SIDEBAR_START_Y + 2 + 96 + 48
 
 // Text areas
 #define UI_MAIN_WINDOW_TEXT_X		1
@@ -70,10 +75,10 @@ void ui_DrawCombat(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawImage(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawText(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawStatusBar(GameState_t *gamestate, LevelState_t *levelstate, unsigned char buttons, unsigned char labels, char *allowed_inputs);
+void ui_DrawStatusBar(GameState_t *gamestate, LevelState_t *levelstate, unsigned char buttons, unsigned char labels);
 void ui_DrawSplashText(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawLocationName(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawNavigation(GameState_t *gamestate, LevelState_t *levelstate, char *input_allowed);
+void ui_DrawNavigation(GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawYesNo(unsigned char *title);
 void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate);
 

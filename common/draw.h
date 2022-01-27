@@ -35,7 +35,24 @@
 #define TEXT_TAG_BLUE			0x62	// b
 #define TEXT_TAG_COLOUR_CLEAR	0x43	// C
 
-unsigned char screen_Init();
+#define SPRITE_CLASS_NONE			0	// A player/enemy without an on-screen sprite
+#define SPRITE_CLASS_NORMAL			1	// Players, normal enemies
+#define SPRITE_CLASS_LARGE			2	// Boss enemies
+#define SPRITE_CLASS_PORTRAIT		3	// In game dialogue/status bar headshots
+
+// SPRITE_CLASS_PORTRAIT
+#define DRAW_PORTRAIT_WIDTH		32		// Player/NPC/Enemy portraits
+#define DRAW_PORTRAIT_HEIGHT	32
+// SPRITE_CLASS_NORMAL
+#define DRAW_PC_WIDTH			32		// Normal player character sprites are these dimensions
+#define DRAW_PC_HEIGHT			32
+#define DRAW_MONSTER_WIDTH		32		// Normal enemy sprites are these dimensions
+#define DRAW_MONSTER_HEIGHT		32
+// SPRITE_CLASS_LARGE
+#define DRAW_BOSS_WIDTH			96		// 'Boss' enemy sprites are these dimensions
+#define DRAW_BOSS_HEIGHT		96
+
+char screen_Init();
 void screen_Exit();
 
 // ============================================

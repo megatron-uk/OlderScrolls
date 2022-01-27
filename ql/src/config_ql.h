@@ -28,3 +28,4 @@
 #define MAP_IDX		"world_idx"
 #define STORY_DAT	"story_dat"
 #define STORY_IDX	"story_idx"
+#define TEST_IMAGE	"image_bmp"

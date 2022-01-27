@@ -15,11 +15,6 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _GAME_H
-#include "../common/game.h"
-#define _GAME_H
-#endif
-
 #define DATA_TYPE_STORY		0x01
 #define DATA_TYPE_MAP		0x02
 #define DATA_TYPE_WEAPON	0x03

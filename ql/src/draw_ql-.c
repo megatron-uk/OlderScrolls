@@ -296,8 +296,8 @@ unsigned short draw_IsStippled(unsigned short fill){
 
 void draw_GetXY(unsigned short x, unsigned short y, unsigned short *addr, unsigned char *bits){
 	// Return offset into screen memory for a given x,y coordinate
-	// Write the offset into &addr, with the number of pixels to skip
-	// at that address into &bits (i.e. if not on an 8 pixel boundary).
+	// Write the offset into &addr, with the number of bits to skip
+	// at that address into &bits.
 	
 	unsigned char r;
 		
@@ -426,11 +426,11 @@ void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsig
 		// This vertical line is not on a byte boundary, so we
 		// need to mask off the first 'start_bits' worth of
 		// pixels, leave one, then mask off the remaining
-		//if (start_bits > 1){
+		if (start_bits > 1){
 			mask = (0x01 << (7 - start_bits));
-		//} else {
-			//mask = (0x01 << 7);
-		//}
+		} else {
+			mask = (0x01 << 6);
+		}
 		if (drawing_mask_lo){
 			drawing_mask_lo = drawing_mask_lo & mask;
 			drawing_mask = drawing_mask_lo << 8;
@@ -471,9 +471,9 @@ void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsig
 				if (next_mask == 0){
 					// Draw the first colour and mask the second byte
 					if (mode == MODE_PIXEL_OR){
-						*p = *p | (drawing_mask_lo << 8);
+						*p = *p | ((drawing_mask_lo << 8) + 0x00);
 					} else {
-						*p = (drawing_mask_lo << 8);
+						*p = ((drawing_mask_lo << 8) + 0x00);
 					}
 					next_mask = 1;
 				} else {
@@ -547,7 +547,7 @@ void draw_Box(unsigned short x, unsigned short y,
 		}
 	}
 	
-	// Detect if we need to offset rows for cross-hatching effect
+		// Detect if we need to offset rows for cross-hatching effect
 	if (borderpx > 1){
 		if (draw_IsStippled(borderfill)){
 			enable_pad = 1;
@@ -796,34 +796,27 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 	unsigned int i, ii;			// Loop counter
 	unsigned short start_addr;	// The first pixel
 	unsigned short end_addr;	// The last pixel
-	unsigned short *p;
-	unsigned short mask = 0;
-	unsigned short c, row_pos = 0;
-	unsigned short i_start = 0;
-	unsigned short i_end = 0;
-	unsigned short last_word = 0;
-	unsigned char bmp_pixel = 0;
-	unsigned char pixel_left = 0;	// left byte of a 16bit QL pixel
-	unsigned char pixel_right = 0;	// right byte of a 16bit QL pixel
-	unsigned char nibble1 = 0;		// Half a byte - a single pixel in 4bpp mode
-	unsigned char nibble2 = 0;		// Half a byte - a single pixel in 4bpp mode
-	unsigned char pix_pos = 0;
+	unsigned char bmp_pixel;
+	unsigned char pixel_left;	// left byte of a 16bit QL pixel
+	unsigned char pixel_right;	// right byte of a 16bit QL pixel
+	unsigned char nibble1;		// Half a byte - a single pixel in 4bpp mode
+	unsigned char nibble2;		// Half a byte - a single pixel in 4bpp mode
+	unsigned char pix_pos;
 	unsigned char start_bits = 0;
 	unsigned char end_bits = 0;
-	unsigned char remain_bits = 0;
-	
-	
-	
+	unsigned short start_mask = 0x0000;
+	unsigned short *p;
+	unsigned short c, row_pos = 0;
 	
 	// Only supporting 1bpp and 4bpp (first four colours) mode BMP on the QL
 	if ((bmpdata->bpp != BMP_1BPP) && (bmpdata->bpp != BMP_4BPP)){
-		//printf("Async bpp error\n");
+		printf("Async bpp error\n");
 		return BMP_ERR_BPP;
 	}
 
 	// BMP header has not been read yet
 	if (bmpdata->offset <= 0){
-		//printf("Async header not read error\n");
+		printf("Async header not read error\n");
 		return BMP_ERR_READ;
 	}
 	
@@ -836,7 +829,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 		if (status != 0){
 			bmpstate->width_bytes = 0;
 			bmpstate->rows_remaining = 0;
-			//printf("Async error seeking data\n");
+			printf("Async error seeking data\n");
 			return BMP_ERR_READ;
 		}
 	}	
@@ -850,7 +843,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 		while(i < bmpdata->row_unpadded){
 			pixel_left = 0;
 			pixel_right = 0;
-			pix_pos = 7;		// Working on bit position 0 (and 1) of the on-screen pixel
+			pix_pos = 8;		// Working on bit position 0 (and 1) of the on-screen pixel
 			// Read 4 bytes from image == 8x 4bpp pixels == 1x 16bit QL screen location
 			for (ii = 0; ii < 4; ii++){
 				
@@ -858,7 +851,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 				if (status < 1){
 					bmpstate->width_bytes = 0;
 					bmpstate->rows_remaining = 0;
-					//printf("Async error reading pixel data at row %d\n", bmpstate->rows_remaining);
+					printf("Async error reading pixel data at row %d\n", bmpstate->rows_remaining);
 					return BMP_ERR_READ;
 				}
 				nibble1 = bmp_pixel >> 4; 		// Get pixel 1 from the byte
@@ -884,16 +877,12 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 						setbit(pixel_left, pix_pos);
 						setbit(pixel_right, pix_pos);
 						break;
-					default:
-						clearbit(pixel_left, pix_pos);
-						clearbit(pixel_right, pix_pos);
-						break;
 				}
 				switch(nibble2){
 					case 0:
 						// Colour 1 aka Black
 						clearbit(pixel_left, pix_pos - 1);
-						clearbit(pixel_right, pix_pos - 1);
+						clearbit(pixel_right, pix_pos + 1);
 						break;
 					case 1:
 						// Colour 2 aka Green
@@ -910,15 +899,11 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 						setbit(pixel_left, pix_pos - 1);
 						setbit(pixel_right, pix_pos - 1);
 						break;
-					default:
-						clearbit(pixel_left, pix_pos - 1);
-						clearbit(pixel_right, pix_pos - 1);
-						break;
 				}
 				// Next time around, we work on the next two bit positions of the on-screen pixel
 				pix_pos = pix_pos - 2;
 			}
-			// Store this decoded word / block of 8 pixels
+			//printf("%x %x\n", pixel_left, pixel_right);
 			bmpstate->pixels[row_pos] = (pixel_left << 8) + pixel_right;
 			row_pos++;
 			i = i + 4;
@@ -931,7 +916,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 		if (status != 0){
 			bmpstate->width_bytes = 0;
 			bmpstate->rows_remaining = 0;
-			//printf("Async error seeking paddding bytes\n");
+			printf("Async error seeking paddding bytes\n");
 			return BMP_ERR_READ;
 		}
 	} else {
@@ -941,85 +926,31 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 		}
 	}
 	
+	// This only currently draws on 8 pixel boundaries - needs the draw_HLine()
+	// startbits/endbits code adapting
+	
 	// Get coordinates
 	draw_GetXY(x, y + bmpstate->rows_remaining, &start_addr, &start_bits);
 	draw_GetXY(x + bmpdata->width, y + bmpstate->rows_remaining, &end_addr, &end_bits);
-	remain_bits = 8 - start_bits;
 	
 	// Reposition write position
 	p = (unsigned short*) screen.buf;
 	p += start_addr;
-	last_word = (bmpdata->width / 8);
 	
 	// Write any starting pixels if not on a 8 pixel boundary
-	if (start_bits != 0){
-		
-		//pixel_left = (unsigned char)((bmpstate->pixels[0] & 0xff00) >> 8) << remain_bits;
-		//pixel_right = (unsigned char)(bmpstate->pixels[0] & 0x00ff) << remain_bits;
-		//mask = (pixel_left << 8) + pixel_right;
-		
-		mask = ((bmpstate->pixels[0] & 0xff00) >> remain_bits) << 8; 	// Get upper byte, shift right by start bits and store back as upper byte again
-		mask += (bmpstate->pixels[0] & 0x00ff) >> remain_bits;			// Get lower byte, shift right by start bits and add back again
-		
-		// OR with any existing leading bits; safest
-		*p = *p | mask;
-		
-		// Move on pointer to next screen word
+	/*if (start_bits != 0){
+		start_mask = (bmpstate->pixels[0] >> start_bits) << 8;
+		start_mask += (bmpstate->pixels[0] >> start_bits);
+		*p = start_mask;
 		p++;
-		
-		// Save a copy of the current 8 pixels (including those we masked off)
-		mask = bmpstate->pixels[0];
-		
-		// Start 1 word into the pixel array
-		i_start = 1;
+		c = start_addr + 1;
+	} else {
+		c = start_addr;
 	}
-	// Construct the mask for the last word if it doesn't end on a 8 pixel boundary
-	if (end_bits != 0){
-		//printf("end bits %d\n", end_bits);
-		i_end = 1;
-	}
-	
-	// Starting from +1 (if we are not on an 8 pixel boundary)
-	// Construct each 8 pixel block in turn, using the masked-off
-	// bits of the previous 8 pixels, if necessary.
-	// Copy to screen/buffer
-	// Increment screen/buffer word pointer
-	for(i = i_start; i < (last_word); i++){
-		
-		if (i_start){
-			// This is tricky if we are not on an 8 pixel boundary....
-			
-			// Use the last pixels we masked off from the previous word
-			pixel_left = (unsigned char)((mask & 0xff00) >> 8) << remain_bits;
-			pixel_right = (unsigned char)(mask & 0x00ff) << remain_bits;
-			
-			// Add on the first pixels from the current word
-			pixel_left += (unsigned char)((bmpstate->pixels[i] & 0xff00) >> 8) >> start_bits;
-			pixel_right += (unsigned char)(bmpstate->pixels[i] & 0x00ff) >> start_bits;
-			
-			*p = (unsigned short)(pixel_left << 8) + pixel_right;
-			
-			// Store the current word for the next pass
-			mask = bmpstate->pixels[i];
-			
-		} else {
-			// On a 8 pixel boundary, just copy the next block of 8 pixels
-			*p = bmpstate->pixels[i];
-		}
-		p++;
-		
-		
-	}
-	
-	// If we have any end bits, set the last 8 pixels
-	if (i_end){
-		
-		// Use the last pixels we masked off from the previous word
-		pixel_left = (unsigned char)((mask & 0xff00) >> 8) << remain_bits;
-		pixel_right = (unsigned char)(mask & 0x00ff) << remain_bits;
-
-		// OR with any existing trailing bits; safest
-		*p = *p | (unsigned short)(pixel_left << 8) + pixel_right;
+	*/
+	for(i = 0; i < (bmpstate->width_bytes / 8); i++){
+		*p = bmpstate->pixels[i];
+		p++; // Move to next 16bit memory location aka next 8 pixels
 	}
 	
 	bmpstate->rows_remaining--;
@@ -1053,6 +984,7 @@ char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata
 		while (bmpstate->rows_remaining > 0){
 			status = draw_BitmapAsync(x, y, bmpdata, bmpfile, bmpstate);
 			if (status != 0){
+				//printf("draw_BitmapAsyncFull() Error loading bitmap asynchronously\n");
 				return status;  
 			}
 		}

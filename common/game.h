@@ -24,15 +24,18 @@
 #define GAME_MODE_SHOP		3		// In shop
 #define GAME_MODE_EXIT		99		// Exit from game
 
-#define MAX_PLAYER_NAME 	32
+#define MAX_PLAYER_NAME 	18
 #define MAX_SHORT_NAME 		6
 #define MAX_REWARD_ITEMS 	6		// Number of items that may be rewarded upon visiting a location, or upon defeat of primary monster(s)
 #define MAX_ITEMS 			32		// The size of player inventory
 #define MAX_LEVEL_NAME_SIZE 32		// How long a level name can be
 #define MAX_STORY_TEXT_SIZE 1024 	// The buffer which holds the text to be shown on screen about a location
 #define MAX_LOCATIONS 		256		// The maximum number of levels we can track - stories should not have more than this!
+#define MAX_CHARACTERS		256		// Number of monsters, npcs or player characters (8 bit ID)
 #define MAX_REQUIREMENTS 	8		// Actions can have prerequisites (or even multiple prerequisities) before they happen
-#define MAX_MONSTER_TYPES 	6		// The number of different types of monsters in each location
+#define MAX_MONSTER_TYPES 	4		// The number of different types of monsters in each location
+#define MAX_EFFECTS			5		// maximum number of effects a spell or item can have
+#define MAX_DAMAGE_TYPES	3
 #define REQUIREMENT_BYTES 	5		// 5 bytes per requirement
 
 #define FORMATION_FRONT		0x00
@@ -48,11 +51,11 @@ typedef struct {
 	unsigned char weapon_class;		// Simple, martial, ranged, magical etc
 	unsigned char weapon_size;		// small, medium, large, huge, etc
 	unsigned char rarity;			// Common, uncommon, rare, legendary
-	unsigned char name[18];			// Name of weapon, e.g. "Longsword"
+	unsigned char name[MAX_PLAYER_NAME];			// Name of weapon, e.g. "Longsword"
 	unsigned char crit_min;			// Minimum roll for critical, e.g 19
 	unsigned char crit_max;			// Maximum roll for critical, e.g. 20
 	unsigned char crit_multi;		// Number of rolls if critical, e.g. 2x
-	unsigned char damage_types[3];	// Up to 3 damage types per weapon
+	unsigned char damage_types[MAX_DAMAGE_TYPES];	// Up to 3 damage types per weapon
 	unsigned char dmg1_type;		// e.g. PHYSICAL
 	unsigned char dmg1_min;			// minimum range of damage, e.g. 1
 	unsigned char dmg1_max;			// minimum range of damage, e.g. 6
@@ -69,8 +72,35 @@ typedef struct {
 
 // Data for a single spell
 typedef struct {
-	unsigned char spell_id;
+	unsigned char spell_id;			// 1-255
+	unsigned char oneshot;			// Is it a single use spell? i.e. a scroll?
+	unsigned char spell_type;		// The effect of the spell
+									// SPELL_TYPE_ATTACK	- offensive attack against hostile
+									// SPELL_TYPE_SUPPORT	- buff of self, party member or party, debuff of hostile character or party
+	unsigned char name[MAX_PLAYER_NAME];			// Name of spell:63 "Lightning Bolt"
+	unsigned char cooldown;			// Number of turns until the spell can be used again, decremented each turn
+	unsigned char cooldown_reset;	// What cooldown resets to when cast
+	unsigned char target;			// Who/what the spell can be cast on:
+									// SPELL_TARGET_SELF 				- caster only
+									// SPELL_TARGET_FRIENDLY_PARTY 		- cast on any one character in party
+									// SPELL_TARGET_FRIENDLY_PARTY_ALL - cast on entire party
+									// SPELL_TARGET_HOSTILE_PARTY		- cast on any one character in hostile party
+									// SPELL_TARGET_HOSTILE_PARTY_ALL	- cast on entire hostile party
+	unsigned char effectlist[MAX_EFFECTS];	// List of effect ID's. Effects are what the spell actually does
 } SpellState_t;
+
+// Data for a single item
+typedef struct {
+	unsigned char item_id;			// 1-255
+	unsigned char name[MAX_PLAYER_NAME];			// Name of Item:1 "Potion"
+	unsigned char class_limit;		// HUMAN_UNTRAINED, HUMAN_PALADIN, BEAST_MAGIC, etc
+	unsigned char type;				// ITEM_TYPE_ARMOUR, ITEM_TYPE_CONSUMEABLE, etc
+	unsigned char slot;				// SLOT_TYPE_BODY, SLOT_TYPE_NONE, etc
+	unsigned short value;			// How much it costs, base value
+	unsigned char ac;				// Armour class for armour items
+	unsigned char ac_type;			// ARMOUR_TYPE_LIGHT, etc
+	unsigned char effectlist[MAX_EFFECTS];	// List of effect ID's. Effects are what the item does on use/equip.
+} ItemState_t;
 
 // Structure representing the status of a single NPC or PC
 typedef struct {
@@ -78,10 +108,12 @@ typedef struct {
 	char short_name[MAX_SHORT_NAME];					// Player character name, e.g. Argus
 	
 	unsigned char player_class;			// HUMAN_ROGUE, HUMAN_UNTRAINED, BEAST_MAGIC etc, see monsters.h
-	
+	unsigned char level;				// 1-10
 	unsigned short profile;				// Melee, Ranged, Magic Attack, Magic Support behaviour
 										// 4 bits each for how aggressive the character is in that area.
 	
+										
+										
 	// Core stats
 	unsigned char str;					// 0-20
 	unsigned char dex;					// 0-20
@@ -96,11 +128,8 @@ typedef struct {
 	
 	// Equipped items
 	unsigned char head;					// head
-	unsigned char neck;					// neck/pendant
 	unsigned char body;					// body
-	unsigned char arms;					// arms
-	unsigned char legs;					// legs
-	unsigned char hands[2];				// hands
+	unsigned char option;				// ring/pendant etc
 	
 	// Location in party when combat begins
 	unsigned char formation;			// front/middle/rear
@@ -109,7 +138,7 @@ typedef struct {
 										// rear gets bonus to defence, but penalty to non-ranged attacks
 	
 	// Item store for this player
-	unsigned short items[MAX_ITEMS];		// items
+	unsigned short items[MAX_ITEMS];	// items
 	
 	// Individual player stats
 	unsigned short kills;				// Record of how many kills this player has made so far
@@ -117,15 +146,18 @@ typedef struct {
 	unsigned short hits_taken;			// Record of how much damage this player has taken so far
 	unsigned short hits_caused;			// Record of how much damage this player has inflicted so far
 	
-	WeaponState_t weapon_right;			// Data for the weapon currently in the right hand
-	WeaponState_t weapon_left;			// Data for the weapon currently in the left hand
+	// Equipped weapons/weapon and shield
+	WeaponState_t *weapon_r;			// Data for the weapon currently in the right hand
+	WeaponState_t *weapon_l;			// Data for the weapon currently in the left hand		
+	
+	
 	
 } PlayerState_t;
 
 // This structure is initialised each time we begin combat with 
 // one or more enemy
 typedef struct {
-	unsigned char current_enemy;				// array entry of current enemy
+	unsigned char current;						// array entry of current enemy
 	PlayerState_t enemies[MAX_MONSTER_TYPES];	// array of enemy characters
 } EnemyState_t;
 
@@ -140,8 +172,8 @@ struct NPCList {
 
 // Basic game data
 typedef struct {
-	char text_buffer[MAX_STORY_TEXT_SIZE + 513];		// A single text buffer to composite any text used for display in the main window. This is 1.5x the size of a normal text string
-	char buf[MAX_STORY_TEXT_SIZE + 1];				// To load strings into
+	char text_buffer[MAX_STORY_TEXT_SIZE + 513];				// A single text buffer to composite any text used for display in the main window. This is 1.5x the size of a normal text string
+	char buf[MAX_STORY_TEXT_SIZE + 1];							// To load strings into
 	unsigned char gamemode;										// What mode we are in - map, combat, shop, etc
 	unsigned char name[MAX_LEVEL_NAME_SIZE];					// Name of the current adventure
 	unsigned char level;										// ID of the current location
@@ -156,7 +188,7 @@ typedef struct {
 	PlayerState_t *p3;											// Pointer to player 3
 	PlayerState_t *p4;											// Pointer to player 4
 	struct NPCList *npcs;										// Pointer to a linked-list of NPC's we have met
-	struct EnemyState_t *enemies;								// Pointer to the enemystate structure
+	EnemyState_t *enemies;										// Pointer to the enemystate structure
 } GameState_t;
 
 // Each level that we visit is loaded from disk into this structure
@@ -260,8 +292,8 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate);
 void game_Combat(GameState_t *gamestate, LevelState_t *levelstate);
 void game_Quit(GameState_t *gamestate, LevelState_t *levelstate);
 
-unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text, char* allowed_inputs);
-unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text, char* allowed_inputs);
+unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
+unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
 
 // ============================================
 // Platform specific game function implementations

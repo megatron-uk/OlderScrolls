@@ -50,11 +50,10 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 	unsigned char *bmp_ptr;		// Represents which row of pixels we are reading at any time
 	unsigned int i;				// A loop counter
 	int	status;					// Generic status for calls from fread/fseek etc.
-	unsigned char pixel;		// A single pixel
 
 	if (header){
 		// Seek to dataoffset position in header
-		fseek(bmp_image, 0, 1);
+		status = fseek(bmp_image, 0, 1);
 		status = fseek(bmp_image, DATA_OFFSET_OFFSET, SEEK_SET);
 
 		// Read data offset value
@@ -106,16 +105,14 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		bmpdata->bytespp = (unsigned char) (bmpdata->bpp >> 3);
 		
 		// Rows are stored bottom-up
-		// Each row is padded to be a multiple of 4 bytes. 
-		// We calculate the padded row size in bytes
+		
 		if (bmpdata->bpp == BMP_1BPP){
-			// Using libm and ceil() function
-			/*bmpdata->row_padded = (int)(4 * ceil((float)(bmpdata->width) / 4.0f)) / 8;
-			bmpdata->row_unpadded = (int) ceil((float)bmpdata->width / 8.0f);
-			bmpdata->size = (int) ceil((bmpdata->width * bmpdata->height) / 8.0f); 
-			bmpdata->n_pixels = bmpdata->size;*/
 			
 			// Using quotient and remainder without libm
+			
+			// Each row is padded to be a multiple of 4 bytes == 32 pixels. 
+			// We calculate the padded row size in bytes
+			
 			if (bmpdata->width % 4 != 0){
 				bmpdata->row_padded = ((bmpdata->width / 4) + 1) / 8;
 			} else {
@@ -133,18 +130,37 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			} else {
 				bmpdata->size = ((bmpdata->width * bmpdata->height) / 8);
 			}
-			bmpdata->n_pixels = bmpdata->size;
+			bmpdata->n_pixels = bmpdata->size * 8;
+		} else if (bmpdata->bpp == BMP_4BPP){
+			
+			// Each row is padded to be a multiple of 4 bytes == 8 pixels. 
+			// We calculate the padded row size in bytes
+			
+			// Using quotient and remainder without libm
+			if (bmpdata->width % 4 != 0){
+				bmpdata->row_padded = ((bmpdata->width / 2) + 1);
+			} else {
+				bmpdata->row_padded = (bmpdata->width / 2);
+			}
+			
+			if (bmpdata->width % 8 != 0){
+				bmpdata->row_unpadded = (bmpdata->width / 2) + 1;
+			} else {
+				bmpdata->row_unpadded = (bmpdata->width / 2);
+			}
+
+			if ((bmpdata->width * bmpdata->height) % 2 != 0){
+				bmpdata->size = ((bmpdata->width * bmpdata->height) / 2) + 1;	
+			} else {
+				bmpdata->size = ((bmpdata->width * bmpdata->height) / 2);
+			}
+			bmpdata->n_pixels = bmpdata->size * 2;
 		} else {
 			return BMP_ERR_BPP;
 		}
 	}
 	
 	if (data){
-	
-		if (bmpdata->bpp != BMP_1BPP){
-			// We ONLY support 1bpp images in this stripped-down bmp library for the QL.
-			return BMP_ERR_BPP;
-		}
 		
 		// First verify if we've actually read the header section...
 		if (bmpdata->offset <= 0){
@@ -161,12 +177,12 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			return BMP_ERR_MEM;
 		}
 	
-		// Set the pixer buffer point to point to the very end of the buffer, minus the space for one row
-		// We have to read the BMP data backwards into the buffer, as it is stored in the file bottom to top
+		// Set the pixel buffer pointer to point to the very end of the buffer, minus the space for one row
+		// We have to read the BMP data **backwards** into the buffer, as it is stored in the file bottom to top
 		bmp_ptr = bmpdata->pixels + ((bmpdata->height - 1) * bmpdata->row_unpadded);
 		
 		// Seek to start of data section in file
-		fseek(bmp_image, bmpdata->offset, SEEK_SET);
+		status = fseek(bmp_image, bmpdata->offset, SEEK_SET);
 		
 		// For every row in the image...
 		for (i = 0; i < bmpdata->height; i++){		
@@ -264,4 +280,15 @@ void bmp_Destroy(bmpdata_t *bmpdata){
 		free(bmpdata->pixels);	
 	}
 	free(bmpdata);	
+}
+
+void bmp_Print(bmpdata_t *bmpdata){
+
+	printf("Resolution: %u x %u\n", bmpdata->width, bmpdata->height);
+	printf("Padded row size: %u bytes\n", bmpdata->row_padded);
+	printf("Unpadded row size: %u bytes\n", bmpdata->row_unpadded);
+	printf("Colour depth: %dbpp\n", bmpdata->bpp);
+	printf("Storage size: %u bytes\n", bmpdata->size);
+	printf("Pixels: %u\n", bmpdata->n_pixels);
+	printf("Pixel data @ %x\n", (unsigned int) &bmpdata->pixels);
 }

@@ -44,13 +44,17 @@
 #include "../common/input.h"
 #define _INPUT_H
 #endif
+#ifndef _DATA_H
+#include "../common/data.h"
+#define _DATA_H
+#endif
 #ifndef _GAME_H
 #include "../common/game.h"
 #define _GAME_H
 #endif
 
 // Options to the C68 runtime environment
-long _stack = 2 * 1024L; 		// Set size of stack, in kb. Defaults to 4kb.
+long _stack = 1 * 1024L; 		// Set size of stack, in kb. Defaults to 4kb.
 long _mneed = 4 * 1024L; 		// Minimum heap size allowed
 long _memincr = 2 * 1024L; 		// When heap exhausted, requests to QDOS are in this size
 long _memqdos = 10 * 1024L; 	// Minimum amount of memory that is allowed to remain for QDOS ...
@@ -59,8 +63,8 @@ long _memqdos = 10 * 1024L; 	// Minimum amount of memory that is allowed to rema
 
 int main(void){
 	
-	unsigned char c;
-	unsigned char exit = 0;
+	char c;
+	unsigned char main_exit = 0;
 	
 	GameState_t *gamestate = NULL;
 	LevelState_t *levelstate = NULL;
@@ -96,7 +100,7 @@ int main(void){
 	game_Splash(gamestate, levelstate);
 	
 	// Main game loop
-	while(exit == 0){
+	while(main_exit == 0){
 		
 		switch(gamestate->gamemode){
 		
@@ -111,7 +115,7 @@ int main(void){
 				break;
 				
 			case GAME_MODE_EXIT:
-				exit = 1;
+				main_exit = 1;
 				break;
 				
 			default:
