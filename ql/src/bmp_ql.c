@@ -5,6 +5,7 @@
  
 */
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,11 +21,7 @@
 #define _UTIL_H
 #endif
 
-int div_ceil(int x, int y) {
-    return x / y + (x % y > 0);
-}
-
-int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, unsigned char data){
+int bmp_ReadImage(int bmp_image, bmpdata_t *bmpdata, unsigned char header, unsigned char data){
 	/* 
 		NOTE - This QL implementation is specific for the OlderScrolls rpg engine and ONLY
 		supports 1bpp bitmap images. Any other format will return an error.
@@ -36,64 +33,64 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 	
 		Example use:
 	
-		FILE *f;
+		int f;
 		bmpdata_t bmp = NULL;
 		bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 		bmp->pixels = NULL;
 		
-		f = fopen("file.bmp", "rb");
+		f = open("file.bmp", O_RDONLY);
 		bmp_ReadImage(f, bmp, 1, 1);
 		bmp_Destroy(bmp);
-		fclose(f);
+		close(f);
 	*/
 	
 	unsigned char *bmp_ptr;		// Represents which row of pixels we are reading at any time
 	unsigned int i;				// A loop counter
-	int	status;					// Generic status for calls from fread/fseek etc.
+	int	status;					// Generic status for calls from read/lseek etc.
 
 	if (header){
 		// Seek to dataoffset position in header
-		status = fseek(bmp_image, 0, 1);
-		status = fseek(bmp_image, DATA_OFFSET_OFFSET, SEEK_SET);
+		status = lseek(bmp_image, 0, 1);
+		status = lseek(bmp_image, DATA_OFFSET_OFFSET, SEEK_SET);
 
 		// Read data offset value
-		status = fread(&bmpdata->offset, 4, 1, bmp_image);
+		status = read(bmp_image, &bmpdata->offset, 4);
 
 		// offset is a little-endian 32bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->offset = swap_int32(bmpdata->offset);
 		
 		// Seek to image width/columns position in header
-		status = fseek(bmp_image, WIDTH_OFFSET, SEEK_SET);
+		status = lseek(bmp_image, WIDTH_OFFSET, SEEK_SET);
 
 		// Read width value
-		status = fread(&bmpdata->width, 4, 1, bmp_image);
+		status = read(bmp_image, &bmpdata->width, 4);
 
 		// width is a little-endian 32bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->width = swap_int32(bmpdata->width);
 		
 		// Seek to image height/rows position in header
-		status = fseek(bmp_image, HEIGHT_OFFSET, SEEK_SET);
+		status = lseek(bmp_image, HEIGHT_OFFSET, SEEK_SET);
 
 		// Read height value
-		status = fread(&bmpdata->height, 4, 1, bmp_image);
+		status = read(bmp_image, &bmpdata->height, 4);
 
 		// Height is a little-endian 32bit,, and Sinclair QL is big-endian so swap it
 		bmpdata->height = swap_int32(bmpdata->height);
 		
 		// Seek to bpp location in header
-		status = fseek(bmp_image, BITS_PER_PIXEL_OFFSET, SEEK_SET);
+		status = lseek(bmp_image, BITS_PER_PIXEL_OFFSET, SEEK_SET);
 
 		// Read bpp value
-		status = fread(&bmpdata->bpp, 2, 1, bmp_image);
+		status = read(bmp_image, &bmpdata->bpp, 2);
 
 		// BPP is a little-endian 16bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->bpp = swap_int16(bmpdata->bpp);
 		
 		// Seek to compression field
-		status = fseek(bmp_image, COMPRESS_OFFSET, SEEK_SET);
+		status = lseek(bmp_image, COMPRESS_OFFSET, SEEK_SET);
 		
 		// Read compression value
-		status = fread(&bmpdata->compressed, sizeof(bmpdata->compressed), 1, bmp_image);
+		status = read(bmp_image, &bmpdata->compressed, sizeof(bmpdata->compressed));
 				
 		// compression is a little-endian 32bit,, and Sinclair QL is big-endian so swap it
 		bmpdata->compressed = swap_int32(bmpdata->compressed);
@@ -182,12 +179,12 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		bmp_ptr = bmpdata->pixels + ((bmpdata->height - 1) * bmpdata->row_unpadded);
 		
 		// Seek to start of data section in file
-		status = fseek(bmp_image, bmpdata->offset, SEEK_SET);
+		status = lseek(bmp_image, bmpdata->offset, SEEK_SET);
 		
 		// For every row in the image...
 		for (i = 0; i < bmpdata->height; i++){		
 			
-			status = fread(bmp_ptr, 1, bmpdata->row_unpadded, bmp_image);
+			status = read(bmp_image, bmp_ptr, bmpdata->row_unpadded);
 			if (status < 1){
 				free(bmpdata->pixels);
 				return BMP_ERR_READ;	
@@ -199,13 +196,13 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			// Seek to next set of pixels for the next row if row_unpadded < row_padded
 			if (status != bmpdata->row_unpadded){
 				// Seek the number of bytes left in this row
-				status = fseek(bmp_image, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
+				status = lseek(bmp_image, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
 				if (status != 0){
 					free(bmpdata->pixels);
 					return BMP_ERR_READ;
 				}
 			}
-			// Else... the fread() already left us at the next row	
+			// Else... the read() already left us at the next row	
 		}
 		
 		return BMP_OK;
@@ -213,7 +210,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 	return BMP_OK;
 }
 
-int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char data, unsigned char font_width, unsigned char font_height){
+int bmp_ReadFont(int bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char data, unsigned char font_width, unsigned char font_height){
 	// Read a font from disk - really a wrapper around the bitmap reader
 	unsigned int h, w;
 	unsigned char status = 0;

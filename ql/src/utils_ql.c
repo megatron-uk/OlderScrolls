@@ -15,6 +15,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fcntl.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,17 +32,17 @@
 
 unsigned char check_Files(){
 
-	FILE *f;
+	int f;
 	unsigned char errors = 0;
 		
 	// Font file(s)
-	f = fopen(FONT_8X8, "r");
-	if (f == NULL){
+	f = open(FONT_8X8, O_RDONLY);
+	if (f < 0){
 		printf("- Error: Unable to find 8x8 font %s\n", FONT_8X8);
 		errors++;
 	} else {
 		//printf("Found %s\n", FONT_8X8);
-		fclose(f);
+		close(f);
 	}
 	
 	// ==============================
@@ -48,53 +50,53 @@ unsigned char check_Files(){
 	// ==============================
 	
 	// Weapon data
-	f = fopen(WEAPON_DAT, "r");
-	if (f == NULL){
+	f = open(WEAPON_DAT, "r");
+	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", WEAPON_DAT);
 		errors++;
 	} else {
 		//printf("Found %s\n", WEAPON_DAT);
-		fclose(f);
+		close(f);
 	}
 	
 	// Monster data
-	f = fopen(MONSTER_DAT, "r");
-	if (f == NULL){
+	f = open(MONSTER_DAT, "r");
+	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", MONSTER_DAT);
 		errors++;
 	} else {
 		//printf("Found %s\n", MONSTER_DAT);
-		fclose(f);
+		close(f);
 	}
 	
 	// Map data
-	f = fopen(ITEM_DAT, "r");
-	if (f == NULL){
+	f = open(ITEM_DAT, "r");
+	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", ITEM_DAT);
 		errors++;
 	} else {
 		//printf("Found %s\n", ITEM_DAT);
-		fclose(f);
+		close(f);
 	}
 	
 	// Map data
-	f = fopen(MAP_DAT, "r");
-	if (f == NULL){
+	f = open(MAP_DAT, "r");
+	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", MAP_DAT);
 		errors++;
 	} else {
 		//printf("Found %s\n", MAP_DAT);
-		fclose(f);
+		close(f);
 	}
 	
 	// Story/text data
-	f = fopen(STORY_DAT, "r");
-	if (f == NULL){
+	f = open(STORY_DAT, "r");
+	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", STORY_DAT);
 		errors++;
 	} else {
 		//printf("Found %s\n", STORY_DAT);
-		fclose(f);
+		close(f);
 	}
 	
 	if (errors == 0){

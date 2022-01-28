@@ -26,13 +26,6 @@
 #define _DRAW_H
 #endif
 
-extern FILE *story_file;
-extern FILE *map_file;
-extern FILE *weapon_file;
-extern FILE *item_file;
-extern FILE *monster_file;
-extern FILE *index_file;
-
 // This is defined here and not in data.h as not all targets support bitmap sprites
 // as part of the player creation routine (e.g. text mode targets)
 unsigned char data_CreateCharacter(PlayerState_t *playerstate, ssprite_t *playersprite);

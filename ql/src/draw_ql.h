@@ -95,7 +95,8 @@ typedef struct lspritedata {
 // Screen definition
 struct Screen_t {
 		chanid_t win;				// QDOS virtual screen mode
-		FILE 	*f;					// QDOS output channel for fprintf stdio functions
+		FILE 	*f;					// QDOS output channel for fprintf stdio functions - NOT for general use
+		int 	file;				// File handle for all bmp loading routines
         unsigned short x;			// Width of screen
         unsigned short y;			// Height of screen
         unsigned short *buf;		// Pointer to either screen or offscreen buffer
@@ -140,5 +141,5 @@ void draw_Box(unsigned short x, unsigned short y, 	unsigned short length, unsign
 unsigned short draw_String(unsigned char x, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c);
 void draw_FontSymbol(unsigned char i, fontdata_t *fontdata, unsigned short fill, unsigned short *p);
 
-char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t *bmpstate);
-char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t *bmpstate);
+char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, int bmpfile, bmpstate_t *bmpstate);
+char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata, int bmpfile, bmpstate_t *bmpstate);

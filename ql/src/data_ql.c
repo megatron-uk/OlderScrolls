@@ -15,6 +15,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -57,49 +59,56 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	unsigned char item_id;
 	unsigned char w_count = 0;
 	unsigned char i_count = 0;	
+	int f;
 	
-	index_file = fopen(MAP_IDX, "r");
-	if (index_file == NULL){
+	f = open(MAP_IDX, O_RDONLY);
+	if (f < 0){
 		return DATA_LOAD_ERR;	
 	}
 	
 	// Seek to the right ID in the header
-	i = fseek(index_file, ((id - 1) * DATA_HEADER_ENTRY_SIZE), SEEK_SET);
+	i = lseek(f, ((id - 1) * DATA_HEADER_ENTRY_SIZE), SEEK_SET);
 	
 	// Read the header entry for this record
-	i = fread(&record_size, 1, DATA_HEADER_RECORD_SIZE, index_file);		// This is the size of the record, in bytes
-	i = fread(&record_offset, 1, DATA_HEADER_OFFSET_SIZE, index_file);		// This is the offset of the record, in bytes from 0
+	i = read(f, &record_size, DATA_HEADER_RECORD_SIZE);		// This is the size of the record, in bytes
+	i = read(f, &record_offset, DATA_HEADER_OFFSET_SIZE);		// This is the offset of the record, in bytes from 0
+	close(f);
+	
+	f = open(MAP_DAT, O_RDONLY);
+	if (f < 0){
+		return DATA_LOAD_ERR;	
+	}
 	
 	// Seek to the data record itself
-	i = fseek(map_file, record_offset, SEEK_SET);
+	i = lseek(f, record_offset, SEEK_SET);
 	
 	// (2 bytes) Level ID
-	i = fread(&levelstate->id, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->id, sizeof(unsigned short));
 	if (levelstate->id != id){
 		return DATA_LOAD_ERR;	
 	}
 	
 	// (2 bytes) Primary text ID
-	i = fread(&levelstate->text, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->text, sizeof(unsigned short));
 
 	// (32 bytes) Level name
-	i = fread(&levelstate->name, 1, MAX_LEVEL_NAME_SIZE, map_file);
+	i = read(f, &levelstate->name, MAX_LEVEL_NAME_SIZE);
 	
 	// =====================================
 	// North exit
 	// =====================================
 	
 	// (2 bytes) North exit ID
-	i = fread(&levelstate->north, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->north, sizeof(unsigned short));
 	
 	// (2 bytes) North exit text label ID
-	i = fread(&levelstate->north_text, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->north_text, sizeof(unsigned short));
 	
 	// North condition (min 2 bytes, possibly 7+)
-	i = fread(&levelstate->north_eval_type, 1, 1, map_file);
-	i = fread(&levelstate->north_require_number, 1, 1, map_file);
+	i = read(f, &levelstate->north_eval_type, 1);
+	i = read(f, &levelstate->north_require_number, 1,);
 	if (levelstate->north_require_number != 0){
-		i = fread(&levelstate->north_require, COND_LENGTH, levelstate->north_require_number, map_file);
+		i = read(f, &levelstate->north_require, (COND_LENGTH * levelstate->north_require_number));
 	}
 	
 	// =====================================
@@ -107,16 +116,16 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// =====================================	
 	
 	// (2 bytes) South exit ID
-	i = fread(&levelstate->south, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->south, sizeof(unsigned short));
 	
 	// (2 bytes) South exit text label ID
-	i = fread(&levelstate->south_text, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->south_text, sizeof(unsigned short));
 	
 	// South condition (min 2 bytes, possibly 7+)
-	i = fread(&levelstate->south_eval_type, 1, 1, map_file);
-	i = fread(&levelstate->south_require_number, 1, 1, map_file);
+	i = read(f, &levelstate->south_eval_type, 1);
+	i = read(f, &levelstate->south_require_number, 1);
 	if (levelstate->south_require_number != 0){
-		i = fread(&levelstate->south_require, COND_LENGTH, levelstate->south_require_number, map_file);
+		i = read(f, &levelstate->south_require, (COND_LENGTH * levelstate->south_require_number));
 	}
 
 	// =====================================
@@ -124,16 +133,16 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// =====================================	
 	
 	// (2 bytes) East exit ID
-	i = fread(&levelstate->east, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->east, sizeof(unsigned short));
 	
 	// (2 bytes) East exit text label ID
-	i = fread(&levelstate->east_text, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->east_text, sizeof(unsigned short));
 	
 	// East condition (min 2 bytes, possibly 7+)
-	i = fread(&levelstate->east_eval_type, 1, 1, map_file);
-	i = fread(&levelstate->east_require_number, 1, 1, map_file);
+	i = read(f, &levelstate->east_eval_type, 1);
+	i = read(f, &levelstate->east_require_number, 1);
 	if (levelstate->east_require_number != 0){
-		i = fread(&levelstate->east_require, COND_LENGTH, levelstate->east_require_number, map_file);
+		i = read(f, &levelstate->east_require, (COND_LENGTH * levelstate->east_require_number));
 	}
 
 	// =====================================
@@ -141,16 +150,16 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// =====================================	
 	
 	// (2 bytes) West exit ID
-	i = fread(&levelstate->west, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->west, sizeof(unsigned short));
 	
 	// (2 bytes) West exit text label ID
-	i = fread(&levelstate->west_text, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->west_text, sizeof(unsigned short));
 	
 	// West condition (min 2 bytes, possibly 7+)
-	i = fread(&levelstate->west_eval_type, 1, 1, map_file);
-	i = fread(&levelstate->west_require_number, 1, 1, map_file);
+	i = read(f, &levelstate->west_eval_type, 1);
+	i = read(f, &levelstate->west_require_number, 1);
 	if (levelstate->west_eval_type != 0){
-		i = fread(&levelstate->west_require, COND_LENGTH, levelstate->west_require_number, map_file);
+		i = read(f, &levelstate->west_require, (COND_LENGTH * levelstate->west_require_number));
 	}
 	
 	// =====================================
@@ -158,19 +167,19 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// =====================================
 	
 	// (1 bytes) primary monster spawn chance
-	i = fread(&levelstate->spawn_chance, 1, 1, map_file);
+	i = read(f, &levelstate->spawn_chance, 1);
 	
 	// (1 byte) number of monster ID's that follow
-	i = fread(&levelstate->spawn_number, 1, 1, map_file);
+	i = read(f, &levelstate->spawn_number, 1);
 	if (levelstate->spawn_number > 0){
-		i = fread(&levelstate->spawn_list, levelstate->spawn_number, 1, map_file);	
+		i = read(f, &levelstate->spawn_list, levelstate->spawn_number);	
 	}
 	
 	// Spawn condition (min 2 bytes, possibly 7+)
-	i = fread(&levelstate->spawn_eval_type, 1, 1, map_file);
-	i = fread(&levelstate->spawn_require_number, 1, 1, map_file);
+	i = read(f, &levelstate->spawn_eval_type, 1);
+	i = read(f, &levelstate->spawn_require_number, 1);
 	if (levelstate->spawn_require_number != 0){
-		i = fread(&levelstate->spawn_require, COND_LENGTH, levelstate->spawn_require_number, map_file);
+		i = read(f, &levelstate->spawn_require, (COND_LENGTH * levelstate->spawn_require_number));
 	}
 	
 	// =====================================
@@ -178,19 +187,19 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// =====================================
 	
 	// (1 bytes) secondary monster spawn chance
-	i = fread(&levelstate->respawn_chance, 1, 1, map_file);
+	i = read(f, &levelstate->respawn_chance, 1);
 	
 	// (1 byte) number of monster ID's that follow
-	i = fread(&levelstate->respawn_number, 1, 1, map_file);
+	i = read(f, &levelstate->respawn_number, 1);
 	if (levelstate->respawn_number > 0){
-		i = fread(&levelstate->respawn_list, levelstate->respawn_number, 1, map_file);	
+		i = read(f, &levelstate->respawn_list, levelstate->respawn_number);	
 	}
 	
 	// Spawn condition (min 2 bytes, possibly 7+)
-	i = fread(&levelstate->respawn_eval_type, 1, 1, map_file);
-	i = fread(&levelstate->respawn_require_number, 1, 1, map_file);
+	i = read(f, &levelstate->respawn_eval_type, 1);
+	i = read(f, &levelstate->respawn_require_number, 1);
 	if (levelstate->respawn_require_number != 0){
-		i = fread(&levelstate->respawn_require, COND_LENGTH, levelstate->respawn_require_number, map_file);
+		i = read(f, &levelstate->respawn_require, (COND_LENGTH * levelstate->respawn_require_number));
 	}
 
 	// ====================================
@@ -198,10 +207,10 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	// ====================================
 	
 	// (1 bytes) item spawn chance
-	i = fread(&levelstate->items_chance, 1, 1, map_file);
+	i = read(f, &levelstate->items_chance, 1);
 	
 	// (1 byte) number of item ID's that follow
-	i = fread(&total_items, 1, 1, map_file);
+	i = read(f, &total_items, 1);
 	
 	// Empty the list of weapons and items
 	levelstate->weapons_number = 0;
@@ -215,8 +224,8 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 		w_count = 0;
 		
 		for (i = 0; i < total_items; i++){
-			i = fread(&item_type, 1, 1, map_file);
-			i = fread(&item_id, 1, 1, map_file);
+			i = read(f, &item_type, 1);
+			i = read(f, &item_id, 1);
 			
 			// Check for 'w' or 'i'
 			switch(item_type){
@@ -237,71 +246,71 @@ unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, uns
 	}
 	
 	// Item spawn condition (min 2 bytes, possibly 7+)
-	i = fread(&levelstate->items_eval_type, 1, 1, map_file);
-	i = fread(&levelstate->items_require_number, 1, 1, map_file);
+	i = read(f, &levelstate->items_eval_type, 1);
+	i = read(f, &levelstate->items_require_number, 1);
 	if (levelstate->items_require_number != 0){
-		i = fread(&levelstate->items_require, COND_LENGTH, levelstate->items_require_number, map_file);
+		i = read(f, &levelstate->items_require, (COND_LENGTH * levelstate->items_require_number));
 	}
 	
 	
 	// ==================================================
 	// (2 bytes) Text shown when primary monsters spawn
 	// ==================================================
-	i = fread(&levelstate->text_spawn, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->text_spawn, sizeof(unsigned short));
 	
 	// ==================================================
 	// (2 bytes) Text shown when primary monsters spawn
 	// ==================================================
-	i = fread(&levelstate->text_after_spawn, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->text_after_spawn, sizeof(unsigned short));
 
 	// ==================================================
 	// (2 bytes) Text shown when primary monsters spawn
 	// ==================================================
-	i = fread(&levelstate->text_respawn, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->text_respawn, sizeof(unsigned short));
 	
 	// ==================================================
 	// (2 bytes) Text shown when primary monsters spawn
 	// ==================================================
-	i = fread(&levelstate->text_after_respawn, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->text_after_respawn, sizeof(unsigned short));
 		
 	// ==================================================
 	// NPC 1
 	// ==================================================
 	
 	// (1 byte) NPC 1 ID
-	i = fread(&levelstate->npc1, 1, 1, map_file);
+	i = read(f, &levelstate->npc1, 1);
 	
 	// NPC 1 spawn condition (min 2 bytes, possibly 7+)
-	i = fread(&levelstate->npc1_eval_type, 1, 1, map_file);
-	i = fread(&levelstate->npc1_require_number, 1, 1, map_file);
+	i = read(f, &levelstate->npc1_eval_type, 1);
+	i = read(f, &levelstate->npc1_require_number, 1);
 	if (levelstate->npc1_require_number != 0){
-		i = fread(&levelstate->npc1_require, COND_LENGTH, levelstate->npc1_require_number, map_file);
+		i = read(f, &levelstate->npc1_require, (COND_LENGTH * levelstate->npc1_require_number));
 	}
 	
 	// (2 byte) NPC 1 text ID
-	i = fread(&levelstate->npc1_text, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->npc1_text, sizeof(unsigned short));
 		
 	// ==================================================
 	// NPC 2
 	// ==================================================
 	
 	// (1 byte) NPC 1 ID
-	i = fread(&levelstate->npc2, 1, 1, map_file);
+	i = read(f, &levelstate->npc2, 1);
 	
 	// NPC 1 spawn condition (min 2 bytes, possibly 7+)
-	i = fread(&levelstate->npc2_eval_type, 1, 1, map_file);
-	i = fread(&levelstate->npc2_require_number, 1, 1, map_file);
+	i = read(f, &levelstate->npc2_eval_type, 1);
+	i = read(f, &levelstate->npc2_require_number, 1);
 	if (levelstate->npc2_require_number != 0){
-		i = fread(&levelstate->npc2_require, COND_LENGTH, levelstate->npc2_require_number, map_file);
+		i = read(f, &levelstate->npc2_require, (COND_LENGTH * levelstate->npc2_require_number));
 	}
 	
 	// (2 byte) NPC 1 text ID
-	i = fread(&levelstate->npc2_text, 1, sizeof(unsigned short), map_file);
+	i = read(f, &levelstate->npc2_text, sizeof(unsigned short));
 	
 	// Monsters have not spawned yet
 	levelstate->spawned = 0;
 	
-	i = fclose(index_file);
+	i = close(f);
 	return DATA_LOAD_OK;
 }
 
@@ -311,27 +320,34 @@ unsigned char data_LoadStory(GameState_t *gamestate, LevelState_t *levelstate, u
 	unsigned short record_size = 0;
 	unsigned long record_offset = 0;
 	unsigned short i = 0;
+	int f;
 	
-	index_file = fopen(STORY_IDX, "r");
-	if (index_file == NULL){
+	f = open(STORY_IDX, O_RDONLY);
+	if (f < 0){
 		return DATA_LOAD_ERR;	
 	}
 	
 	// Seek to the right ID in the header
-	i = fseek(index_file, (id * DATA_HEADER_ENTRY_SIZE), SEEK_SET);
+	i = lseek(f, (id * DATA_HEADER_ENTRY_SIZE), SEEK_SET);
 	
 	// Read the header entry for this record
-	i = fread(&record_size, 1, DATA_HEADER_RECORD_SIZE, index_file);		// This is the size of the record, in bytes
-	i = fread(&record_offset, 1, DATA_HEADER_OFFSET_SIZE, index_file);	// This is the offset of the record, in bytes from 0
+	i = read(f, &record_size, DATA_HEADER_RECORD_SIZE);		// This is the size of the record, in bytes
+	i = read(f, &record_offset, DATA_HEADER_OFFSET_SIZE);	// This is the offset of the record, in bytes from 0
+	close(f);
 	
+	
+	f = open(STORY_DAT, O_RDONLY);
+	if (f < 0){
+		return DATA_LOAD_ERR;	
+	}
 	// Seek to the data record itself
-	i = fseek(story_file, record_offset, SEEK_SET);
+	i = lseek(f, record_offset, SEEK_SET);
 		
 	// Read DATA_HEADER_RECORD_SIZE worth of bytes
 	memset(gamestate->buf, '\0', record_size + 1);
-	i = fread(gamestate->buf, 1, record_size, story_file);
+	i = read(f, gamestate->buf, record_size);
 	
-	i = fclose(index_file);
+	close(f);
 	return DATA_LOAD_OK;
 }
 

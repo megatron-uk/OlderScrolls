@@ -15,6 +15,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -43,7 +45,7 @@
 
 char screen_Init(){
 	// Initialise screen and/or offscreen buffers
-	FILE *f;
+	int f;
 	unsigned char i;
 	
 	// ========================================
@@ -81,7 +83,7 @@ char screen_Init(){
 	// ==========================================
 	
 	screen.win = io_open(SCREEN_MODE, 0);
-	screen.f = fopen(SCREEN_MODE, "rw");
+	screen.f = open(SCREEN_MODE, "rw");
 	
 	// ==========================================
 	// Load font bitmap and initialise fonts
@@ -96,7 +98,7 @@ char screen_Init(){
 	screen.bmp->pixels = NULL;
 	
 	// Load and process the 8x8 font
-	f = fopen(FONT_8X8, "rb");
+	f = open(FONT_8X8, O_RDONLY);
 	if (f == NULL){
 		// Couldn't open font
 		return 3;
@@ -110,6 +112,7 @@ char screen_Init(){
 		// Couldn't process font bitmap to table
 		return 5;
 	}
+	bmp_Print(screen.bmp);
 	screen.font_8x8->unknown_symbol = 37;	// Unknown characters are replaced with '%'
 	screen.font_8x8->ascii_start = 32;		// First ascii char in set is ' '
 	
@@ -786,7 +789,7 @@ void draw_FontSymbol(unsigned char ascii_num, fontdata_t *fontdata, unsigned sho
 }
 
 
-char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t *bmpstate){
+char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, int bmpfile, bmpstate_t *bmpstate){
 	// Load from file, decode and display, line by line
 	// Every time the function is called, another line is read, decoded and displayed
 	
@@ -827,7 +830,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 		bmpstate->width_bytes = bmpdata->width * bmpdata->bytespp;
 		
 		// Seek to start of data section in file
-		status = fseek(bmpfile, bmpdata->offset, SEEK_SET);
+		status = lseek(bmpfile, bmpdata->offset, SEEK_SET);
 		if (status != 0){
 			bmpstate->width_bytes = 0;
 			bmpstate->rows_remaining = 0;
@@ -849,7 +852,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 			// Read 4 bytes from image == 8x 4bpp pixels == 1x 16bit QL screen location
 			for (ii = 0; ii < 4; ii++){
 				
-				status = fread(&bmp_pixel, 1, 1, bmpfile);
+				status = read(bmpfile, &bmp_pixel, 1);
 				if (status < 1){
 					bmpstate->width_bytes = 0;
 					bmpstate->rows_remaining = 0;
@@ -921,7 +924,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 
 	if (status != bmpdata->row_unpadded){
 		// Seek the number of bytes left in this row
-		status = fseek(bmpfile, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
+		status = lseek(bmpfile, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
 		if (status != 0){
 			bmpstate->width_bytes = 0;
 			bmpstate->rows_remaining = 0;
@@ -931,7 +934,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 	} else {
 		// Seek to end of row
 		if (bmpdata->row_padded != bmpdata->row_unpadded){
-			fseek(bmpfile, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
+			lseek(bmpfile, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
 		}
 	}
 	
@@ -1022,7 +1025,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FI
 	
 }
 
-char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t *bmpstate){
+char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata, int bmpfile, bmpstate_t *bmpstate){
 	// Display a bitmap using the async call, in its entirety, using no-more than 1 line
 	// worth of allocated memory
 	
@@ -1034,7 +1037,7 @@ char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata
 		return status;
 	} else {
 		
-		//bmp_Print(screen.bmp);
+		bmp_Print(screen.bmp);
 		
 		// Set rows remaining
 		bmpstate->rows_remaining = bmpdata->height;
@@ -1043,6 +1046,7 @@ char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata
 		while (bmpstate->rows_remaining > 0){
 			status = draw_BitmapAsync(x, y, bmpdata, bmpfile, bmpstate);
 			if (status != 0){
+				printf("Error drawing async: %d\n", status);
 				return status;  
 			}
 		}

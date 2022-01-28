@@ -15,6 +15,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fcntl.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -94,28 +96,39 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 	// Draws the sidebar with the player party portraits, names, basic status, etc
 	
 	unsigned char i;		// Loop counter
-	unsigned char n;		// Integer calculation on player stats
 	PlayerState_t *pc;		// Pointer to current player
-	char buf[16];			// Temporary string buffer
+	char buf[20];			// Temporary string buffer
 	
-	// Draw 3 horizontal bars between the 4 player info boxes
-	for (i = 1; i <= 3; i++){
-		draw_HLine(UI_SIDEBAR_START_X, UI_SIDEBAR_START_Y + (UI_SIDEBAR_BLOCK * i), SCREEN_WIDTH - UI_SIDEBAR_START_X, PIXEL_GREEN, 0, MODE_PIXEL_OR);
+	// TEMPORARY - replace with screen.players[n] sprites
+	screen.file = open("orc_bmp", O_RDONLY);
+	if (screen.file < 0){
+		// Couldn't open image
+		return;
 	}
 	
 	// Draw 4 player head boxes and 4 player portrait sprites
 	for (i = 0; i <= 3; i++){
-		draw_Box(UI_SIDEBAR_PORTRAIT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i), DRAW_PORTRAIT_WIDTH + 1, DRAW_PORTRAIT_HEIGHT + 1, 1, PIXEL_GREEN, PIXEL_CLEAR, MODE_PIXEL_OR);
+		if (i > 0){
+			draw_HLine(UI_SIDEBAR_START_X, UI_SIDEBAR_START_Y + (UI_SIDEBAR_BLOCK * i), SCREEN_WIDTH - UI_SIDEBAR_START_X, PIXEL_GREEN, 0, MODE_PIXEL_OR);	
+		}
+		pc = gamestate->players->player[i];
+		
+		//draw_Box(UI_SIDEBAR_PORTRAIT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i), DRAW_PORTRAIT_WIDTH + 1, DRAW_PORTRAIT_HEIGHT + 1, 1, PIXEL_GREEN, PIXEL_CLEAR, MODE_PIXEL_OR);
 		
 		if (pc->level){
-			
+			// Only draw portraits of existing party characters
+			draw_BitmapAsyncFull(UI_SIDEBAR_PORTRAIT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i), screen.bmp, screen.file, screen.bmpstate);
+		} else {
+			// Otherwise draw a placeholder portrait
 		}
 	}	
+	close(screen.file);
 	
 	// Draw player stats
 	for (i = 0; i <= 3; i++){
 		
-		// Only draw
+		// Only draw stats of existing part
+		// characters
 		pc = gamestate->players->player[i];
 		if (pc->level){
 
@@ -130,9 +143,8 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 			// - Red if HP under 50%
 			// ===================================================
 			
-			n = (pc->hp * 100) / pc->hp_reset;
 			sprintf(buf, "%03d", pc->hp);
-			if (n > 50){
+			if (((pc->hp * 100) / pc->hp_reset) > 50){
 				draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen.font_8x8, PIXEL_GREEN, buf);
 			} else {
 				draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen.font_8x8, PIXEL_RED, buf);
@@ -177,6 +189,10 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 		
 			// Name
 			sprintf(buf, "%d: %s", (i + 1), pc->short_name);
+			draw_String(51, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+		} else {
+			// Name
+			sprintf(buf, "%d: ----", (i + 1));
 			draw_String(51, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
 		}
 	}

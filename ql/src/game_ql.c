@@ -61,12 +61,6 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	
 	unsigned short i;
 	
-	story_file = fopen(STORY_DAT, "r");
-	//weapon_file = fopen(WEAPON_DAT, "r");
-	//monster_file = fopen(MONSTER_DAT, "r");
-	//item_file = fopen(ITEM_DAT, "r");
-	map_file = fopen(MAP_DAT, "r");
-	
 	// Initialise game state
 	gamestate->gamemode = GAME_MODE_MAP;
 	gamestate->level = 1;
@@ -133,56 +127,12 @@ void game_Splash(GameState_t *gamestate, LevelState_t *levelstate){
 	// Shows the screen, prompts for a basic set of options:
 	// Start, Exit, <TO DO>, <TO DO>
 	// ... then starts the game engine proper
+	unsigned char i;
 	
-	FILE *f;
-	//draw_Clear();
+	draw_Clear();
 	ui_Draw(gamestate, levelstate);
-	ui_DrawSideBar(gamestate, levelstate);
-	
-	//ui_DrawSplashText(gamestate, levelstate);
-	
-	//draw_HLine(8, 50, 384, PIXEL_WHITE, 0, MODE_PIXEL_SET);
-	//draw_VLine(8, 16, 184, PIXEL_WHITE, MODE_PIXEL_SET);
-	
-	// Load and process the 8x8 font
-	f = fopen("orc_bmp", "rb");
-	if (f == NULL){
-		// Couldn't open image
-		return;
-	}
-	
-	/*
-	draw_Box(0, UI_SIDEBAR_PORTRAIT_Y1, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	draw_Box(1, UI_SIDEBAR_PORTRAIT_Y2, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	draw_Box(2, UI_SIDEBAR_PORTRAIT_Y3, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	draw_Box(7, UI_SIDEBAR_PORTRAIT_Y4, 34, 33, 1, PIXEL_RED, PIXEL_BLACK, MODE_PIXEL_OR);
-	*/
-	draw_BitmapAsyncFull(1, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
-	draw_BitmapAsyncFull(2, UI_SIDEBAR_PORTRAIT_Y2, screen.bmp, f, screen.bmpstate);
-	draw_BitmapAsyncFull(3, UI_SIDEBAR_PORTRAIT_Y3, screen.bmp, f, screen.bmpstate);
-	draw_BitmapAsyncFull(8, UI_SIDEBAR_PORTRAIT_Y4, screen.bmp, f, screen.bmpstate);
-	
-	fclose(f);
-	
-	f = fopen("ball_bmp", "rb");
-	if (f == NULL){
-		// Couldn't open image
-		return;
-	}
-	/*
-	draw_Box(70, UI_SIDEBAR_PORTRAIT_Y1, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	draw_Box(71, UI_SIDEBAR_PORTRAIT_Y2, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	draw_Box(72, UI_SIDEBAR_PORTRAIT_Y3, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	draw_Box(73, UI_SIDEBAR_PORTRAIT_Y4, 34, 33, 1, PIXEL_WHITE, PIXEL_BLACK, MODE_PIXEL_OR);
-	*/
-	draw_BitmapAsyncFull(71, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
-	draw_BitmapAsyncFull(103, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
-	draw_BitmapAsyncFull(135, UI_SIDEBAR_PORTRAIT_Y1, screen.bmp, f, screen.bmpstate);
-	draw_BitmapAsyncFull(74, UI_SIDEBAR_PORTRAIT_Y4, screen.bmp, f, screen.bmpstate);
-	
+	ui_DrawSplashText(gamestate, levelstate);
 	draw_Flip();
-	
-	fclose(f);
 	
 	// Wait for user input
 	input_Wait(INPUT_CONFIRM);
@@ -204,7 +154,6 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	
 	// Redraw the main screen
 	ui_Draw(gamestate, levelstate);
-	ui_DrawSideBar(gamestate, levelstate);
 	
 	// Open the Map data file and load current level
 	if (gamestate->level != gamestate->level_previous){
@@ -229,6 +178,9 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	
 	// Apply any ongoing status effects (bleeding, poison, etc)
 	// Display any status effect text
+	
+	// Display party sidebar
+	ui_DrawSideBar(gamestate, levelstate);
 	
 	// If monsters are spawned - go to combat, but print before_spawn or before_respawn text
 	c = game_CheckMonsterSpawn(gamestate, levelstate, 0, 1);
