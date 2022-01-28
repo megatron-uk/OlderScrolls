@@ -119,10 +119,11 @@ struct Screen_t {
         
         // Always hold the player character sprite/portrait in memory
         // pixel data is *retained* after use
-        ssprite_t *p1;				// Bitmap data for player 1 sprite & portrait
-        ssprite_t *p2;				// Bitmap data for player 2 sprite & portrait
-        ssprite_t *p3;				// Bitmap data for player 3 sprite & portrait
-        ssprite_t *p4;				// Bitmap data for player 4 sprite & portrait
+        ssprite_t *players[MAX_PLAYERS]; 	// Bitmap data for players
+        //ssprite_t *p1;				// Bitmap data for player 1 sprite & portrait
+        //ssprite_t *p2;				// Bitmap data for player 2 sprite & portrait
+        //ssprite_t *p3;				// Bitmap data for player 3 sprite & portrait
+        //ssprite_t *p4;				// Bitmap data for player 4 sprite & portrait
         
         ssprite_t *enemies[MAX_MONSTER_TYPES]; 	// Bitmap data for enemy sprites       
         lsprite_t *boss;						// Bitmap data for enemy boss sprite

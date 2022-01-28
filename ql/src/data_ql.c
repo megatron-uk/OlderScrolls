@@ -39,6 +39,10 @@
 #include "../common/ui.h"
 #define _UI_H
 #endif
+#ifndef _BMP_H
+#include "bmp_ql.h"
+#define _BMP_H
+#endif
 #include "../common/conditions.h"
 
 unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id){
@@ -381,7 +385,8 @@ unsigned char data_CreateCharacter(PlayerState_t *playerstate, ssprite_t *player
 	playerstate->intl = 10;
 	playerstate->chr = 10;
 	playerstate->profile = 0;
-	playerstate->hp = 10;
+	playerstate->hp = 4;
+	playerstate->hp_reset = 10;
 	playerstate->status = 0x00000000;
 	
 	// Equipped items

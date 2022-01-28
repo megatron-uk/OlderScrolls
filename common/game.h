@@ -24,6 +24,7 @@
 #define GAME_MODE_SHOP		3		// In shop
 #define GAME_MODE_EXIT		99		// Exit from game
 
+#define MAX_PLAYERS			4
 #define MAX_PLAYER_NAME 	18
 #define MAX_SHORT_NAME 		6
 #define MAX_REWARD_ITEMS 	6		// Number of items that may be rewarded upon visiting a location, or upon defeat of primary monster(s)
@@ -38,9 +39,50 @@
 #define MAX_DAMAGE_TYPES	3
 #define REQUIREMENT_BYTES 	5		// 5 bytes per requirement
 
+// Combat stances
+
 #define FORMATION_FRONT		0x00
 #define FORMATION_MID		0x01
 #define FORMATION_REAR		0x02
+
+// We can have up to 32 simultaneous status effects
+#define STATUS_OK 						0x00000000
+
+// Negative effects from 0x00000001 - 0x00040000
+#define STATUS_BLINDED 					0x00000001
+#define STATUS_FRIGHTENED				0x00000002
+#define STATUS_INCAPACITATED			0x00000004
+#define STATUS_INVISIBLE				0x00000008
+#define STATUS_PARALYZED				0x00000010
+#define STATUS_POISONED					0x00000020
+#define STATUS_PRONE					0x00000040
+#define STATUS_STUNNED					0x00000080
+#define STATUS_UNCONSCIOUS				0x00000100
+#define STATUS_EXHAUSTED				0x00000200
+#define STATUS_BLEEDING					0x00000400
+#define STATUS_BURNING					0x00000800
+#define STATUS_SILENCED					0x00001000
+#define STATUS_WEAKENED					0x00002000
+#define STATUS_SLOWED					0x00004000
+#define STATUS_PRECISE					0x00008000
+#define STATUS_POWERFUL					0x00010000
+#define STATUS_BLESSED					0x00020000
+#define STATUS_CURSED					0x00040000
+
+// Positive effects from 0x00080000 - 0x80000000
+#define STATUS_FRENZY					0x00080000
+#define STATUS_UNSTOPPABLE				0x00100000
+#define STATUS_REGENERATION				0x00200000
+#define STATUS_ELEMENTAL_RESISTANCE	0x00400000
+#define STATUS_FIRE_RESISTANCE			0x00800000
+#define STATUS_STALWART					0x01000000
+#define STATUS_COLD_RESISTANCE			0x02000000
+#define STATUS_POISON_RESISTANCE	 	0x04000000
+#define STATUS_ACID_RESISTANCE			0x08000000
+#define STATUS_THORNS					0x10000000
+#define STATUS_LIGHTNING_RESISTANCE	0x20000000
+#define STATUS_MAGICAL_RESISTANCE		0x40000000
+#define STATUS_PHYSICAL_RESISTANCE		0x80000000
 
 // Structure representing the data associated with a single weapon
 // This is everything we need to know in order to carry out combat with this weapon
@@ -123,7 +165,8 @@ typedef struct {
 	unsigned char chr;					// 0-20
 	
 	// Hitpoints and status effects
-	unsigned char hp;					// Hit points
+	unsigned char hp;					// Current Hit points
+	unsigned char hp_reset;				// Base/original Hit points
 	unsigned long status;				// 32bit bitfield of status effects - see status.h
 	
 	// Equipped items
@@ -154,11 +197,17 @@ typedef struct {
 	
 } PlayerState_t;
 
+// List of players in party
+typedef struct {
+	unsigned char current;					// array entry of current selected player
+	PlayerState_t *player[MAX_PLAYERS];		// array of player characters
+} PartyState_t;
+
 // This structure is initialised each time we begin combat with 
 // one or more enemy
 typedef struct {
 	unsigned char current;						// array entry of current enemy
-	PlayerState_t enemies[MAX_MONSTER_TYPES];	// array of enemy characters
+	PlayerState_t *enemy[MAX_MONSTER_TYPES];	// array of enemy characters
 } EnemyState_t;
 
 // A list of NPCs we encounter, the 
@@ -183,12 +232,9 @@ typedef struct {
 	unsigned char level_defeated_secondary[MAX_LOCATIONS];		// Each level has a flag to indicate whether the secondary monster(s) has been defeated
 	unsigned short counter;										// Game turn/timer/counter
 	unsigned short gold;										// Record of currency
-	PlayerState_t *p1;											// Pointer to player 1
-	PlayerState_t *p2;											// Pointer to player 2
-	PlayerState_t *p3;											// Pointer to player 3
-	PlayerState_t *p4;											// Pointer to player 4
+	PartyState_t *players;								// partystate, which holds the list of players in party
+	EnemyState_t *enemies;								// enemystate, which holds the list of enemies in combat
 	struct NPCList *npcs;										// Pointer to a linked-list of NPC's we have met
-	EnemyState_t *enemies;										// Pointer to the enemystate structure
 } GameState_t;
 
 // Each level that we visit is loaded from disk into this structure

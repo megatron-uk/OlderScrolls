@@ -73,12 +73,15 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	gamestate->level_previous = 1;
 	gamestate->gold = 0;
 	gamestate->counter = 0;
-	gamestate->p1 = (PlayerState_t *) calloc(sizeof(PlayerState_t), 1); 
-	gamestate->p2 = NULL;
-	gamestate->p3 = NULL;
-	gamestate->p4 = NULL;
 	gamestate->npcs = NULL;
+	gamestate->players = (PartyState_t *) calloc(sizeof(PlayerState_t), 1);
+	for (i = 0; i < MAX_PLAYERS; i++){
+		gamestate->players->player[i] = (PlayerState_t *) calloc(sizeof(PlayerState_t), 1);
+	}
 	gamestate->enemies = (EnemyState_t *) calloc(sizeof(EnemyState_t), 1);
+	for (i = 0; i < MAX_MONSTER_TYPES; i++){
+		gamestate->enemies->enemy[i] = (PlayerState_t *) calloc(sizeof(PlayerState_t), 1);
+	}
 	
 	// Open the story data file and load entry 0 - this has the adventure name
 	data_LoadStory(gamestate, levelstate, 0);
@@ -92,8 +95,8 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	data_LoadMap(gamestate, levelstate, 1);
 	gamestate->level_visits[1] = 1;
 	
-	// Initialise a new player character
-	data_CreateCharacter(gamestate->p1, screen.p1);
+	// Initialise a new player character and their sprites
+	data_CreateCharacter(gamestate->players->player[0], screen.players[0]);
 }
 
 void game_Exit(){
@@ -134,6 +137,8 @@ void game_Splash(GameState_t *gamestate, LevelState_t *levelstate){
 	FILE *f;
 	//draw_Clear();
 	ui_Draw(gamestate, levelstate);
+	ui_DrawSideBar(gamestate, levelstate);
+	
 	//ui_DrawSplashText(gamestate, levelstate);
 	
 	//draw_HLine(8, 50, 384, PIXEL_WHITE, 0, MODE_PIXEL_SET);
@@ -199,6 +204,7 @@ void game_Map(GameState_t *gamestate, LevelState_t *levelstate){
 	
 	// Redraw the main screen
 	ui_Draw(gamestate, levelstate);
+	ui_DrawSideBar(gamestate, levelstate);
 	
 	// Open the Map data file and load current level
 	if (gamestate->level != gamestate->level_previous){

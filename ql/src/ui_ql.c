@@ -91,7 +91,97 @@ void ui_DrawText(GameState_t *gamestate, LevelState_t *levelstate){
 }
 
 void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
+	// Draws the sidebar with the player party portraits, names, basic status, etc
 	
+	unsigned char i;		// Loop counter
+	unsigned char n;		// Integer calculation on player stats
+	PlayerState_t *pc;		// Pointer to current player
+	char buf[16];			// Temporary string buffer
+	
+	// Draw 3 horizontal bars between the 4 player info boxes
+	for (i = 1; i <= 3; i++){
+		draw_HLine(UI_SIDEBAR_START_X, UI_SIDEBAR_START_Y + (UI_SIDEBAR_BLOCK * i), SCREEN_WIDTH - UI_SIDEBAR_START_X, PIXEL_GREEN, 0, MODE_PIXEL_OR);
+	}
+	
+	// Draw 4 player head boxes and 4 player portrait sprites
+	for (i = 0; i <= 3; i++){
+		draw_Box(UI_SIDEBAR_PORTRAIT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i), DRAW_PORTRAIT_WIDTH + 1, DRAW_PORTRAIT_HEIGHT + 1, 1, PIXEL_GREEN, PIXEL_CLEAR, MODE_PIXEL_OR);
+		
+		if (pc->level){
+			
+		}
+	}	
+	
+	// Draw player stats
+	for (i = 0; i <= 3; i++){
+		
+		// Only draw
+		pc = gamestate->players->player[i];
+		if (pc->level){
+
+			// Draw field titles
+			draw_String(55, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 4, 0, screen.font_8x8, PIXEL_WHITE, "HP:\nLv:\nFm:\nSt:");
+			
+			// ===================================================
+			// Hitpoints
+			// Shows a colour-coded display of the current players
+			// health:
+			// - Green if HP over 50%
+			// - Red if HP under 50%
+			// ===================================================
+			
+			n = (pc->hp * 100) / pc->hp_reset;
+			sprintf(buf, "%03d", pc->hp);
+			if (n > 50){
+				draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen.font_8x8, PIXEL_GREEN, buf);
+			} else {
+				draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen.font_8x8, PIXEL_RED, buf);
+			}
+			
+			// ===================================================
+			// Level
+			// Just shows the level number of the current player
+			// ===================================================
+			sprintf(buf, "%03d", pc->level);
+			draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 9, 3, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+		
+			// ===================================================
+			// Combat formation
+			// Can display:
+			// - Front
+			// - Mid
+			// - Rear
+			// ===================================================
+			if (pc->formation == FORMATION_FRONT){
+				sprintf(buf, "Front");
+			}
+			if (pc->formation == FORMATION_MID){
+				sprintf(buf, "Mid");
+			}
+			if (pc->formation == FORMATION_REAR){
+				sprintf(buf, "Rear");
+			}
+			draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 17, 5, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+			
+			// ===================================================
+			// Status
+			// Green if ok
+			// Red if any status effects
+			// ===================================================
+			if (pc->status == STATUS_OK){
+				sprintf(buf, "<g>Okay");
+			} else {
+				sprintf(buf, "<r>Check");
+			}
+			draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 25, 8, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+		
+			// Name
+			sprintf(buf, "%d: %s", (i + 1), pc->short_name);
+			draw_String(51, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+		}
+	}
+	
+	screen.dirty = 1;
 }
 
 void ui_DrawStatusBar(GameState_t *gamestate, LevelState_t *levelstate, unsigned char buttons, unsigned char labels){
@@ -326,17 +416,6 @@ void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate){
 	unsigned int base3 = 128;
 	unsigned int base4 = 8;
 	
-	// Players in party
-	if (gamestate->p2){
-		players++;
-	}
-	if (gamestate->p3){
-		players++;
-	}
-	if (gamestate->p4){
-		players++;
-	}
-	
 	// NPCs encountered
 	npcs = data_CountNPC(gamestate->npcs);
 	
@@ -374,10 +453,10 @@ void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate){
 	
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Screen, Player Sprites, BMP buffers\n", (screen.indirect * SCREEN_BYTES) + sizeof(screen) + sizeof(bmpdata_t) + sizeof(bmpstate_t) + (4 * sizeof(ssprite_t)) + (MAX_MONSTER_TYPES * sizeof(ssprite_t)) + sizeof(lsprite_t));
 	
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Game, Enemies\n", sizeof(GameState_t), sizeof(EnemyState_t));
+	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Game, Party, Enemies\n", sizeof(GameState_t));//, sizeof(EnemyState_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Level data\n", sizeof(LevelState_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Font data\n", sizeof(fontdata_t));
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Player, (total: <r>%d<C>)\n", sizeof(PlayerState_t), (players * sizeof(PlayerState_t)));
+	//sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Player, (total: <r>%d<C>)\n", sizeof(PlayerState_t), (players * sizeof(PlayerState_t)));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per NPC, (total: <r>%d<C>)\n", sizeof(struct NPCList), (npcs * sizeof(struct NPCList)));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Weapon\n", sizeof(WeaponState_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Spell\n", sizeof(SpellState_t));

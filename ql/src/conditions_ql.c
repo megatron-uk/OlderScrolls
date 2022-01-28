@@ -161,6 +161,8 @@ unsigned char check_PlayerAttribute(GameState_t *gamestate, LevelState_t *levels
 	check_value = cond[3];
 	
 	// Select the player character
+	pc = gamestate->players->player[player - 1];
+	/*
 	switch(player){
 		case 1:
 			pc = gamestate->p1;
@@ -188,6 +190,7 @@ unsigned char check_PlayerAttribute(GameState_t *gamestate, LevelState_t *levels
 		default:
 			return 0;
 	}
+	*/
 	
 	// Check the attribute
 	switch(check_attribute){
@@ -396,7 +399,8 @@ unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate,
 	check_item_id = cond[3];
 	
 	for (player = 1; player <= 4; player++){
-		switch(player){
+		pc = gamestate->players->player[player - 1];
+		/*switch(player){
 			case 1:
 				pc = gamestate->p1;
 			case 2:
@@ -420,7 +424,7 @@ unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate,
 					pc = NULL;;
 				}
 				break;
-		}
+		}*/
 		if (pc != NULL){
 			for (i = 0; i < MAX_ITEMS; i++){
 				pc_item_type = (pc->items[i] & 0xff00) >> 2;

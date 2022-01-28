@@ -121,35 +121,33 @@ char screen_Init(){
 	// ===========================================
 	
 	// Allocate memory for the progressive bmp loader
-	screen.bmpstate = (bmpstate_t *) malloc(sizeof(bmpstate_t));
+	screen.bmpstate = (bmpstate_t *) calloc(sizeof(bmpstate_t), 1);
 	if (screen.bmpstate == NULL){
 		// Couldn't allocate memory
 		return 6;	
 	}
 	
 	// ===========================================
-	// Initialise player character sprites
+	// Initialise player/enemy character sprites
 	// ===========================================
 	
-	screen.p1 = (ssprite_t *) malloc(sizeof(ssprite_t));
-	screen.p2 = (ssprite_t *) malloc(sizeof(ssprite_t));
-	screen.p3 = (ssprite_t *) malloc(sizeof(ssprite_t));
-	screen.p4 = (ssprite_t *) malloc(sizeof(ssprite_t));
-	if ((screen.p1 == NULL) || (screen.p1 == NULL) || (screen.p1 == NULL) || (screen.p1 == NULL)){
-		// Couldn't allocate memory
-		return 7;	
-	}
-	
-	// ===========================================
-	// Initialise enemy character sprite locations
-	// ===========================================
-	for (i = 0; i < MAX_MONSTER_TYPES; i++){
-		screen.enemies[i] = (ssprite_t *) malloc(sizeof(ssprite_t));
-		if (screen.enemies[i] == NULL){
-			return 7;
+	for (i = 0; i < MAX_PLAYERS; i++){
+		screen.players[i] = (ssprite_t *) calloc(sizeof(ssprite_t), 1);
+		if (screen.players[i] == NULL){
+			// COuld not allocate memory for a player sprite
+			return 7;	
 		}
 	}
-	screen.boss = (lsprite_t *) malloc(sizeof(lsprite_t));
+	
+	for (i = 0; i < MAX_MONSTER_TYPES; i++){
+		screen.enemies[i] = (ssprite_t *) calloc(sizeof(ssprite_t), 1);
+		if (screen.enemies[i] == NULL){
+			// COuld not allocate memory for a enemy sprite
+			return 7;	
+		}
+	}
+	
+	screen.boss = (lsprite_t *) calloc(sizeof(lsprite_t), 1);
 	if (screen.boss == NULL){
 		return 7;
 	}
