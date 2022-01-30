@@ -103,13 +103,13 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 	screen.file = open("orc_bmp", O_RDONLY);
 	if (screen.file < 0){
 		// Couldn't open image
-		return;
+		//return;
 	}
 	
 	// Draw 4 player head boxes and 4 player portrait sprites
 	for (i = 0; i <= 3; i++){
 		if (i > 0){
-			//draw_HLine(UI_SIDEBAR_START_X, UI_SIDEBAR_START_Y + (UI_SIDEBAR_BLOCK * i), SCREEN_WIDTH - UI_SIDEBAR_START_X, PIXEL_GREEN, 0, MODE_PIXEL_OR);	
+			draw_HLine(UI_SIDEBAR_START_X, UI_SIDEBAR_START_Y + (UI_SIDEBAR_BLOCK * i), SCREEN_WIDTH - UI_SIDEBAR_START_X, PIXEL_GREEN, 0, MODE_PIXEL_OR);	
 		}
 		pc = gamestate->players->player[i];
 		
@@ -453,11 +453,12 @@ void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate){
 	}
 	
 	// Draw the basic game UI
-	ui_Draw(gamestate, levelstate);
+	//ui_Draw(gamestate, levelstate);
+	draw_Clear();
 	draw_String(UI_TITLEBAR_MAX_CHARS - (strlen("DEBUG SCREEN")), UI_TITLEBAR_TEXT_Y, MAX_LEVEL_NAME_SIZE, 1, 0, screen.font_8x8, PIXEL_RED, "DEBUG SCREEN");
 	
 	// Show size of current game data structures
-	sprintf((char *)gamestate->text_buffer, "<g>Memory Used<C>\n");
+	sprintf((char *)gamestate->text_buffer, "<g>Data Structures<C>\n");
 	
 	// This line adds the following
 	// + 1x offscreen buffer (if in use)
@@ -467,48 +468,34 @@ void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate){
 	// + MAX_MONSTER_TYPES x enemy sprite/portrait structures
 	// + 1x boss sprite/portrait structures
 	
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Screen, Player Sprites, BMP buffers\n", (screen.indirect * SCREEN_BYTES) + sizeof(screen) + sizeof(bmpdata_t) + sizeof(bmpstate_t) + (4 * sizeof(ssprite_t)) + (MAX_MONSTER_TYPES * sizeof(ssprite_t)) + sizeof(lsprite_t));
-	
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Game, Party, Enemies\n", sizeof(GameState_t));//, sizeof(EnemyState_t));
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Level data\n", sizeof(LevelState_t));
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Font data\n", sizeof(fontdata_t));
-	//sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Player, (total: <r>%d<C>)\n", sizeof(PlayerState_t), (players * sizeof(PlayerState_t)));
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per NPC, (total: <r>%d<C>)\n", sizeof(struct NPCList), (npcs * sizeof(struct NPCList)));
+	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> BMP buffers\n- <r>%6d<C> Gamestate (inc text buffers)\n- <r>%6d<C> Levelstate\n- <r>%6d<C> per NPC state, (total: <r>%db<C>)\n- <r>%6d<C> Partystate (total: <r>%dx<C>)\n- <r>%6d<C> Enemystate (total: <r>%dx<C>)\n", (sizeof(bmpdata_t) + sizeof(bmpstate_t)), sizeof(GameState_t), sizeof(LevelState_t), sizeof(struct NPCList), (npcs * sizeof(struct NPCList)), (sizeof(PartyState_t) + (MAX_PLAYERS * sizeof(PlayerState_t))), MAX_PLAYERS, (sizeof(EnemyState_t) + (MAX_MONSTER_TYPES * sizeof(PlayerState_t))), MAX_MONSTER_TYPES);
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Weapon\n", sizeof(WeaponState_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Spell\n", sizeof(SpellState_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Item\n", sizeof(ItemState_t));
 	draw_String(1, 15, 48, 11, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
 	
+	sprintf((char *)gamestate->text_buffer, "<g>Graphics Data<C>\n");
+	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Double buffering?\n- <r>%6d<C> Screen state\n- <r>%6d<C> Bitmap font\n- <r>%6d<C> PC/Enemy GFX\n- <r>%6d<C> Boss GFX\n", screen.indirect, (screen.indirect * SCREEN_BYTES) + sizeof(screen), sizeof(fontdata_t), sizeof(ssprite_t), sizeof(lsprite_t));
+	draw_String(36, 96, 48, 11, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+		
 	// Calculate largest free blocks of memory that remain
 	sprintf((char *)gamestate->text_buffer, "<g>Memory Free<C>\n");
 	mem = get_FreeBlock(&size_bytes, base1, 72);
 	total_bytes += size_bytes;
-	if (mem){
-		sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 1st Free block\n", size_bytes);
-	} else {
-		sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- 1st free block is <r>less<C> than <r>%d<C> bytes\n", base1);
-	}
+	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 1st (%db chunks)\n", size_bytes, base1);
 	
 	mem2 = get_FreeBlock(&size_bytes, base2, 8);
 	total_bytes += size_bytes;
-	if (mem2){
-		sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 2nd\n", size_bytes);
-	}
+	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 2nd (%db)\n", size_bytes, base2);
 	
 	mem3 = get_FreeBlock(&size_bytes, base3, 2);
 	total_bytes += size_bytes;
-	if (mem3){
-		sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 3rd\n", size_bytes);
-	}
+	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 3rd (%db)\n", size_bytes, base3);
 	
 	mem4 = get_FreeBlock(&size_bytes, base4, 1);
 	total_bytes += size_bytes;
-	if (mem4){
-		sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 4th\n", size_bytes);
-	}
-	
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Total Bytes Free\n", total_bytes);
-	draw_String(1, 96, 48, 6, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 4th (%db)\n- <r>%6d<C> Total Bytes Free\n", size_bytes, base4, total_bytes);
+	draw_String(1, 104, 48, 6, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
 	
 	// Free any memory allocated!
 	if (mem){
@@ -525,13 +512,9 @@ void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate){
 	}
 
 	// Game progress details
-	sprintf((char *)gamestate->text_buffer, "<g>Game Progress<C>\n");
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> PC in player party\n", players);
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> NPCs met\n", npcs);
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Locations discovered\n", locations);
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Primary spawns\n", primary);
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Secondary spawns\n", secondary);
-	draw_String(1, 156, 48, 6, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+	sprintf((char *)gamestate->text_buffer, "<g>Game Progress\n<C>\- <r>%6d<C> PC in player party\n- <r>%6d<C> NPCs met\n- <r>%6d<C> Locations discovered\n- <r>%6d<C> Primary spawns\n- <r>%6d<C> Secondary spawns\n", players, npcs, locations, primary, secondary);
+	draw_String(1, 160, 48, 6, 0, screen.font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+	draw_String(1, SCREEN_HEIGHT - 10, 32, 1, 0, screen.font_8x8, PIXEL_RED, "Press [ESC] to return to game");
 	
 	screen.dirty = 1;
 }

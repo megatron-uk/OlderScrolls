@@ -82,7 +82,7 @@ char screen_Init(){
 	// ==========================================
 	
 	screen.win = io_open(SCREEN_MODE, 0);
-	screen.f = open(SCREEN_MODE, "rw");
+	screen.f = open(SCREEN_MODE, O_RDWR);
 	
 	// ==========================================
 	// Load font bitmap and initialise fonts

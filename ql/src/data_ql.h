@@ -15,8 +15,6 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-
 #ifndef _GAME_H
 #include "../common/game.h"
 #define _GAME_H

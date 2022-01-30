@@ -69,7 +69,7 @@ int main(void){
 	GameState_t *gamestate = NULL;
 	LevelState_t *levelstate = NULL;
 	gamestate = (GameState_t *) calloc(sizeof(GameState_t), 1);
-	levelstate = (LevelState_t *) malloc(sizeof(LevelState_t));
+	levelstate = (LevelState_t *) calloc(sizeof(LevelState_t), 1);
 	
 	printf("%s starting...\n", ENGINE_NAME);
 	
@@ -93,7 +93,7 @@ int main(void){
 	printf("\nPress any key to begin full screen mode...\n");
 	input_Wait(INPUT_CONFIRM);
 	
-	// Initialise game data and open datafiles
+	// Initialise game data and open any initial datafiles (splash text, first level location)
 	game_Init(gamestate, levelstate);
 	
 	// Show the adventure-specific splash screen

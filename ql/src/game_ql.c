@@ -79,7 +79,7 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 	
 	// Open the story data file and load entry 0 - this has the adventure name
 	data_LoadStory(gamestate, levelstate, 0);
-	strncpy((char *) gamestate->name, (char *) gamestate->text_buffer, MAX_LEVEL_NAME_SIZE);
+	strncpy(gamestate->name, gamestate->buf, MAX_LEVEL_NAME_SIZE);
 	
 	// Open the story data file and load entry 1 - this has the splash screen data
 	data_LoadStory(gamestate, levelstate, 1);

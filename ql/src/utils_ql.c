@@ -50,7 +50,7 @@ unsigned char check_Files(){
 	// ==============================
 	
 	// Weapon data
-	f = open(WEAPON_DAT, "r");
+	f = open(WEAPON_DAT, O_RDONLY);
 	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", WEAPON_DAT);
 		errors++;
@@ -60,7 +60,7 @@ unsigned char check_Files(){
 	}
 	
 	// Monster data
-	f = open(MONSTER_DAT, "r");
+	f = open(MONSTER_DAT, O_RDONLY);
 	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", MONSTER_DAT);
 		errors++;
@@ -70,7 +70,7 @@ unsigned char check_Files(){
 	}
 	
 	// Map data
-	f = open(ITEM_DAT, "r");
+	f = open(ITEM_DAT, O_RDONLY);
 	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", ITEM_DAT);
 		errors++;
@@ -80,7 +80,7 @@ unsigned char check_Files(){
 	}
 	
 	// Map data
-	f = open(MAP_DAT, "r");
+	f = open(MAP_DAT, O_RDONLY);
 	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", MAP_DAT);
 		errors++;
@@ -90,7 +90,7 @@ unsigned char check_Files(){
 	}
 	
 	// Story/text data
-	f = open(STORY_DAT, "r");
+	f = open(STORY_DAT, O_RDONLY);
 	if (f < 0){
 		printf("- Error: Unable to find game data %s\n", STORY_DAT);
 		errors++;
