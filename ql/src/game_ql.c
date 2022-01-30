@@ -96,25 +96,6 @@ void game_Init(GameState_t *gamestate, LevelState_t *levelstate){
 void game_Exit(){
 	// Close any open data files
 	
-	if (story_file != NULL){
-		fclose(story_file);
-	}
-	
-	if (map_file != NULL){
-		fclose(map_file);
-	}
-	
-	if (weapon_file != NULL){
-		fclose(weapon_file);
-	}
-	
-	if (item_file != NULL){
-		fclose(item_file);
-	}
-	
-	if (monster_file != NULL){
-		fclose(monster_file);
-	}
 }
 
 void game_Splash(GameState_t *gamestate, LevelState_t *levelstate){

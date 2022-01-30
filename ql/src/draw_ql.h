@@ -95,7 +95,7 @@ typedef struct lspritedata {
 // Screen definition
 struct Screen_t {
 		chanid_t win;				// QDOS virtual screen mode
-		FILE 	*f;					// QDOS output channel for fprintf stdio functions - NOT for general use
+		int		f;					// File handle for QDOS screen/io channels
 		int 	file;				// File handle for all bmp loading routines
         unsigned short x;			// Width of screen
         unsigned short y;			// Height of screen
@@ -120,14 +120,9 @@ struct Screen_t {
         
         // Always hold the player character sprite/portrait in memory
         // pixel data is *retained* after use
-        ssprite_t *players[MAX_PLAYERS]; 	// Bitmap data for players
-        //ssprite_t *p1;				// Bitmap data for player 1 sprite & portrait
-        //ssprite_t *p2;				// Bitmap data for player 2 sprite & portrait
-        //ssprite_t *p3;				// Bitmap data for player 3 sprite & portrait
-        //ssprite_t *p4;				// Bitmap data for player 4 sprite & portrait
-        
+        ssprite_t *players[MAX_PLAYERS]; 			// Bitmap data for players        
         ssprite_t *enemies[MAX_MONSTER_TYPES]; 	// Bitmap data for enemy sprites       
-        lsprite_t *boss;						// Bitmap data for enemy boss sprite
+        lsprite_t *boss;							// We only support one boss per level and they have a large sprite
 };
 extern struct Screen_t screen;		// Global, all functions have visibility of screen data	
 

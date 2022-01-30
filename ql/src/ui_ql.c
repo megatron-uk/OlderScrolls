@@ -109,7 +109,7 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 	// Draw 4 player head boxes and 4 player portrait sprites
 	for (i = 0; i <= 3; i++){
 		if (i > 0){
-			draw_HLine(UI_SIDEBAR_START_X, UI_SIDEBAR_START_Y + (UI_SIDEBAR_BLOCK * i), SCREEN_WIDTH - UI_SIDEBAR_START_X, PIXEL_GREEN, 0, MODE_PIXEL_OR);	
+			//draw_HLine(UI_SIDEBAR_START_X, UI_SIDEBAR_START_Y + (UI_SIDEBAR_BLOCK * i), SCREEN_WIDTH - UI_SIDEBAR_START_X, PIXEL_GREEN, 0, MODE_PIXEL_OR);	
 		}
 		pc = gamestate->players->player[i];
 		
@@ -133,7 +133,7 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 		if (pc->level){
 
 			// Draw field titles
-			draw_String(55, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 4, 0, screen.font_8x8, PIXEL_WHITE, "HP:\nLv:\nFm:\nSt:");
+			draw_String(UI_SIDEBAR_STAT_TEXT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 4, 0, screen.font_8x8, PIXEL_WHITE, "HP:\nLv:\nFm:\nSt:");
 			
 			// ===================================================
 			// Hitpoints
@@ -144,10 +144,10 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 			// ===================================================
 			
 			sprintf(buf, "%03d", pc->hp);
-			if (((pc->hp * 100) / pc->hp_reset) > 50){
-				draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen.font_8x8, PIXEL_GREEN, buf);
+			if (((pc->hp * 100) / pc->hp_reset) > UI_HP_WARN_LEVEL){
+				draw_String(UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen.font_8x8, PIXEL_GREEN, buf);
 			} else {
-				draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen.font_8x8, PIXEL_RED, buf);
+				draw_String(UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen.font_8x8, PIXEL_RED, buf);
 			}
 			
 			// ===================================================
@@ -155,7 +155,7 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 			// Just shows the level number of the current player
 			// ===================================================
 			sprintf(buf, "%03d", pc->level);
-			draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 9, 3, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+			draw_String(UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 9, 3, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
 		
 			// ===================================================
 			// Combat formation
@@ -173,7 +173,7 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 			if (pc->formation == FORMATION_REAR){
 				sprintf(buf, "Rear");
 			}
-			draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 17, 5, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+			draw_String(UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 17, 5, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
 			
 			// ===================================================
 			// Status
@@ -185,15 +185,15 @@ void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate){
 			} else {
 				sprintf(buf, "<r>Check");
 			}
-			draw_String(58, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 25, 8, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+			draw_String(UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 25, 8, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
 		
 			// Name
 			sprintf(buf, "%d: %s", (i + 1), pc->short_name);
-			draw_String(51, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+			draw_String(UI_SIDEBAR_PC_NAME_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
 		} else {
 			// Name
 			sprintf(buf, "%d: ----", (i + 1));
-			draw_String(51, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
+			draw_String(UI_SIDEBAR_PC_NAME_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen.font_8x8, PIXEL_WHITE, buf);
 		}
 	}
 	

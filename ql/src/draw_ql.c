@@ -45,7 +45,6 @@
 
 char screen_Init(){
 	// Initialise screen and/or offscreen buffers
-	int f;
 	unsigned char i;
 	
 	// ========================================
@@ -98,8 +97,8 @@ char screen_Init(){
 	screen.bmp->pixels = NULL;
 	
 	// Load and process the 8x8 font
-	f = open(FONT_8X8, O_RDONLY);
-	if (f == NULL){
+	screen.file = open(FONT_8X8, O_RDONLY);
+	if (screen.file < 0){
 		// Couldn't open font
 		return 3;
 	}
@@ -108,11 +107,10 @@ char screen_Init(){
 		// Couldn't allocate memory
 		return 4;	
 	}
-	if (bmp_ReadFont(f, screen.bmp, screen.font_8x8, 1, 1, 8, 8) < 0){
+	if (bmp_ReadFont(screen.file, screen.bmp, screen.font_8x8, 1, 1, 8, 8) < 0){
 		// Couldn't process font bitmap to table
 		return 5;
 	}
-	bmp_Print(screen.bmp);
 	screen.font_8x8->unknown_symbol = 37;	// Unknown characters are replaced with '%'
 	screen.font_8x8->ascii_start = 32;		// First ascii char in set is ' '
 	
@@ -156,7 +154,7 @@ char screen_Init(){
 	}
 	
 	// Close file handle used to load font bitmap file
-	fclose(f);
+	close(screen.file);
 	
 	return 0;
 }
@@ -169,7 +167,7 @@ void screen_Exit(){
 	}
 	
 	// Close any io channel handles
-	fclose(screen.f);
+	close(screen.f);
 }
 
 void draw_Clear(){
@@ -1037,7 +1035,7 @@ char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata
 		return status;
 	} else {
 		
-		bmp_Print(screen.bmp);
+		//bmp_Print(screen.bmp);
 		
 		// Set rows remaining
 		bmpstate->rows_remaining = bmpdata->height;
@@ -1046,7 +1044,7 @@ char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata
 		while (bmpstate->rows_remaining > 0){
 			status = draw_BitmapAsync(x, y, bmpdata, bmpfile, bmpstate);
 			if (status != 0){
-				printf("Error drawing async: %d\n", status);
+				//printf("Error drawing async: %d\n", status);
 				return status;  
 			}
 		}
