@@ -15,6 +15,10 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _BMP_DEFS_H
+#define _BMP_DEFS_H
+
+#define BMP_FILENAME_LEN		12
 #define BMP_FILE_SIG_OFFSET		0x0000 // Should always be 'BM'
 #define BMP_FILE_SIZE_OFFSET	0x0002 // Size of file, including headers
 #define DATA_OFFSET_OFFSET 		0x000A // How many bytes from 0x0000 the data section starts
@@ -36,21 +40,10 @@
 
 #define BMP_UNCOMPRESSED	0
 
-// Return codes
-#define BMP_OK				0 // BMP loaded and decode okay
-#define BMP_ERR_NOFILE		-1 // Cannot find file
-#define BMP_ERR_SIZE		-2 // Height/Width outside bounds
-#define BMP_ERR_MEM			-3 // Unable to allocate memory
-#define BMP_ERR_BPP			-4 // Unsupported colour depth/BPP
-#define BMP_ERR_READ		-5 // Error reading or seeking within file
-#define BMP_ERR_COMPRESSED	-6 // We dont support comrpessed BMP files
-#define BMP_ERR_FONT_WIDTH	-7 // We dont support fonts of this width
-#define BMP_ERR_FONT_HEIGHT	-8 // We dont support fonts of this height
-#define BMP_ERR_NODATA		-9 // No data received from readImage
-
 #define BMP_FONT_MAX_WIDTH		8
 #define BMP_FONT_MAX_HEIGHT		8
-#define BMP_WIDTH_MAX			512	// On the QL we support up images up to the width of the screen
+#define BMP_WIDTH_MAX			512	// On the QL we support images up to the width of the screen
+#define BMP_MAX_SYMBOLS			96
 
 // ============================
 //
@@ -58,7 +51,7 @@
 //
 // ============================
 typedef struct bmpdata {
-	unsigned char	filename[13];	// Maximum of 8 + 1 + 3 + \0. e.g. (filename.bmp)
+	unsigned char	filename[BMP_FILENAME_LEN];	// Maximum of 8 + 1 + 3 + \0. e.g. (filename.bmp)
 	unsigned int 	width;			// X resolution in pixels
 	unsigned int 	height;			// Y resolution in pixels
 	unsigned char	compressed;		// If the data is compressed or not (usually RLE)
@@ -80,12 +73,14 @@ typedef struct bmpdata {
 //
 // =============================
 typedef struct bmpstate {
-        unsigned short width_bytes;    			// Number of bytes in a row
-        short rows_remaining; 			// Total number of rows left to be read
-        unsigned short pixels[BMP_WIDTH_MAX / 8];	// Maximum number of pixels in a row of any image
-        											// The QL stores a single pixel as a pair of bits 
-        											// in the upper and lower bytes of a 16bit word.
-        											// So we don't need 1 byte per pixel!
+	unsigned short x;						// Where the bitmap is being displayed on screen
+	unsigned short y;
+	unsigned short width_bytes;    			// Number of bytes in a row - not used in 1bpp/4bpp modes
+	short rows_remaining; 						// Total number of rows left to be read
+	unsigned short pixels[BMP_WIDTH_MAX / 8];	// Maximum number of pixels in a row of *any* image
+												// The QL stores a single pixel as a pair of bits 
+												// in the upper and lower bytes of a 16bit word.
+												// So we don't need 1 byte per pixel! It is in fact 8 pixels per 16bit word.
 } bmpstate_t;
 
 // ============================
@@ -93,9 +88,9 @@ typedef struct bmpstate {
 // Font data structure
 //
 // 96 characters, 
-// each character is 1 byte wide, and up to 8 (max) rows high 
-// each row is 1bpp
-// total of 6144 bytes per 96 character font
+// Bitmap is stored as 1bpp
+// Each character is 8px, or 1 byte wide, and up to 8px high. Therefore 8 bytes per font. 
+// Total of 768 bytes per 96 character font
 //
 //=============================
 typedef struct fontdata {
@@ -104,14 +99,23 @@ unsigned char	height;			// Height of each character, in pixels
 unsigned char	ascii_start;	// ASCII number of symbol 0
 unsigned char	n_symbols;		// Total number of symbols
 unsigned char	unknown_symbol;	// Which symbol do we map to unknown/missing symbols?
-unsigned char 	symbol[96][BMP_FONT_MAX_HEIGHT]; 
+unsigned char 	symbol[BMP_MAX_SYMBOLS][BMP_FONT_MAX_HEIGHT]; 
 } fontdata_t;
 
+#endif
+
+// Protos
+
+#ifndef _BMP_PROTO_H
+#define _BMP_PROTO_H
+
+void bmp_Init(bmpdata_t *bmpdata);
+void bmp_InitState(bmpstate_t *bmpstate);
 void bmp_Destroy(bmpdata_t *bmpdata);
-int bmp_ReadFont(int bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char data, unsigned char font_width, unsigned char font_height);
-int bmp_ReadImage(int bmp_image, bmpdata_t *bmpdata, unsigned char header, unsigned char data);
-
-//int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char data, unsigned char font_width, unsigned char font_height);
-//int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, unsigned char data);
-
+int bmp_ReadFont(int bmpfile, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char data, unsigned char font_width, unsigned char font_height);
+int bmp_ReadImage(int bmpfile, bmpdata_t *bmpdata, unsigned char header, unsigned char data);
 void bmp_Print(bmpdata_t *bmpdata);
+void bmp_PrintFont(fontdata_t *fontdata);
+void bmp_PrintState(bmpstate_t *bmpstate);
+
+#endif

@@ -52,70 +52,85 @@
 #include "../common/game.h"
 #define _GAME_H
 #endif
+#ifndef _ERROR_H
+#include "../common/error.h"
+#define _ERROR_H
+#endif
 
 // Options to the C68 runtime environment
 long _stack = 1 * 1024L; 		// Set size of stack, in kb. Defaults to 4kb.
-long _mneed = 8 * 1024L; 		// Minimum heap size allowed
+long _mneed = 4 * 1024L; 		// Minimum heap size allowed
 long _memincr = 2 * 1024L; 		// When heap exhausted, requests to QDOS are in this size
-long _memqdos = 10 * 1024L; 	// Minimum amount of memory that is allowed to remain for QDOS ...
+long _memqdos = 8 * 1024L; 		// Minimum amount of memory that is allowed to remain for QDOS ...
 								// ... this defaults to 20kb, so reducing it to 10kb gives us another
-								// 10kb of heap to play with.
+								// 10kb of heap to play with - very useful for an unexpanded 128kb machine.
+
+//(*_Cinit)() = main;								
+//(*_Cstart)() = main;
 
 int main(void){
 	
-	char c;
+	char c = 0;
 	unsigned char main_exit = 0;
 	
 	GameState_t *gamestate = NULL;
 	LevelState_t *levelstate = NULL;
-	gamestate = (GameState_t *) calloc(sizeof(GameState_t), 1);
-	levelstate = (LevelState_t *) calloc(sizeof(LevelState_t), 1);
+	Screen_t *screen = NULL;
 	
 	printf("%s starting...\n", ENGINE_NAME);
+	
+	// Allocate memory for basic data structures
+	gamestate = (GameState_t *) calloc(sizeof(GameState_t), 1);
+	levelstate = (LevelState_t *) calloc(sizeof(LevelState_t), 1);
+	screen = (Screen_t *) calloc(sizeof(Screen_t), 1);
+	if ((gamestate == NULL) || (levelstate == NULL) || (screen == NULL)){
+		printf("- Error: Unable to allocate memory for essential data!");
+		return(-1);
+	}
 	
 	// Check that all game objects are present
 	c = check_Files();
 	c = 0;
 	if (c != 0){
 		printf("- Error: One or more game datafiles are missing! [Err:%d]\n", c);
-		return(-1);
+		return(MAIN_DATAFILES_MISSING);
 	}
 	
 	// Try to initialise screen/video memory interface
-	c = screen_Init();
+	c = screen_Init(screen);
 	if (c != 0){
 		printf("- Error: Screen could not be initialised! [Err:%d]\n", c);
-		return(-1);
-	} else {
-		printf("- Screen structures initialised\n");	
+		return(MAIN_SCREEN_FAILURE);
 	}
 	
-	printf("\nPress any key to begin full screen mode...\n");
-	input_Wait(INPUT_CONFIRM);
+	printf("\nPress return to begin full screen mode...\n");
+	input_Wait(screen, INPUT_CONFIRM);
 	
-	// Initialise game data and open any initial datafiles (splash text, first level location)
-	game_Init(gamestate, levelstate);
+	// Initialise game data and open any initial datafiles 
+	// (splash text, first level location)
+	game_Init(screen, gamestate, levelstate);
 	
 	// Show the adventure-specific splash screen
-	game_Splash(gamestate, levelstate);
+	game_Splash(screen, gamestate, levelstate);
 	
-	// Main game loop
 	while(main_exit == 0){
 		
 		switch(gamestate->gamemode){
 		
-			case GAME_MODE_MAP:
-				game_Map(gamestate, levelstate);
-				break;
-			
 			case GAME_MODE_COMBAT:
+				//game_Combat();
 				break;
 				
 			case GAME_MODE_SHOP:
+				//game_Shop();
 				break;
 				
 			case GAME_MODE_EXIT:
 				main_exit = 1;
+				break;
+			
+			case GAME_MODE_MAP:
+				game_Map(screen, gamestate, levelstate);
 				break;
 				
 			default:
@@ -123,7 +138,7 @@ int main(void){
 		}
 	}
 	
-	screen_Exit();
-	game_Exit();
-	return(0);
+	screen_Exit(screen);
+	game_Exit(screen);
+	return(OK);
 }

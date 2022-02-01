@@ -15,15 +15,33 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// Defines
+
+#ifndef _DATA_QL_DEFS_H
+#define _DATA_QL_DEFS_H
+#endif
+
+// Protos
+
+#ifndef _DATA_QL_PROTO_H
+#define _DATA_QL_PROTO_H
+
 #ifndef _GAME_H
 #include "../common/game.h"
-#define _GAME_H
 #endif
 #ifndef _DRAW_H
 #include "../common/draw.h"
-#define _DRAW_H
 #endif
+
+int data_LoadStory(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
+int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
+int data_AddNPC(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char id);
+struct NPCList * data_FindNPC(struct NPCList *npclist, unsigned char id);
+struct NPCList * data_LastNPC(struct NPCList *npclist);
+unsigned char data_CountNPC(struct NPCList *npclist);
 
 // This is defined here and not in data.h as not all targets support bitmap sprites
 // as part of the player creation routine (e.g. text mode targets)
-unsigned char data_CreateCharacter(PlayerState_t *playerstate, ssprite_t *playersprite);
+unsigned char data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t *playersprite);
+
+#endif

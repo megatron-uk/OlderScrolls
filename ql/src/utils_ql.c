@@ -23,14 +23,12 @@
 
 #ifndef _CONFIG_H
 #include "../common/config.h"
-#define _CONFIG_H
 #endif
 #ifndef _UTIL_H
 #include "../common/utils.h"
-#define _UTIL_H
 #endif
 
-unsigned char check_Files(){
+unsigned char check_Files(void){
 
 	int f;
 	unsigned char errors = 0;
@@ -128,7 +126,7 @@ unsigned char word_length(char *c, unsigned short pos){
 	return count;
 }
 
-void * get_FreeBlock(unsigned int *size, unsigned int base, unsigned char increment){
+void * get_FreeBlock(unsigned int *size, unsigned int base, unsigned short increment){
 	// Returns the biggest free block of memory than can be allocated
 	
 	unsigned char *mem;
@@ -145,7 +143,7 @@ void * get_FreeBlock(unsigned int *size, unsigned int base, unsigned char increm
 		
 		// Wind back until we get a free block increment
 		while (mem == NULL){
-			base -= 1;
+			base -= increment;
 			mem = malloc(base);
 		}
 		

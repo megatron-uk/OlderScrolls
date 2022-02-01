@@ -15,13 +15,16 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _INPUT_H
+#define _INPUT_H
+
 #define MAX_ALLOWED_INPUTS 32
 
 extern unsigned char input_allowed[MAX_ALLOWED_INPUTS]; // Global list holding all of the keycodes that 
 														// are allowed at any point in the game. Each game
 														// 'module' or 'function' needs to redefine the list
 														// to its own allowed keys (move, query, save, etc)
-
+														
 // ============================================
 // Platform specific drawing implementations
 // ============================================
@@ -50,3 +53,5 @@ extern unsigned char input_allowed[MAX_ALLOWED_INPUTS]; // Global list holding a
 //#ifdef TARGET_MSX2
 //#include "../src/input_msx2.h"
 //#endif
+
+#endif

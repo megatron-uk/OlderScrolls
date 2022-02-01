@@ -20,13 +20,17 @@
 #include "../common/utils.h"
 #define _UTIL_H
 #endif
+#ifndef _ERROR_H
+#include "../common/error.h"
+#define _ERROR_H
+#endif
 
-int bmp_ReadImage(int bmp_image, bmpdata_t *bmpdata, unsigned char header, unsigned char data){
+int bmp_ReadImage(int bmpfile, bmpdata_t *bmpdata, unsigned char header, unsigned char data){
 	/* 
 		NOTE - This QL implementation is specific for the OlderScrolls rpg engine and ONLY
-		supports 1bpp bitmap images. Any other format will return an error.
+		supports 1bpp/4bpp bitmap images. Any other format will return an error.
 	
-		bmp_image 	== open file handle to your bmp file
+		bmpfile 	== open file handle to your bmp file
 		bmpdata 	== a bmpdata_t struct
 		header		== 1/0 to enable bmp header parsing
 		data		== 1/0 to enable bmp pixel extraction (cannot do this without first parsing the header)
@@ -49,48 +53,49 @@ int bmp_ReadImage(int bmp_image, bmpdata_t *bmpdata, unsigned char header, unsig
 	int	status;					// Generic status for calls from read/lseek etc.
 
 	if (header){
+		
 		// Seek to dataoffset position in header
-		status = lseek(bmp_image, 0, 1);
-		status = lseek(bmp_image, DATA_OFFSET_OFFSET, SEEK_SET);
+		lseek(bmpfile, 0, 1);
+		lseek(bmpfile, DATA_OFFSET_OFFSET, SEEK_SET);
 
 		// Read data offset value
-		status = read(bmp_image, &bmpdata->offset, 4);
+		read(bmpfile, &bmpdata->offset, 4);
 
 		// offset is a little-endian 32bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->offset = swap_int32(bmpdata->offset);
 		
 		// Seek to image width/columns position in header
-		status = lseek(bmp_image, WIDTH_OFFSET, SEEK_SET);
+		lseek(bmpfile, WIDTH_OFFSET, SEEK_SET);
 
 		// Read width value
-		status = read(bmp_image, &bmpdata->width, 4);
+		read(bmpfile, &bmpdata->width, 4);
 
 		// width is a little-endian 32bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->width = swap_int32(bmpdata->width);
 		
 		// Seek to image height/rows position in header
-		status = lseek(bmp_image, HEIGHT_OFFSET, SEEK_SET);
+		lseek(bmpfile, HEIGHT_OFFSET, SEEK_SET);
 
 		// Read height value
-		status = read(bmp_image, &bmpdata->height, 4);
+		read(bmpfile, &bmpdata->height, 4);
 
 		// Height is a little-endian 32bit,, and Sinclair QL is big-endian so swap it
 		bmpdata->height = swap_int32(bmpdata->height);
 		
 		// Seek to bpp location in header
-		status = lseek(bmp_image, BITS_PER_PIXEL_OFFSET, SEEK_SET);
+		lseek(bmpfile, BITS_PER_PIXEL_OFFSET, SEEK_SET);
 
 		// Read bpp value
-		status = read(bmp_image, &bmpdata->bpp, 2);
+		read(bmpfile, &bmpdata->bpp, 2);
 
 		// BPP is a little-endian 16bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->bpp = swap_int16(bmpdata->bpp);
 		
 		// Seek to compression field
-		status = lseek(bmp_image, COMPRESS_OFFSET, SEEK_SET);
+		lseek(bmpfile, COMPRESS_OFFSET, SEEK_SET);
 		
 		// Read compression value
-		status = read(bmp_image, &bmpdata->compressed, sizeof(bmpdata->compressed));
+		read(bmpfile, &bmpdata->compressed, sizeof(bmpdata->compressed));
 				
 		// compression is a little-endian 32bit,, and Sinclair QL is big-endian so swap it
 		bmpdata->compressed = swap_int32(bmpdata->compressed);
@@ -165,11 +170,12 @@ int bmp_ReadImage(int bmp_image, bmpdata_t *bmpdata, unsigned char header, unsig
 		}
 		
 		// Allocate the total size of the pixel data in bytes		
-		if (bmpdata->bpp == BMP_1BPP){
+		if ((bmpdata->bpp == BMP_1BPP) || (bmpdata->bpp == BMP_4BPP)){
 			bmpdata->pixels = (unsigned char*) calloc(bmpdata->size, 1);
 		} else {
-			bmpdata->pixels = (unsigned char*) calloc(bmpdata->n_pixels, bmpdata->bytespp);
-		} 
+			return BMP_ERR_BPP;
+		}
+		
 		if (bmpdata->pixels == NULL){
 			return BMP_ERR_MEM;
 		}
@@ -179,12 +185,12 @@ int bmp_ReadImage(int bmp_image, bmpdata_t *bmpdata, unsigned char header, unsig
 		bmp_ptr = bmpdata->pixels + ((bmpdata->height - 1) * bmpdata->row_unpadded);
 		
 		// Seek to start of data section in file
-		status = lseek(bmp_image, bmpdata->offset, SEEK_SET);
+		lseek(bmpfile, bmpdata->offset, SEEK_SET);
 		
 		// For every row in the image...
 		for (i = 0; i < bmpdata->height; i++){		
 			
-			status = read(bmp_image, bmp_ptr, bmpdata->row_unpadded);
+			status = read(bmpfile, bmp_ptr, bmpdata->row_unpadded);
 			if (status < 1){
 				free(bmpdata->pixels);
 				return BMP_ERR_READ;	
@@ -196,7 +202,7 @@ int bmp_ReadImage(int bmp_image, bmpdata_t *bmpdata, unsigned char header, unsig
 			// Seek to next set of pixels for the next row if row_unpadded < row_padded
 			if (status != bmpdata->row_unpadded){
 				// Seek the number of bytes left in this row
-				status = lseek(bmp_image, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
+				lseek(bmpfile, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
 				if (status != 0){
 					free(bmpdata->pixels);
 					return BMP_ERR_READ;
@@ -210,7 +216,7 @@ int bmp_ReadImage(int bmp_image, bmpdata_t *bmpdata, unsigned char header, unsig
 	return BMP_OK;
 }
 
-int bmp_ReadFont(int bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char data, unsigned char font_width, unsigned char font_height){
+int bmp_ReadFont(int bmpfile, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char data, unsigned char font_width, unsigned char font_height){
 	// Read a font from disk - really a wrapper around the bitmap reader
 	unsigned int h, w;
 	unsigned char status = 0;
@@ -221,7 +227,12 @@ int bmp_ReadFont(int bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsign
 	unsigned int heightpos = 0;		// vertical offsetof into bmp image data
 	unsigned int pos = 0;			// character/symbol position (0, 1, 2, ... 32)
 	
-	status = bmp_ReadImage(bmp_image, bmpdata, header, data);
+	fontdata->width = 0;
+	fontdata->height = 0;
+	fontdata->ascii_start = 0;
+	fontdata->n_symbols = 0;
+	fontdata->unknown_symbol = 0;
+	status = bmp_ReadImage(bmpfile, bmpdata, header, data);
 	if (status == BMP_OK){
 		fontdata->width = font_width;
 		fontdata->height = font_height;
@@ -249,6 +260,13 @@ int bmp_ReadFont(int bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsign
 						bytepos += 1;
 						// Increment symbol number
 						pos++;
+						
+						// We only support a limited number of symbols, 
+						// otherwise we risk array overflow
+						if (pos >= BMP_MAX_SYMBOLS){
+							fontdata->n_symbols = pos;
+							return BMP_OK;
+						}
 					}
 					// At end of every row of symbols, step by the height of one symbol row
 					// so that we're at the top left pixel of the first symbol of the new row
@@ -270,6 +288,30 @@ int bmp_ReadFont(int bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsign
 	}	
 }
 
+void bmp_Init(bmpdata_t *bmpdata){
+	// Reset all values of the bmpdata structure, e.g. prior to
+	// re-using it.
+	
+	//strncpy(bmpdata->filename, "nothing", BMP_FILENAME_LEN);
+	bmpdata->width = 0;
+	bmpdata->height = 0;
+	bmpdata->compressed = 0;
+	bmpdata->bpp = 0;
+	bmpdata->bytespp = 0;
+	bmpdata->offset = 0;
+	bmpdata->row_unpadded = 0;
+	bmpdata->row_padded = 0;
+	bmpdata->size = 0;
+	bmpdata->n_pixels = 0;
+}
+
+void bmp_InitState(bmpstate_t *bmpstate){
+
+	bmpstate->width_bytes = 0;
+	bmpstate->rows_remaining = 0;
+	memset(bmpstate->pixels, 0, BMP_WIDTH_MAX / 8);
+}
+
 void bmp_Destroy(bmpdata_t *bmpdata){
 	// Destroy a bmpdata structure and free any memory allocated
 	
@@ -281,11 +323,29 @@ void bmp_Destroy(bmpdata_t *bmpdata){
 
 void bmp_Print(bmpdata_t *bmpdata){
 
+	printf("Filename: [%s]\n", bmpdata->filename);
 	printf("Resolution: %u x %u\n", bmpdata->width, bmpdata->height);
-	printf("Padded row size: %u bytes\n", bmpdata->row_padded);
+	printf("Padded row size: %u\n", bmpdata->row_padded);
 	printf("Unpadded row size: %u bytes\n", bmpdata->row_unpadded);
 	printf("Colour depth: %dbpp\n", bmpdata->bpp);
 	printf("Storage size: %u bytes\n", bmpdata->size);
 	printf("Pixels: %u\n", bmpdata->n_pixels);
-	printf("Pixel data @ %x\n", (unsigned int) &bmpdata->pixels);
+	printf("Pixel data offset: %u\n", bmpdata->offset);
+}
+
+void bmp_PrintState(bmpstate_t *bmpstate){
+
+	printf("Display at: %d,%d\n", bmpstate->x, bmpstate->y);
+	printf("Width: %d bytes\n", bmpstate->width_bytes);
+	printf("Rows left: %d\n", bmpstate->rows_remaining);
+	printf("Storage size: %lu bytes\n", sizeof(bmpstate_t));
+}
+
+void bmp_PrintFont(fontdata_t *fontdata){
+
+	printf("Font size: %d x %d\n", fontdata->width, fontdata->height);
+	printf("ASCII start: %d\n", fontdata->ascii_start);
+	printf("Total symbols: %d\n", fontdata->n_symbols);
+	printf("Unknown remap: %d\n", fontdata->unknown_symbol);
+	printf("Storage size: %lu bytes\n", sizeof(fontdata_t));
 }

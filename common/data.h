@@ -15,6 +15,9 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _DATA_H
+#define _DATA_H
+
 #define DATA_TYPE_STORY		0x01
 #define DATA_TYPE_MAP		0x02
 #define DATA_TYPE_WEAPON	0x03
@@ -33,16 +36,6 @@
 // These prototypes are standard for all targets
 // ============================================
 
-#define DATA_LOAD_OK	0x00
-#define DATA_LOAD_ERR	0x01
-
-unsigned char data_LoadStory(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
-unsigned char data_LoadMap(GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
-//unsigned char data_CreateCharacter(PlayerState_t *playerstate);
-unsigned char data_AddNPC(GameState_t *gamestate, LevelState_t *levelstate, unsigned char id);
-struct NPCList * data_FindNPC(struct NPCList *npclist, unsigned char id);
-struct NPCList * data_LastNPC(struct NPCList *npclist);
-unsigned char data_CountNPC(struct NPCList *npclist);
 	
 // ============================================
 // Platform specific UI implementations
@@ -72,3 +65,5 @@ unsigned char data_CountNPC(struct NPCList *npclist);
 //#ifdef TARGET_MSX2
 //#include "../src/data_msx2.h"
 //#endif
+
+#endif

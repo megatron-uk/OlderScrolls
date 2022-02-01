@@ -24,160 +24,169 @@
 
 #ifndef _BMP_H
 #include "bmp_ql.h"
-#define _BMP_H
 #endif
 #ifndef _CONFIG_H
 #include "../common/config.h"
-#define _CONFIG_H
 #endif
 #ifndef _DRAW_H
 #include "../common/draw.h"
-#define _DRAW_H
 #endif
 #ifndef _UTILS_H
 #include "../common/utils.h"
-#define _UTILS_H
 #endif
 #ifndef _BMP_H
 #include "bmp_ql.h"
-#define _BMP_H
+#endif
+#ifndef _UI_H
+#include "../common/ui.h"
+#endif
+#ifndef _ERROR_H
+#include "../common/error.h"
 #endif
 
-char screen_Init(){
+int screen_Init(Screen_t *screen){
 	// Initialise screen and/or offscreen buffers
 	unsigned char i;
+	int f;
 	
 	// ========================================
 	//  Initialise offscreen video buffer
 	// ========================================
 	
 	// Where our physical video memory is located
-	screen.screen = SCREEN_BASE;
+	screen->screen = SCREEN_BASE;
 	
-	// Offscreen rendering (requires a free region of 32kb)
+	// Offscreen rendering (requires a free region of 32768 bytes)
 	// This will composite all UI elements and text, only
 	// flipping the buffer to screen once all elements are
 	// in place.
-	screen.indirect = 1;
-	screen.offscreen = malloc(SCREEN_BYTES);
-	if (screen.offscreen == NULL){
+	screen->x = SCREEN_WIDTH;
+	screen->y = SCREEN_HEIGHT;
+	screen->indirect = 1;
+	screen->offscreen = calloc(SCREEN_BYTES, 1);
+	if (screen->offscreen == NULL){
 		
 		// Couldn't allocate memory for offscreen buffer
-		// - we might be on a base model QL with only 128kb
-		//printf("- Offscreen buffer: 0 bytes\n");
-		
+		// - we might be on a base model QL with only 128kb 
+		// and some background utils running.
 		// Direct rendering - write direct to screen memory
 		// but this might show flickering as we write the
 		// individual UI elements and/or text
-		screen.indirect = 0;
-		screen.offscreen = NULL;
-		screen.buf = (unsigned short*) screen.screen;
+		screen->indirect = 0;
+		screen->offscreen = NULL;
+		screen->buf = (unsigned short*) screen->screen;
 	} else {
 		//printf("- Offscreen buffer: %d bytes\n", SCREEN_BYTES);
-		screen.buf = (unsigned short*) screen.offscreen;
+		screen->buf = (unsigned short*) screen->offscreen;
 	}
 	
 	// ==========================================
 	// Open the QDOS input/output channel
 	// ==========================================
 	
-	screen.win = io_open(SCREEN_MODE, 0);
-	screen.f = open(SCREEN_MODE, O_RDWR);
+	screen->win = io_open(SCREEN_MODE, 0);
 	
 	// ==========================================
 	// Load font bitmap and initialise fonts
 	// ==========================================
 	
 	// Initialise any fonts
-	screen.bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
-	if (screen.bmp == NULL){
+	screen->bmp = (bmpdata_t *) calloc(sizeof(bmpdata_t), 1);
+	if (screen->bmp == NULL){
 		// Couldn't allocate memory
-		return 2;	
+		return SCREEN_INIT_BMPMEMORY;	
 	}
-	screen.bmp->pixels = NULL;
+	screen->bmp->pixels = NULL;
 	
 	// Load and process the 8x8 font
-	screen.file = open(FONT_8X8, O_RDONLY);
-	if (screen.file < 0){
+	f = open(FONT_8X8, O_RDONLY);
+	if (f < 0){
 		// Couldn't open font
-		return 3;
+		return SCREEN_INIT_FONTFILE;
 	}
-	screen.font_8x8 = (fontdata_t *) malloc(sizeof(fontdata_t));
-	if (screen.font_8x8 == NULL){
+	screen->font_8x8 = (fontdata_t *) calloc(sizeof(fontdata_t), 1);
+	if (screen->font_8x8 == NULL){
 		// Couldn't allocate memory
-		return 4;	
+		return SCREEN_INIT_FONTMEMORY;	
 	}
-	if (bmp_ReadFont(screen.file, screen.bmp, screen.font_8x8, 1, 1, 8, 8) < 0){
+	if (bmp_ReadFont(f, screen->bmp, screen->font_8x8, 1, 1, 8, 8) < 0){
 		// Couldn't process font bitmap to table
-		return 5;
+		return SCREEN_INIT_FONTPROCESS;
 	}
-	screen.font_8x8->unknown_symbol = 37;	// Unknown characters are replaced with '%'
-	screen.font_8x8->ascii_start = 32;		// First ascii char in set is ' '
+	screen->font_8x8->unknown_symbol = 37;	// Unknown characters are replaced with the symbol '%' (percent)
+	screen->font_8x8->ascii_start = 32;		// First ascii char in our 8x8 font set is the symbol ' ' (space)
 	
-	// Destroy the bmp pixel memory which was used to load the font bitmap
-	free(screen.bmp->pixels);
+	// Destroy the pixel memory which was used to load the font bitmap
+	free(screen->bmp->pixels);
+	
+	// At this point we have the bitmap font available, so can use graphical error messages
 	
 	// ===========================================
 	// Set up the progressive bitmap loader
+	// We can use this to stream in bitmaps from
+	// disk as many times as we want.
 	// ===========================================
 	
 	// Allocate memory for the progressive bmp loader
-	screen.bmpstate = (bmpstate_t *) calloc(sizeof(bmpstate_t), 1);
-	if (screen.bmpstate == NULL){
+	screen->bmpstate = (bmpstate_t *) calloc(sizeof(bmpstate_t), 1);
+	if (screen->bmpstate == NULL){
 		// Couldn't allocate memory
-		return 6;	
+		ui_DrawError(screen, GENERIC_MEMORY_MSG, SCREEN_INIT_MEMORY_MSG, SCREEN_INIT_BMPSTATEMEMORY);
+		return SCREEN_INIT_BMPSTATEMEMORY;	
 	}
 	
 	// ===========================================
 	// Initialise player/enemy character sprites
+	// Only done ONCE per session
 	// ===========================================
 	
 	for (i = 0; i < MAX_PLAYERS; i++){
-		screen.players[i] = (ssprite_t *) calloc(sizeof(ssprite_t), 1);
-		if (screen.players[i] == NULL){
+		screen->players[i] = (ssprite_t *) calloc(sizeof(ssprite_t), 1);
+		if (screen->players[i] == NULL){
 			// COuld not allocate memory for a player sprite
-			return 7;	
+			ui_DrawError(screen, GENERIC_MEMORY_MSG, SCREEN_INIT_MEMORY_MSG, SCREEN_INIT_PC_SPRITEMEMORY);
+			return SCREEN_INIT_PC_SPRITEMEMORY;	
 		}
 	}
 	
 	for (i = 0; i < MAX_MONSTER_TYPES; i++){
-		screen.enemies[i] = (ssprite_t *) calloc(sizeof(ssprite_t), 1);
-		if (screen.enemies[i] == NULL){
+		screen->enemies[i] = (ssprite_t *) calloc(sizeof(ssprite_t), 1);
+		if (screen->enemies[i] == NULL){
 			// COuld not allocate memory for a enemy sprite
-			return 7;	
+			ui_DrawError(screen, GENERIC_MEMORY_MSG, SCREEN_INIT_MEMORY_MSG, SCREEN_INIT_E_SPRITEMEMORY);
+			return SCREEN_INIT_E_SPRITEMEMORY;	
 		}
 	}
 	
-	screen.boss = (lsprite_t *) calloc(sizeof(lsprite_t), 1);
-	if (screen.boss == NULL){
-		return 7;
+	screen->boss = (lsprite_t *) calloc(sizeof(lsprite_t), 1);
+	if (screen->boss == NULL){
+		// COuld not allocate memory for boss sprite
+		ui_DrawError(screen, GENERIC_MEMORY_MSG, SCREEN_INIT_MEMORY_MSG, SCREEN_INIT_BOSS_SPRITEMEMORY);
+		return SCREEN_INIT_BOSS_SPRITEMEMORY;
 	}
 	
 	// Close file handle used to load font bitmap file
-	close(screen.file);
+	close(f);
 	
-	return 0;
+	return SCREEN_INIT_OK;
 }
 
-void screen_Exit(){
+void screen_Exit(Screen_t *screen){
 	// Free any allocated screen
-	if (screen.indirect){
-		free(screen.offscreen);
-		screen.indirect = 0;
+	if (screen->indirect){
+		free(screen->offscreen);
+		screen->indirect = 0;
 	}
-	
-	// Close any io channel handles
-	close(screen.f);
 }
 
-void draw_Clear(){
+void draw_Clear(Screen_t *screen){
 	// Clear screen (or offscreen buffer)
 	
 	unsigned short i;	// Loop counter
 	unsigned short *p;	// Pointer to the current 8 pixel block of screen memory (stored as a pair of bytes / single 16bit word)
 	
 	// Initialise the pointer to the start of screen memory buffer
-	p = (unsigned short*) screen.buf;
+	p = (unsigned short*) screen->buf;
 	
 	// For every 8 pixel block / 16bit word, set those pixels to a given colour
 	for (i = 0 ; i < SCREEN_BLOCKS; i++){
@@ -186,21 +195,21 @@ void draw_Clear(){
 	}
 }
 
-void draw_Flip(){
+void draw_Flip(Screen_t *screen){
 	// Swap offscreen buffer with video memory,
 	// if currently enabled.
 	
-	if (screen.dirty){
+	if (screen->dirty){
 	
 		// Check for vsync
 		// TO DO
 		
 		// Copy offscreen buffer
-		if (screen.indirect){
-			memcpy((unsigned char*) screen.screen, screen.buf, SCREEN_BYTES);
+		if (screen->indirect){
+			memcpy((unsigned char*) screen->screen, screen->buf, SCREEN_BYTES);
 		}
 		
-		screen.dirty = 0;
+		screen->dirty = 0;
 	}
 }
 
@@ -313,7 +322,7 @@ void draw_GetXY(unsigned short x, unsigned short y, unsigned short *addr, unsign
 	return;
 }
 
-void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char pad, unsigned char mode){
+void draw_HLine(Screen_t *screen, unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char pad, unsigned char mode){
 	// Draw a horizontal line of pixels
 	
 	unsigned short *p;
@@ -334,7 +343,7 @@ void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsig
 	draw_GetXY(x + length - pad, y, &end_p, &end_bits);
 	draw_SetMask(fill, 0, &drawing_mask_lo, &drawing_mask_hi, &pixel_skip, &multi_colour);
 	
-	p = (unsigned short*) screen.buf;
+	p = (unsigned short*) screen->buf;
 	p += start_p;
 	
 	// Draw leading pixels if start_bits != 0
@@ -398,10 +407,10 @@ void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsig
 		}
 	}
 	
-	screen.dirty = 1;
+	screen->dirty = 1;
 }
 
-void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char mode){
+void draw_VLine(Screen_t *screen, unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char mode){
 	// Draw a vertical line of pixels
 	
 	unsigned short *p;						// Pointer to a 16bit word in screen buffer with the first and second byte of the 8x1 pixels
@@ -452,7 +461,7 @@ void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsig
 	}
 	
 	c = 0;
-	p = (unsigned short*) screen.buf;
+	p = (unsigned short*) screen->buf;
 	p += start_p;
 	if (pixel_skip){
 		skip = 0;
@@ -498,10 +507,10 @@ void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsig
 		c++;
 	}
 	
-	screen.dirty = 1;
+	screen->dirty = 1;
 }
 
-void draw_Box(unsigned short x, unsigned short y, 
+void draw_Box(Screen_t *screen, unsigned short x, unsigned short y, 
 	unsigned short length, unsigned short height,
 	unsigned short borderpx, unsigned short borderfill,
 	unsigned short centrefill,
@@ -535,7 +544,7 @@ void draw_Box(unsigned short x, unsigned short y,
 		}
 		pad = 0;
 		for (i = 0; i < height - (2 * borderpx) + 1; i++){
-			draw_HLine(x + borderpx, y + borderpx + i, length - (2 * borderpx), centrefill, pad, mode);
+			draw_HLine(screen, x + borderpx, y + borderpx + i, length - (2 * borderpx), centrefill, pad, mode);
 			if (enable_pad){
 				if (pad == 1){
 					pad = 0;
@@ -559,13 +568,13 @@ void draw_Box(unsigned short x, unsigned short y,
 	// Borders
 	for (i = 0; i < borderpx; i++){
 		// Top line
-		draw_HLine(x, y + i, length, borderfill, pad, mode);
+		draw_HLine(screen, x, y + i, length, borderfill, pad, mode);
 		// Left
-		draw_VLine(x + i, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
+		draw_VLine(screen, x + i, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
 		// Right
-		draw_VLine(x + (length - i) - 1, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
+		draw_VLine(screen, x + (length - i) - 1, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
 		// Bottom
-		draw_HLine(x, y + height - i, length, borderfill, pad, mode);
+		draw_HLine(screen, x, y + height - i, length, borderfill, pad, mode);
 		if (enable_pad){
 			if (pad == 1){
 				pad = 0;
@@ -574,12 +583,8 @@ void draw_Box(unsigned short x, unsigned short y,
 			}
 		}
 	}
-	screen.dirty = 1;
+	screen->dirty = 1;
 	return;
-}
-
-void draw_Pixel(unsigned short x, unsigned short y, unsigned short fill){
-	screen.dirty = 1;
 }
 
 void draw_GetStringXY(unsigned short col, unsigned short y, unsigned short *addr){
@@ -600,7 +605,7 @@ void draw_GetStringXY(unsigned short col, unsigned short y, unsigned short *addr
 	return;
 }
 
-unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c){
+unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c){
 	// Put a string of text on the screen, at a set of coordinates (x,y
 	// using a specific font.
 	// max_chars and max_rows defines a bounding box
@@ -633,7 +638,7 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 	draw_GetStringXY(col, y, &start_p);
 	
 	// Reposition write position
-	p = (unsigned short*) screen.buf;
+	p = (unsigned short*) screen->buf;
 	p += start_p;
 	
 	current_chars = 0;
@@ -691,7 +696,7 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 				// Newline characters
 				if (current_rows < max_rows){
 					// We have at least 1 more row of text left
-					p = (unsigned short*) screen.buf;
+					p = (unsigned short*) screen->buf;
 					start_p += (8 * SCREEN_WORDS_PER_ROW); // Set a new start position to this new line
 					p += start_p;
 					current_chars = 0;
@@ -699,7 +704,7 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 				} else {
 					// We've exceeded number of allowed rows, return
 					// with the current position in the string.
-					screen.dirty = 1;
+					screen->dirty = 1;
 					return pos;	
 				}
 			} else {
@@ -710,7 +715,7 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 					
 					// Find the bitmap for this character in the font table
 					draw_FontSymbol(i, fontdata, fill, p);
-					p = (unsigned short*) screen.buf;
+					p = (unsigned short*) screen->buf;
 					current_chars++;
 					p += start_p + current_chars;
 				} else {
@@ -719,7 +724,7 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 					
 					if (current_rows < max_rows){
 						// We have at least 1 more row of text left
-						p = (unsigned short*) screen.buf;
+						p = (unsigned short*) screen->buf;
 						start_p += (8 * SCREEN_WORDS_PER_ROW); // Set a new start position to this new line
 						p += start_p;
 						current_rows++;			
@@ -727,14 +732,14 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 						if (i != 0x20){
 							// Find the bitmap for this character in the font table
 							draw_FontSymbol(i, fontdata, fill, p);
-							p = (unsigned short*) screen.buf;
+							p = (unsigned short*) screen->buf;
 							current_chars = 1;
 							p += start_p + current_chars;
 						} else {
 							// Don't print a leading space if it is the first
 							// character on a line. Just skip to next character.
 							// This 'left justifies' the text.
-							p = (unsigned short*) screen.buf;
+							p = (unsigned short*) screen->buf;
 							current_chars = 0;
 							p += start_p + current_chars;
 						}
@@ -742,7 +747,7 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 						
 						// We've exceeded number of allowed rows, return
 						// with the current position in the string.
-						screen.dirty = 1;
+						screen->dirty = 1;
 						return pos;	
 					}
 				}
@@ -750,12 +755,12 @@ unsigned short draw_String(unsigned char col, unsigned char y, unsigned char max
 		}
 	}
 	// All characters have been printed
-	screen.dirty = 1;
+	screen->dirty = 1;
 	return 0;	
 }
 
 void draw_FontSymbol(unsigned char ascii_num, fontdata_t *fontdata, unsigned short fill, unsigned short *pos){
-	// Draws a single character at screen position pointed at by p.
+	// Draws a single character in a given colour, at screen position pointed at by p.
 	
 	unsigned char font_row;
 	unsigned char font_symbol;
@@ -787,12 +792,13 @@ void draw_FontSymbol(unsigned char ascii_num, fontdata_t *fontdata, unsigned sho
 }
 
 
-char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, int bmpfile, bmpstate_t *bmpstate){
+int draw_BitmapAsync(Screen_t *screen, int bmpfile){
 	// Load from file, decode and display, line by line
 	// Every time the function is called, another line is read, decoded and displayed
 	
 	int	status;					// Status returned from fread/fseek
-	unsigned int i, ii;			// Loop counter
+	unsigned int i = 0;			// Outer loop counter
+	unsigned int ii = 0;		// Inner loop counter
 	unsigned short start_addr;	// The first pixel
 	unsigned short end_addr;	// The last pixel
 	unsigned short *p;
@@ -812,38 +818,33 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, in
 	unsigned char remain_bits = 0;	
 	
 	// Only supporting 1bpp and 4bpp (first four colours) mode BMP on the QL
-	if ((bmpdata->bpp != BMP_1BPP) && (bmpdata->bpp != BMP_4BPP)){
+	if ((screen->bmp->bpp != BMP_1BPP) && (screen->bmp->bpp != BMP_4BPP)){
 		//printf("Async bpp error\n");
 		return BMP_ERR_BPP;
 	}
 
 	// BMP header has not been read yet
-	if (bmpdata->offset <= 0){
+	if (screen->bmp->offset <= 0){
 		//printf("Async header not read error\n");
 		return BMP_ERR_READ;
 	}
 	
-	if (bmpstate->rows_remaining == bmpdata->height){
-		// This is a new image, or we haven't read a row yet		
-		bmpstate->width_bytes = bmpdata->width * bmpdata->bytespp;
-		
+	if (screen->bmpstate->rows_remaining == screen->bmp->height){
+		//printf("Async seek to: %u in %u\n", bmpdata->offset, bmpfile);
+		// This is a new image, or we haven't read a row yet			
 		// Seek to start of data section in file
-		status = lseek(bmpfile, bmpdata->offset, SEEK_SET);
-		if (status != 0){
-			bmpstate->width_bytes = 0;
-			bmpstate->rows_remaining = 0;
+		status = lseek(bmpfile, screen->bmp->offset, SEEK_SET);
+		if (status != screen->bmp->offset){
+			screen->bmpstate->width_bytes = 0;	// not used in 1bpp/4bpp mode
+			screen->bmpstate->rows_remaining = 0;
 			//printf("Async error seeking data\n");
 			return BMP_ERR_READ;
 		}
 	}	
 	
 	// Read a row of pixels
-	if (bmpdata->bpp == BMP_1BPP){
-		//status = fread(bmpstate->pixels, 1, bmpdata->row_unpadded, bmpfile);
-		
-		
-	} else if (bmpdata->bpp == BMP_4BPP){
-		while(i < bmpdata->row_unpadded){
+	if (screen->bmp->bpp == BMP_4BPP){
+		while(i < screen->bmp->row_unpadded){
 			pixel_left = 0;
 			pixel_right = 0;
 			pix_pos = 7;		// Working on bit position 0 (and 1) of the on-screen pixel
@@ -852,8 +853,9 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, in
 				
 				status = read(bmpfile, &bmp_pixel, 1);
 				if (status < 1){
-					bmpstate->width_bytes = 0;
-					bmpstate->rows_remaining = 0;
+					//printf("Async error reading data\n");
+					screen->bmpstate->width_bytes = 0; // not used in 1bpp/4bpp mode
+					screen->bmpstate->rows_remaining = 0;
 					return BMP_ERR_READ;
 				}
 				nibble1 = bmp_pixel >> 4; 		// Get pixel 1 from the byte
@@ -914,43 +916,47 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, in
 				pix_pos = pix_pos - 2;
 			}
 			// Store this decoded word / block of 8 pixels
-			bmpstate->pixels[row_pos] = (pixel_left << 8) + pixel_right;
+			screen->bmpstate->pixels[row_pos] = (pixel_left << 8) + pixel_right;
 			row_pos++;
 			i = i + 4;
 		}
+	} else {
+		return BMP_ERR_BPP;	
 	}
 
-	if (status != bmpdata->row_unpadded){
+	if (status != screen->bmp->row_unpadded){
 		// Seek the number of bytes left in this row
-		status = lseek(bmpfile, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
-		if (status != 0){
-			bmpstate->width_bytes = 0;
-			bmpstate->rows_remaining = 0;
-			//printf("Async error seeking paddding bytes\n");
-			return BMP_ERR_READ;
+		if ((screen->bmp->row_padded - screen->bmp->row_unpadded) != 0){
+			status = lseek(bmpfile, (screen->bmp->row_padded - screen->bmp->row_unpadded), SEEK_CUR);
+			if (status != (screen->bmp->row_padded - screen->bmp->row_unpadded)){
+				screen->bmpstate->width_bytes = 0;
+				screen->bmpstate->rows_remaining = 0;
+				//printf("Async error seeking padding bytes (wanted: %u, got %u)\n", (bmpdata->row_padded - bmpdata->row_unpadded), status);
+				return BMP_ERR_READ;
+			}
 		}
 	} else {
 		// Seek to end of row
-		if (bmpdata->row_padded != bmpdata->row_unpadded){
-			lseek(bmpfile, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
+		if (screen->bmp->row_padded != screen->bmp->row_unpadded){
+			lseek(bmpfile, (screen->bmp->row_padded - screen->bmp->row_unpadded), SEEK_CUR);
 		}
 	}
 	
 	// Get coordinates
-	draw_GetXY(x, y + bmpstate->rows_remaining, &start_addr, &start_bits);
-	draw_GetXY(x + bmpdata->width, y + bmpstate->rows_remaining, &end_addr, &end_bits);
+	draw_GetXY(screen->bmpstate->x, screen->bmpstate->y + screen->bmpstate->rows_remaining - 1, &start_addr, &start_bits);
+	draw_GetXY(screen->bmpstate->x + screen->bmp->width, screen->bmpstate->y + screen->bmpstate->rows_remaining, &end_addr, &end_bits);
 	remain_bits = 8 - start_bits;
 	
 	// Reposition screen write position for current x/y position
-	p = (unsigned short*) screen.buf;
+	p = (unsigned short*) screen->buf;
 	p += start_addr;
-	last_word = (bmpdata->width / 8);
+	last_word = (screen->bmp->width / 8);
 	
 	// Write any starting pixels if not on a 8 pixel boundary
 	if (start_bits != 0){
 		
-		pixel_left = (unsigned char)((bmpstate->pixels[0] & 0xff00) >> 8) >> start_bits;
-		pixel_right = (unsigned char)(bmpstate->pixels[0] & 0x00ff) >> start_bits;
+		pixel_left = (unsigned char)((screen->bmpstate->pixels[0] & 0xff00) >> 8) >> start_bits;
+		pixel_right = (unsigned char)(screen->bmpstate->pixels[0] & 0x00ff) >> start_bits;
 		mask = (pixel_left << 8) + pixel_right;
 		
 		// OR with any existing leading bits; safest
@@ -960,7 +966,7 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, in
 		p++;
 		
 		// Save a copy of the current 8 pixels (including those we masked off)
-		mask = bmpstate->pixels[0];
+		mask = screen->bmpstate->pixels[0];
 		
 		// Start 1 word into the pixel array
 		i_start = 1;
@@ -985,17 +991,17 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, in
 			pixel_right = (unsigned char)(mask & 0x00ff) << remain_bits;
 			
 			// Add on the first pixels from the current word
-			pixel_left += (unsigned char)((bmpstate->pixels[i] & 0xff00) >> 8) >> start_bits;
-			pixel_right += (unsigned char)(bmpstate->pixels[i] & 0x00ff) >> start_bits;
+			pixel_left += (unsigned char)((screen->bmpstate->pixels[i] & 0xff00) >> 8) >> start_bits;
+			pixel_right += (unsigned char)(screen->bmpstate->pixels[i] & 0x00ff) >> start_bits;
 			
 			*p = (unsigned short)(pixel_left << 8) + pixel_right;
 			
 			// Store the current word for the next pass
-			mask = bmpstate->pixels[i];
+			mask = screen->bmpstate->pixels[i];
 			
 		} else {
 			// On a 8 pixel boundary, just copy the next block of 8 pixels
-			*p = bmpstate->pixels[i];
+			*p = screen->bmpstate->pixels[i];
 		}
 		p++;
 		
@@ -1013,42 +1019,59 @@ char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, in
 		*p = *p | (unsigned short)(pixel_left << 8) + pixel_right;
 	}
 	
-	bmpstate->rows_remaining--;
-	
-	if (bmpstate->rows_remaining < 1){
-		bmpstate->rows_remaining = 0;
+	// Decrement number of rows left
+	if (screen->bmpstate->rows_remaining == 1){
+		screen->bmpstate->rows_remaining = 0;
+	} else {
+		screen->bmpstate->rows_remaining--;	
 	}
 	
-	return 0;
+	return BMP_OK;
 	
 }
 
-char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata, int bmpfile, bmpstate_t *bmpstate){
+int draw_BitmapAsyncFull(Screen_t *screen, unsigned short x, unsigned short y, char *filename){
 	// Display a bitmap using the async call, in its entirety, using no-more than 1 line
 	// worth of allocated memory
 	
+	int f;
 	short status;
 	
-	// Read image header and palette entries
-	status = bmp_ReadImage(bmpfile, bmpdata, 1, 0); 
+	f = open(filename, O_RDONLY);
+	if (f < 0){
+		ui_DrawError(screen, GENERIC_FILE_MSG, SCREEN_ASYNCBMP_FILE, 0);
+		return DRAW_OPEN_BMPFILE;
+	}
+	
+	// Read image header
+	bmp_Init(screen->bmp);
+	status = bmp_ReadImage(f, screen->bmp, 1, 0); 
 	if (status != 0){
+		ui_DrawError(screen, SCREEN_ASYNCBMP_MSG, SCREEN_ASYNCBMP_HEADER, status);
+		close(f);
 		return status;
 	} else {
+		//strncpy(screen->bmp->filename, filename, BMP_FILENAME_LEN);
+		// Set rows remaining based on height set in header
+		bmp_InitState(screen->bmpstate);
+		screen->bmpstate->rows_remaining = screen->bmp->height;
+		screen->bmpstate->x = x;
+		screen->bmpstate->y = y;
 		
-		//bmp_Print(screen.bmp);
+		//bmp_Print(screen->bmp);
+		//bmp_PrintState(screen->bmpstate);
 		
-		// Set rows remaining
-		bmpstate->rows_remaining = bmpdata->height;
-
 		// Loop until all rows processed
-		while (bmpstate->rows_remaining > 0){
-			status = draw_BitmapAsync(x, y, bmpdata, bmpfile, bmpstate);
-			if (status != 0){
-				//printf("Error drawing async: %d\n", status);
-				return status;  
+		while (screen->bmpstate->rows_remaining > 0){
+			status = draw_BitmapAsync(screen, f);
+			if (status != BMP_OK){
+				ui_DrawError(screen, SCREEN_ASYNCBMP_MSG, SCREEN_ASYNCBMP_DISPLAY, status);
+				close(f);
+				return status;	
 			}
 		}
 	}
-	
+	close(f);
+	screen->dirty = 1;
 	return status;
 }

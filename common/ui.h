@@ -15,6 +15,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _UI_H
+
 // ============================================
 // Platform specific UI implementations
 // ============================================
@@ -43,3 +45,6 @@
 //#ifdef TARGET_MSX2
 //#include "../src/draw_msx2.h"
 //#endif
+
+#define _UI_H
+#endif

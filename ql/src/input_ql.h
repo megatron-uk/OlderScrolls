@@ -15,6 +15,13 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 */
 
+#ifndef _INPUT_QL_DEF_H
+#define _INPUT_QL_DEF_H
+
+#ifndef _DRAW_H
+#include "../common/draw.h"
+#endif
+
 // Keys that we listen for
 #define INPUT_CANCEL	0x1B		// Escape key
 #define INPUT_CONFIRM	0x0A		// Return key
@@ -56,7 +63,16 @@
 #define INPUT_Y			0x59		// uppercase 'Y'
 #define INPUT_Y_		0x79		// lowercase 'y'
 
-unsigned char input_Get(void);
+#endif
+
+// Protos
+
+#ifndef _INPUT_QL_PROTO_H
+#define _INPUT_QL_PROTO_H
+
+unsigned char input_Get(Screen_t *screen);
 void input_Set(unsigned char key);
 void input_Clear(void);
-void input_Wait(unsigned char key);
+void input_Wait(Screen_t *screen, unsigned char key);
+
+#endif

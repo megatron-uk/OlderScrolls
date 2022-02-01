@@ -15,6 +15,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _UTILS_QL_H
+
 // Swap endianess of a 16bit integer
 #define swap_int16(i) ((i << 8) | ((i >> 8) & 0xFF))
 
@@ -27,6 +29,9 @@
 // Clear bit 'x' of a value
 #define clearbit(x,bit) ((x) &= ~(1<<(bit)))
 
-unsigned char check_Files();
+unsigned char check_Files(void);
 unsigned char word_length(char *c, unsigned short pos);
-void * get_FreeBlock(unsigned int *size, unsigned int base, unsigned char increment);
+void * get_FreeBlock(unsigned int *size, unsigned int base, unsigned short increment);
+
+#define _UTILS_QL_H
+#endif

@@ -15,13 +15,14 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _UI_QL_DEF_H
+#define _UI_QL_DEF_H
+
 #ifndef _GAME_H
 #include "../common/game.h"
-#define _GAME_H
 #endif
 #ifndef _DRAW_H
 #include "../common/draw.h"
-#define _DRAW_H
 #endif
 
 // Main windows is the full screen
@@ -71,18 +72,31 @@
 #define UI_YESNO_START_X			160
 #define UI_YESNO_START_Y			170
 
+// Error popup boxes
+#define UI_ERROR_START_X			110
+#define UI_ERROR_START_Y			150
 
-void ui_Draw(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawCombat(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawImage(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawText(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawSideBar(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawStatusBar(GameState_t *gamestate, LevelState_t *levelstate, unsigned char buttons, unsigned char labels);
-void ui_DrawSplashText(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawLocationName(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawNavigation(GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawYesNo(unsigned char *title);
-void ui_DebugScreen(GameState_t *gamestate, LevelState_t *levelstate);
+#endif
+
+// Protos
+
+#ifndef _UI_QL_PROTO_H
+#define _UI_QL_PROTO_H
+
+void ui_Draw(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawCombat(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawImage(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawStatusBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char buttons, unsigned char labels);
+void ui_DrawSplashText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawLocationName(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawNavigation(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawYesNo(Screen_t *screen, char *title);
+void ui_DrawError(Screen_t *screen, char *title, char *text, short errorcode);
+void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 
 // Area-specific text display routines
-unsigned short ui_DrawMainWindowText(GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, char *c);
+unsigned short ui_DrawMainWindowText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, char *c);
+
+#endif

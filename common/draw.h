@@ -21,6 +21,9 @@
 // For UI interface routines that use the low-level
 // functions, please see ui.h
 
+#ifndef _DRAW_H
+#define _DRAW_H
+
 // ============================================
 // Common defines and data structures
 // All targets need to implement these.
@@ -52,16 +55,15 @@
 #define DRAW_BOSS_WIDTH			96		// 'Boss' enemy sprites are these dimensions
 #define DRAW_BOSS_HEIGHT		96
 
-char screen_Init();
-void screen_Exit();
-
 // ============================================
 // Platform specific drawing implementations
 // ============================================
 
 // Sinclair QL 16bit m68008
 #ifdef TARGET_QL
+#ifndef _DRAW_QL_DEF_H
 #include "../src/draw_ql.h"
+#endif
 #endif
 
 // Commodore PET 8bit 6502
@@ -83,3 +85,5 @@ void screen_Exit();
 //#ifdef TARGET_MSX2
 //#include "../src/draw_msx2.h"
 //#endif
+
+#endif

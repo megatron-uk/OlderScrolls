@@ -17,6 +17,7 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _MONSTERS_H
 
 // Monster classes
 // Generic humans who get no special abilities
@@ -42,3 +43,6 @@
 #define BEAST_MELEE			0x21
 #define BEAST_RANGED		0x22
 #define BEAST_MAGIC			0x23
+
+#define _MONSTERS_H
+#endif

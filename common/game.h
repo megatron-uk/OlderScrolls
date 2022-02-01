@@ -17,7 +17,16 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifdef _GAME_H
+#error "The module game.h is already included by another module"
+#endif
+
+#ifndef _GAME_H
+#define _GAME_H
+
+#ifndef _MONSTERS_H
 #include "../common/monsters.h"
+#endif
 
 #define GAME_MODE_MAP		1		// General mode, reading text, with movement and talk options
 #define GAME_MODE_COMBAT	2		// In combat
@@ -34,7 +43,7 @@
 #define MAX_LOCATIONS 		256		// The maximum number of levels we can track - stories should not have more than this!
 #define MAX_CHARACTERS		256		// Number of monsters, npcs or player characters (8 bit ID)
 #define MAX_REQUIREMENTS 	8		// Actions can have prerequisites (or even multiple prerequisities) before they happen
-#define MAX_MONSTER_TYPES 	4		// The number of different types of monsters in each location
+#define MAX_MONSTER_TYPES 	6		// The number of monsters in each location
 #define MAX_EFFECTS			5		// maximum number of effects a spell or item can have
 #define MAX_DAMAGE_TYPES	3
 #define REQUIREMENT_BYTES 	5		// 5 bytes per requirement
@@ -331,15 +340,6 @@ typedef struct {
 // =====================================================
 // *ALL* platforms must implement the following methods
 // =====================================================
-void game_Init(GameState_t *gamestate, LevelState_t *levelstate); 	// Init game data
-void game_Exit(); 														// De-init game data
-void game_Splash(GameState_t *gamestate, LevelState_t *levelstate); 	// Show a splash screen on game start
-void game_Map(GameState_t *gamestate, LevelState_t *levelstate); 
-void game_Combat(GameState_t *gamestate, LevelState_t *levelstate);
-void game_Quit(GameState_t *gamestate, LevelState_t *levelstate);
-
-unsigned char game_CheckMovement(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
-unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
 
 // ============================================
 // Platform specific game function implementations
@@ -369,3 +369,5 @@ unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *level
 //#ifdef TARGET_MSX2
 //#include "../src/game_msx2.h"
 //#endif
+
+#endif

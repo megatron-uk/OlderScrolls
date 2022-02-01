@@ -21,16 +21,14 @@
 
 #ifndef _DRAW_H
 #include "../common/draw.h"
-#define _DRAW_H
 #endif
 #ifndef _INPUT_H
 #include "../common/input.h"
-#define _INPUT_H
 #endif
 
 unsigned char input_allowed[MAX_ALLOWED_INPUTS];
 
-unsigned char input_Get(void){
+unsigned char input_Get(Screen_t *screen){
 	// Listens for input and returns it, if it is present as
 	// one of the allowed types for this game area.
 	//
@@ -40,7 +38,7 @@ unsigned char input_Get(void){
 	unsigned i;
 	short v;
 	
-	v = io_fbyte(screen.win, 0, (char *) &c);
+	v = io_fbyte(screen->win, 0, (char *) &c);
 	if (v != ERR_OK){
 		return 0;	
 	}
@@ -76,12 +74,12 @@ void input_Clear(void){
 	}
 }
 
-void input_Wait(unsigned char key){
+void input_Wait(Screen_t *screen, unsigned char key){
 	// Quickly set a single key type and wait for it
 	
 	input_Clear();
 	input_Set(key);
-	while (input_Get() == 0){
+	while (input_Get(screen) == 0){
 	}
 	input_Clear();
 }

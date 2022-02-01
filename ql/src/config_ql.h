@@ -17,10 +17,14 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _CONFIG_QL_DEFS_H
+#define _CONFIG_QL_DEFS_H
+
 //#define ENGINE_TARGET_NAME	"QL"
 #define ENGINE_TARGET_NAME	"<g>OlderScrolls<C> <r>QL<C>"
 
-#define FONT_8X8	"font8x8_bmp"	// Note the underscore as present when copied to the QL filesystem
+#define FONT_8X8		"font8x8_bmp"	// Note the underscore as present when copied to the QL filesystem
+#define FONT_8X8_FANCY	"font8x8b_bmp"	// Locations, NPC names, fancy words in story text etc
 #define WEAPON_DAT	"weapon_dat"
 #define MONSTER_DAT	"monster_dat"
 #define ITEM_DAT	"item_dat"
@@ -29,3 +33,5 @@
 #define STORY_DAT	"story_dat"
 #define STORY_IDX	"story_idx"
 #define TEST_IMAGE	"image_bmp"
+
+#endif

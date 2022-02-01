@@ -19,13 +19,14 @@
 #include <qdos.h>
 
 
-#ifndef _GAME_H
-#include "../common/game.h"
-#define _GAME_H
-#endif
+#ifndef _DRAW_QL_DEF_H
+#define _DRAW_QL_DEF_H
+
+//#ifndef _GAME_H
+//#include "../common/game.h"
+//#endif
 #ifndef _BMP_H
 #include "bmp_ql.h"
-#define _BMP_H
 #endif
 
 // Screen defaults for the QL in 512x256 mode
@@ -37,7 +38,6 @@
 #define SCREEN_BLOCKS 			16384 	// Screen memory is addressed in 16bit words
 #define SCREEN_PIXELS_PER_BYTE 8 		// Each byte has 8 pixels
 #define SCREEN_WORDS_PER_ROW 	64 		// 64 x 8 pixels per row
-#define SCREEN_BYTES_PER_ROW 	128 	// 64 x 8 pixels per row
 
 // Bitmasks which are used to fill in a 8x1 matrix of pixels in a given colour
 #define PIXEL_CLEAR				0x1111	// Flag to indicate 'do not fill' when drawing a box
@@ -93,48 +93,56 @@ typedef struct lspritedata {
 } lsprite_t;
 
 // Screen definition
-struct Screen_t {
-		chanid_t win;				// QDOS virtual screen mode
-		int		f;					// File handle for QDOS screen/io channels
-		int 	file;				// File handle for all bmp loading routines
-        unsigned short x;			// Width of screen
-        unsigned short y;			// Height of screen
-        unsigned short *buf;		// Pointer to either screen or offscreen buffer
-        unsigned int *offscreen;	// Pointer to possible 'off-screen' video buffer
-        unsigned int screen;		// Memory address of real video memory
-        unsigned char indirect;		// Flag to indicate use of off-screen or direct video memory writes
-        unsigned char dirty;		// Flag to indicate buffer has been changed
-        
-        // Main on-screen bitmap font in platforms 
-        // that support it.
-        fontdata_t *font_8x8;		// 8x8 font bitmap
-        
-        // Used to load any generic bitmaps, font, etc
-        // pixel data freed after use
-        bmpdata_t *bmp;				// Bitmap loader
-        
-        // Used to hold state data of any bitmap we load
-        // in progressively, i.e. line by line, not read
-        // into memory in its entirety.
-        bmpstate_t *bmpstate;		// Progressive Bitmap loader
-        
-        // Always hold the player character sprite/portrait in memory
-        // pixel data is *retained* after use
-        ssprite_t *players[MAX_PLAYERS]; 			// Bitmap data for players        
-        ssprite_t *enemies[MAX_MONSTER_TYPES]; 	// Bitmap data for enemy sprites       
-        lsprite_t *boss;							// We only support one boss per level and they have a large sprite
-};
-extern struct Screen_t screen;		// Global, all functions have visibility of screen data	
+typedef struct screendata {
+	chanid_t win;				// QDOS virtual screen mode
+	unsigned short x;			// Width of screen
+	unsigned short y;			// Height of screen
+	unsigned short *buf;		// Pointer to either screen or offscreen buffer
+	unsigned int *offscreen;	// Pointer to possible 'off-screen' video buffer
+	unsigned int screen;		// Memory address of real video memory
+	unsigned char indirect;		// Flag to indicate use of off-screen or direct video memory writes
+	unsigned char dirty;		// Flag to indicate buffer has been changed
+	
+	// Main on-screen bitmap font in platforms 
+	// that support it.
+	fontdata_t *font_8x8;		// 8x8 font bitmap
+	
+	// Used to load any generic bitmaps, font, etc
+	// pixel data should be free()'d after use
+	bmpdata_t *bmp;				// Bitmap loader
+	
+	// Used to hold state data of any bitmap we load
+	// in progressively, i.e. line by line, not read
+	// into memory in its entirety.
+	bmpstate_t *bmpstate;		// Progressive Bitmap loader
+	
+	// Always hold the player character sprite/portrait in memory
+	// pixel data is *retained* after use
+	ssprite_t *players[4]; 			// Bitmap data for players        
+	ssprite_t *enemies[6]; 	// Bitmap data for enemy sprites       
+	lsprite_t *boss;							// We only support one boss per level and they have a large sprite
+} Screen_t;	
 
-void draw_Clear();
-void draw_Flip();
+#endif
+
+// Prototypes
+
+#ifndef _DRAW_QL_PROTO_H
+#define _DRAW_QL_PROTO_H
+
+int screen_Init(Screen_t *screen);
+void screen_Exit(Screen_t *screen);
+void draw_Clear(Screen_t *screen);
+void draw_Flip(Screen_t *screen);
 void draw_GetXY(unsigned short x, unsigned short y, unsigned short *addr, unsigned char *bits);
 void draw_GetStringXY(unsigned short x, unsigned short y, unsigned short *addr);
-void draw_HLine(unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char pad, unsigned char mode);
-void draw_VLine(unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char mode);
-void draw_Box(unsigned short x, unsigned short y, 	unsigned short length, unsigned short height, unsigned short borderpx, unsigned short borderfill, unsigned short centrefill, unsigned char mode);
-unsigned short draw_String(unsigned char x, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c);
+void draw_HLine(Screen_t *screen, unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char pad, unsigned char mode);
+void draw_VLine(Screen_t *screen, unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char mode);
+void draw_Box(Screen_t *screen, unsigned short x, unsigned short y, 	unsigned short length, unsigned short height, unsigned short borderpx, unsigned short borderfill, unsigned short centrefill, unsigned char mode);
+unsigned short draw_String(Screen_t *screen, unsigned char x, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c);
 void draw_FontSymbol(unsigned char i, fontdata_t *fontdata, unsigned short fill, unsigned short *p);
 
-char draw_BitmapAsync(unsigned short x, unsigned short y, bmpdata_t *bmpdata, int bmpfile, bmpstate_t *bmpstate);
-char draw_BitmapAsyncFull(unsigned short x, unsigned short y, bmpdata_t *bmpdata, int bmpfile, bmpstate_t *bmpstate);
+int draw_BitmapAsync(Screen_t *screen, int bmpfile);
+int draw_BitmapAsyncFull(Screen_t *screen, unsigned short x, unsigned short y, char *filename);
+
+#endif
