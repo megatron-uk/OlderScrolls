@@ -23,275 +23,198 @@ import copy
 import sys
 import string
 import traceback
+
 from PIL import Image	# For verifying sprite bitmap dimensions and colour depth
 
-DEBUG =0
+from datasettings import *
 
-##################################################################################
-#
-# This section contains definitions that MUST match those found in the following
-# OlderScrolls header files:
-#
-# - conditions.h
-# - monsters.h
-# - game.h
-#
-# Deviating from the values defined in the OlderScrolls source code will result
-# in data files loading incorrectly, if at all.
-#
-##################################################################################
-
-MAX_REQUIREMENTS = 8		# as per game.h
-MAX_MONSTER_TYPES = 4		# as per game.h
-MAX_REWARD_ITEMS = 6 		# as per game.h
-MAX_LEVEL_NAME_SIZE = 32	# as per game.h
-MAX_STORY_TEXT_SIZE = 1024	# as per game.h
-MAX_LOCATIONS = 256			# as per game.h
-MAX_PLAYER_NAME = 18		# as per game.h
-MAX_SHORT_NAME = 6			# as per game.h
-MAX_CHARACTERS = 256		# as per game.h
-MAX_BMP_FILENAME = 8		# Limit filenames to 8 characters and no '.' to be valid on all targets
-ALLOWED_FILENAME_CHARS = string.ascii_lowercase + string.digits + "_"
-BMP_SOURCES	= "/bmp/"		# bitmap images for this dataset should be within
-							# a sub-directory of the adventure folder, named '/bmp/'
-							# e.g. ./leafy_glade/bmp/
-							# Target-specific bmp datafiles will then be automatically
-							# placed in ./leafy_glade/out/ql, ./leafy_glade/out/atarixl, etc.
-							# alongside the normal datafiles.
-
-OUT_DIR	= "/out/"
-
-##################################################################################
-#
-# Condition checks and their available options
-# 
-##################################################################################
-CONDITION_RULES = {
-	"COND_EVAL_EMPTY"	: 0x00,	# The condition set is EMPTY, do not attempt to evaluate
-	"COND_EVAL_AND"		: 0x10,	# All conditions must evaluate to true. The default.
-	"COND_EVAL_OR"		: 0x20,	# At least one condition must evaluate to true.
-	"COND_EVAL_NOR"		: 0x30,	# All conditions must evaluate to false.
-	"COND_EVAL_NAND"	: 0x40,	# Zero or one, (but no more than one) condition must evaluate to true.
-}
-
-CONDITIONS_PC_TYPE = {
-	"COND_TYPE_STR" 	:		0x01,	# Check on PC or Party STR attribute
-	"COND_TYPE_DEX" 	:		0x02,	# Check on PC or Party DEX attribute
-	"COND_TYPE_CON" 	:		0x03,	# Check on PC or Party CON attribute
-	"COND_TYPE_WIS" 	:		0x04,	# Check on PC or Party WIS attribute
-	"COND_TYPE_INT" 	:		0x06,	# Check on PC or Party INT attribute
-	"COND_TYPE_CHR" 	:		0x07,	# Check on PC or Party CHR attribute
-	"COND_TYPE_HP" 		:		0x08,	# Check on PC or Party HP attribute
-	"COND_TYPE_GOLD" 	:		0x09,	# Check on PC or Party GOLD attribute
-	"COND_TYPE_DMG" 	:		0x0A,	# Check on PC or Party DMG attribute
-	"COND_TYPE_INJURY" 	:		0x0B,	# Check on PC or Party INJURY attribute
-}
-
-PARTY_MEMBER_STATUS = {
-	"COND_PARTY_PRESENT" 	: 0x01, # The given party member 'x' is present in the party
-	"COND_PARTY_DIMISSED" 	: 0x02, # The given party member 'x' has been recruited, but is not currently in the party 
-	"COND_PARTY_DEAD"		: 0x03, # The given party member 'x' has the status 'dead'
-}
-
-VISIT_TYPE = {
-	"COND_MAP_VISIT_TYPE"		: 0x00,
-	"COND_MAP_VISIT_TYPE_MAX"	: 0x01, # The given location has been visited less than or equal to this number of times
-	"COND_MAP_VISIT_TYPE_MIN"	: 0x02, # The given location has been visited more than or equal to this number of times
-}
-
-MONSTER_LOCATION_TYPE = {
-	"MONSTER_TYPE_PRIMARY"		: 0x01, # The primary monster spawn at this location has been encountered/defeated 'x' times
-	"MONSTER_TYPE_SECONDARY"	: 0x02, # The secondary monster spawn at this location has been encountered/defeated 'x' times
-}
-
-ITEM_OWN_TYPE = {
-	"COND_ITEM_OWN" 	: 	0x01, # The given item is present in the player or party inventory
-	"COND_ITEM_NOTOWN" 	: 	0x02, # The given item is not present in the player or party inventory
-}
-
-WEAPON_OWN_TYPE = {
-	"COND_ITEM_OWN" 	: 	0x01, # The given weapon is present in the player or party inventory
-	"COND_ITEM_NOTOWN" 	: 	0x02, # The given weapon is present in the player or party inventory
-}
-
-NPC_TEST_TYPE = {
-	"COND_NPC_TALK"			: 0x01,	# An NPC has been met and talked to (irrespective of times)
-	"COND_NPC_ALIVE"		: 0x02,	# An NPC is still alive (if not met, assumed still alive)
-	"COND_NPC_DEAD"			: 0x03,	# An NPC is dead (if not met, assumed still alive) 
-	"COND_NPC_TIMER_LESS" 	: 0x04, # An NPC has been met/last talked less than or equal to 'x' turns ago
-	"COND_NPC_TIMER_MORE" 	: 0x05, # An NPC has been met/last talked more than or equal to 'x' turns ago
-}
-
-ITEM_TYPE_IDS = ["w", "i"]
-
-CONDITIONS = {
-	"NO_COND" : {								# No conditions applied
-		'bitfield'		: [0x00, 0x00, 0x00, 0x00, 0x00],
-		'bytes' 		: 5,					# Total size of check is 5 bytes
-	},
-	"COND_NO_MONSTERS" : {						# No monsters currently spawned
-		'bitfield'		: [0x00, 0x01, 0x00, 0x00, 0x00],
-		'bytes' 		: 5,					# Total size of check is 5 bytes
-	},
-	"COND_PC_ATR_TYPE" 	: {						# PC has above 'x' STR/WIS/CON/etc
-		'bitfield'		: [0x01, 0x00],			# Initial bitfield, 2 bytes
-		'1_type'		: "CONDITIONS_PC_TYPE",	# PC Lookup, type STR
-		'1_sz'			: 1,					# Param 1 is 1 bytes
-		'2_type'		: "INTEGER",			# Must be an integer
-		'2_sz'			: 1,					# Param 2 is 1 bytes
-		'pad_sz'		: 1,					# Extra padding byte
-		'bytes' 		: 5,					# Total size of check is 5 bytes
-	},
-	"COND_PARTY_ATR_TYPE": {					# PC has above 'x' STR/WIS/CON/etc
-		'bitfield'		: [0x02, 0x00],
-		'1_type'		: "CONDITIONS_PC_TYPE",	# PC Lookup, type STR
-		'1_sz'			: 1,					# Param 1 is 1 bytes
-		'2_type'		: "INTEGER",			# Integer parameter
-		'2_sz'			: 1,					# Param 2 is 1 bytes
-		'pad_sz'		: 1,					# Extra padding byte 
-		'bytes' 		: 5,					# Total size of check is 5 bytes
-	},
-	"COND_PARTY_MEMBER_TYPE": {					# Party character presence check
-		'bitfield'		: [0x03, 0x00],
-		'1_type'		: "PARTY_MEMBER_ID",	# Lookup for a player party character ID
-		'1_sz'			: 1,					# Param 1 is 1 bytes
-		'2_type'		: "PARTY_MEMBER_STATUS",# Status ID
-		'2_sz'			: 1,					# Param 2 is 1 bytes
-		'pad_sz'		: 1,					# Extra padding byte 
-		'bytes' 		: 5,					# Total size of check is 5 bytes
-	},
-	"COND_MAP_VISIT_TYPE" : {				# A check on whether a location has been visited
-		'bitfield'		: [0x04],
-		'1_type'		: "VISIT_TYPE",		# VISIT, VISIT_TYPE_MAX, VISIT_TYPE_MIN
-		'1_sz'			: 1,				# Param 1 is 1 byte
-		'2_type'		: "LOCATION_ID",	# Location ID
-		'2_sz'			: 2,				# Param 2 is 2 bytes
-		'3_type'		: "INTEGER",		# Number of visits
-		'3_sz'			: 1,				# Param 3 is 1 byte
-		'bytes'			: 5,				# Total size if 5 bytes
-	},
-	"COND_MONSTER_DEFEAT_TYPE" : {
-		'bitfield'		: [0x05],
-		'1_type'		: "MONSTER_LOCATION_TYPE",		# MONSTER_TYPE_PRIMARY, MONSTER_TYPE_SECONDARY
-		'1_sz'			: 1,				# Param 1 is 1 byte
-		'2_type'		: "LOCATION_ID",	# Location ID
-		'2_sz'			: 2,				# Param 2 is 2 bytes
-		'3_type'		: "INTEGER",		# Number of monster defeats
-		'3_sz'			: 1,				# Param 3 is 1 byte
-		'bytes'			: 5,				# Total size if 5 bytes	
-	},
-	"COND_NPC_TYPE" : {
-		'bitfield'		: [0x06],
-		'1_type'		: "NPC_TEST_TYPE",
-		'1_sz'			: 1,				
-		'2_type'		: "NPC_ID",			# NPC ID
-		'2_sz'			: 1,				# Param 1 is 1 byte
-		'2_type'		: "INTEGER",		# Times talked
-		'2_sz'			: 2,				# Param 2 is 2 byte
-		'pad_sz'		: 0,				# Pad byte
-		'bytes'			: 5,				# Total size if 5 bytes		
-	},
-	"COND_ITEM_TYPE" : {
-		'bitfield'		: [0x07],
-		'1_type'		: "ITEM_OWN_TYPE",
-		'1_sz'			: 1,
-		'2_type'		: "ITEM_ID",
-		'2_sz'			: 1,
-		'3_type'		: "INTEGER",
-		'3_sz'			: 1,
-		'pad_sz'		: 1,
-		'bytes'			: 5,
-	},
-	"COND_WEAPON_TYPE" : {
-		'bitfield'		: [0x08],
-		'1_type'		: "WEAPON_OWN_TYPE",
-		'1_sz'			: 1,
-		'2_type'		: "WEAPON_ID",
-		'2_sz'			: 1,
-		'3_type'		: "INTEGER",
-		'3_sz'			: 1,
-		'pad_sz'		: 1,
-		'bytes'			: 5,
-	}
-	
-}
-
-# These classes should match the definitions 
-# from the OlderScrolls engine 'monsters.h' header.
-MONSTER_CLASSES = {
-	"HUMAN_UNTRAINED" 		: 0x10,	
-	"HUMAN_GENERIC_MELEE"	: 0x11,
-	"HUMAN_GENERIC_RANGED"	: 0x12,
-	"HUMAN_GENERIC_MAGIC"	: 0x13,
-	"HUMAN_BARBARIAN"		: 0x14,			
-	"HUMAN_BARD"			: 0x15,
-	"HUMAN_CLERIC"			: 0x16,
-	"HUMAN_DRUID"			: 0x17,
-	"HUMAN_FIGHTER"			: 0x18,
-	"HUMAN_PALADIN"			: 0x19,
-	"HUMAN_RANGER"			: 0x1A,
-	"HUMAN_ROGUE"			: 0x1B,
-	"HUMAN_SORCERER"		: 0x1C,
-	"HUMAN_WARLOCK"			: 0x1D,
-	"HUMAN_WIZARD"			: 0x1E,
-	"BEAST_WILD"			: 0x20,
-	"BEAST_MELEE"			: 0x21,
-	"BEAST_RANGED"			: 0x22,
-	"BEAST_MAGIC"			: 0x23,
-}
-
-# These classes should match the definitions
-# of the possible sprite sizes as found in the
-# OlderScrolls engine 'draw.h"
-SPRITE_CLASSES = {
-	"SPRITE_CLASS_NONE"			: 0,
-	"SPRITE_CLASS_NORMAL"		: 1,
-	"SPRITE_CLASS_LARGE"		: 2,
-	"SPRITE_CLASS_PORTRAIT" 	: 3,
-}
-
-SPRITE_SIZES = {
-	"SPRITE_CLASS_NORMAL" 		: { 'w' : 32, 'h' : 32 },
-	"SPRITE_CLASS_LARGE" 		: { 'w' : 96, 'h' : 96 },
-	"SPRITE_CLASS_PORTRAIT" 	: { 'w' : 32, 'h' : 32 },
-}
-
-MAX_STATS = {
-	'str' 	: { 'min' : 1, 'max' : 20 },
-	'dex' 	: { 'min' : 1, 'max' : 20 },
-	'con' 	: { 'min' : 1, 'max' : 20 },
-	'wis' 	: { 'min' : 1, 'max' : 20 },
-	'intl' 	: { 'min' : 1, 'max' : 20 },
-	'chr' 	: { 'min' : 1, 'max' : 20 },
-	'hp' 	: { 'min' : 1, 'max' : 255 },
-	'level' : { 'min' : 1, 'max' : 10 },
-}
-
-ITEM_TYPES = {
-	'ITEM_TYPE_CONSUMEABLE' 	: 1,
-	'ITEM_TYPE_ARMOUR'			: 2,
-	'ITEM_TYPE_SPELL'			: 4,
-	'ITEM_TYPE_QUEST'			: 8,
-}
-
-ITEM_SLOT_TYPES = {
-	'SLOT_TYPE_NONE' : {	'val' : 0, 'slots' : [] },
-	'SLOT_TYPE_HEAD' : {	'val' : 1, 'slots' : ['head'] },
-	'SLOT_TYPE_NECK' : {	'val' : 2, 'slots' : ['neck'] },
-	'SLOT_TYPE_BODY' : {	'val' : 4, 'slots' : ['body'] },
-	'SLOT_TYPE_ARMS' : {	'val' : 8, 'slots' : ['arms'] },
-	'SLOT_TYPE_LEGS' : {	'val' : 16, 'slots' : ['legs'] },
-	'SLOT_TYPE_HAND' : {	'val' : 32, 'slots' : ['hand_l', 'hand_r'] },
-}
-
-SLOT_NAMES = ["head", "neck", "body", "arms", "legs", "hand_r", "hand_l"]
-WEAPON_SLOTS = ["weapon_r", "weapon_l"]
+DEBUG =1
 
 ##################################################################################
 #
 # Functions to parse and sanity-check an adventure start here...
 #
 ##################################################################################
+
+class bmp_to_target:
+	""" THis is a class that processes out bitmap images to whatever target
+		system we are using at the time. """
+
+	def __init__(self, target = None):
+		""" Test """
+		
+		# The raw image
+		self.bmp = None
+		
+		# The targer machine
+		self.target = target
+		
+		# Decoded byte sequence ready to be written to dat file
+		self.bytes = []
+	
+	def setbit(self, value, bit):
+		return value | (1<<bit)
+
+	def clearbit(self, value, bit):
+		return value & ~(1<<bit)
+	
+	#################################################################
+	
+	def load(self, filename = None):
+		""" Loads an image from disk """
+		try:
+			if DEBUG:
+				print("INFO - load() Loading [%s]" % filename)
+			self.bmp = Image.open(filename)
+			return True
+		except Exception as e:
+			print("ERROR - load() Unable to load image bitmap [%s]" % filename)
+			print("ERROR - %s" % e)
+			return False
+	
+	#################################################################
+	
+	def convert(self, force = False):
+		""" Convert a loaded bitmap """
+		
+		if self.bmp is None:
+			print("ERROR - convert() Bitmap is not loaded!")
+			return False
+		
+		if target['suffix'] == 'ql':
+			self.to_ql()	
+			return True
+			
+		print("ERROR - convert() Not a valid target [%s]" % self.target['suffix'])
+		return False
+	
+	#################################################################
+	
+	def out(self, force = False):
+		""" Output the byte representation of the current image, suitable for
+			use in a dat file for the selected target. """
+			
+		if self.bmp is None:
+			print("ERROR - out() Bitmap is not loaded!")
+			return False
+		
+		if target['suffix'] == 'ql':
+			self.out_ql()	
+			return True
+			
+		print("ERROR - out() Not a valid target [%s]" % self.target['suffix'])
+		return False	
+		
+	#################################################################
+		
+	def to_ql(self):
+		""" Convert a bitmap from the master folder into 4bpp fixed palette for QL """
+		pass
+		
+	def out_ql(self):
+		""" Turn a 4bpp QL bitmap into a string of 16bit, 8pixel words we store in a dat file """
+		
+		# Each byte in the 4bpp bitmap is a single pixel
+		# We need to concatenate 8 pixels into one 16bit word
+		# using the 4 colour mapping scheme of the QL
+		pixels = self.bmp.tobytes()
+		if (len(pixels) % 8) != 0:
+			print("ERROR - out_ql() Bitmap is not divisible by 8!!!")
+			return False
+		
+		# Read 8 pixels
+		ql_pixel_blocks = []
+		i = 7
+		pixel_left = 0
+		pixel_right = 0
+		for px in pixels:
+			
+			# Colour BLACK
+			if px == 0:
+				pixel_left = self.clearbit(pixel_left, i)			# Set pixel in left hand byte
+				pixel_right = self.clearbit(pixel_right, i)		# Set pixel in right hand byte
+				
+			# Colour GREEN
+			if px == 1:
+				pixel_left = self.setbit(pixel_left, i)
+				pixel_right = self.clearbit(pixel_right, i)
+				
+			# Colour RED
+			if px == 2:
+				pixel_left = self.clearbit(pixel_left, i)
+				pixel_right = self.setbit(pixel_right, i)
+				
+			# Colour WHITE
+			if px == 3:
+				pixel_left = self.setbit(pixel_left, i)
+				pixel_right = self.setbit(pixel_right, i)
+				
+			
+			if i == 0:		
+				ql_pixel_blocks.append(pixel_left)
+				ql_pixel_blocks.append(pixel_right)
+				
+				# Reset left and right pixels
+				pixel_left = 0
+				pixel_right = 0
+				i = 7
+			else:
+				i -= 1
+		
+		for pixel_block in ql_pixel_blocks:
+			self.bytes.append(pixel_block)
+			
+		if DEBUG:
+			print("INFO - out_ql() Generated %s bytes of data" % len(self.bytes))
+		
+		return True
+			
+
+def choose_target(adventure = None):
+	""" Selects the target machine type and creates any necessary output folders """
+
+	print("")
+	print("*** Choose Deployment Target ***")
+	print("")
+	print("Choose the target platform that you wish to build a set of datafiles for.")
+	print("This will build a target-specific set of datafiles for the adventure: %s" % adventure)
+	print("")
+	if len(AVAILABLE_TARGETS.keys()) < 1:
+		print("ERROR - No targets available")
+		return False
+	else:
+		print("ID | %20s | %20s | %8s" % ("Target", "Resolution", "Suffix"))
+		for k in AVAILABLE_TARGETS.keys():
+			my_target = AVAILABLE_TARGETS[k]
+			print("%2s | %20s | %20s | %8s" % (k, my_target['target'], my_target['res'], my_target['suffix']))
+			
+		i = None
+		while (i not in AVAILABLE_TARGETS.keys()):
+			i = input()
+			
+		target = AVAILABLE_TARGETS[i]
+		target_out_dir = adventure + OUT_DIR + target['suffix']
+		if os.path.exists(target_out_dir):
+			pass
+		else:
+			try:
+				if os.path.exists(adventure + OUT_DIR):
+					pass
+				else:
+					if DEBUG:
+						print("Creating output directory [%s]" % adventure + OUT_DIR)
+					os.mkdir(adventure + OUT_DIR)
+				if DEBUG:
+					print("Creating target output directory [%s]" % target_out_dir)
+				os.mkdir(target_out_dir)
+				
+			except Exception as e:
+				print("ERROR - Creating output directory failed")
+				print("ERROR - %s" % e)
+				return False
+		
+		return AVAILABLE_TARGETS[i]
+	
 
 def filename_is_valid(filename = None):
 	""" Check that a filename matches the criteria to work on all targets """
@@ -306,7 +229,7 @@ def filename_is_valid(filename = None):
 	return True
 	
 
-def generate_characters(import_dir = None):
+def generate_characters(import_dir = None, target = None):
 	""" Generates party, npc and monster datafiles from a monster.py file """
 	
 	print("")
@@ -335,6 +258,12 @@ def generate_characters(import_dir = None):
 	
 	weapon_ids = list(game_weapons.WEAPONS.keys())
 	weapon_ids.sort()
+
+	# Empty list of bitmaps that we keep
+	portraits = {}
+	bitmaps = {}
+	for sprite_type in SPRITE_CLASSES:
+		bitmaps[sprite_type] = {}
 
 	for char_type in ["NPC", "PARTY", "MONSTER"]:
 	
@@ -421,58 +350,85 @@ def generate_characters(import_dir = None):
 					valid = False
 					print("%s Character ID: %3d" % (char_type, char_id))
 					print("- ERROR: This character does not have a valid sprite class defined [%s]" % sprite_type)
-			
-				# Check filename
+
+				for sprite_file_name in ['sprite_name', 'sprite_name2', 'sprite_name3', 'portrait_name']:
 					
-				sprite_file = char_entries[char_id]['sprite_name']
-				l = len(sprite_file)
-				if l == 0:
-					valid = False
-					print("%s Character ID: %3d" % (char_type, char_id))
-					print("- ERROR: This character does not have a valid sprite filename defined [%s]" % sprite_file)					
-				elif (l > MAX_BMP_FILENAME):
-					valid = False
-					print("%s Character ID: %3d" % (char_type, char_id))
-					print("- ERROR: This character has a sprite filename [%s] longer than [%s] bytes" % (sprite_file, l))
-				elif (l <= MAX_BMP_FILENAME) and (l > 0):
-					if filename_is_valid(sprite_file):
-						if DEBUG:
-							print("%s Character ID: %3d, sprite filename [%s], OK" % (char_type, char_id, sprite_file))
-					else:
-						valid = False
-						print("%s Character ID: %3d" % (char_type, char_id))
-						print("- ERROR: This character has an invalid sprite filename [%s]" % (sprite_file))
-						print("- ERROR: Allowed filename bytes are: [%s]" % ALLOWED_FILENAME_CHARS)
-						print("- ERROR: Allowed filename length is: [%s]" % MAX_BMP_FILENAME)				
-		
-				# Check file is present!
-				if os.path.exists(import_dir + BMP_SOURCES + sprite_file):
-					if DEBUG:
-						print("%s Character ID: %3d, sprite filename [%s] found, OK" % (char_type, char_id, sprite_file))
-						
-					# Check file dimensions match the class stated for this character (e.g. 32x32 or whatever)
-					try:
-						img = Image.open(import_dir + BMP_SOURCES + sprite_file)
-						my_sizes = SPRITE_SIZES[sprite_type]
-						if (img.width == my_sizes['w']) and (img.height == my_sizes['h']):
-							if DEBUG:
-								print("%s Character ID: %3d, sprite dimensions [%sx%s] match class [%s], OK" % (char_type, char_id, img.width, img.height, sprite_type))
+					sprite_file = char_entries[char_id][sprite_file_name]
+
+					if sprite_file not in bitmaps[sprite_type].keys():
+	
+						# Only check for filenames which are not blank
+						if sprite_file == "":
+							print("%s Character ID: %3d, !!WARNING!! %s filename is blank, assuming no sprite? !!WARNING!!" % (char_type, char_id, sprite_file_name))
 						else:
-							valid = False
-							print("%s Character ID: %d" % (char_type, char_id))
-							print("- ERROR: This character has an invalid sprite size of [%sx%s] which does not match class [%s]" % (img.width, img.height, sprite_type))
-							print("- ERROR: Allowed dimensions for this sprite class are [%sx%s]" % (my_sizes['w'], my_sizes['h']))
-						img.close()
-					except Exception as e:
-						valid = False
-						print("%s Character ID: %3d" % (char_type, char_id))
-						print("- ERROR: This character has an sprite filename which could not be opened [%s]" % sprite_file)
-				else:
-					valid = False
-					print("%s Character ID: %3d" % (char_type, char_id))
-					print("- ERROR: This character has a sprite filename which was not found [%s]" % sprite_file)
-					print("- ERROR: Sprite files for this adventure should be found in: [%s]" % (import_dir + BMP_SOURCES))
+							if DEBUG:
+								print("%s Character ID: %3d, %s filename [%s], OK" % (char_type, char_id, sprite_file_name, sprite_file))
 				
+							# Check file is present!
+							found_sprite = False
+							d1 = import_dir + BMP_SOURCES + target['suffix'] + "/" + sprite_file
+							d2 = import_dir + BMP_SOURCES + "master/" + sprite_file
+							if os.path.exists(d1):
+								found_sprite = True
+								d = d1
+								if DEBUG:
+									print("%s Character ID: %3d, %s filename [%s] found for target [%s], OK" % (char_type, char_id, sprite_file_name, sprite_file, target['target']))
+							else:
+								if os.path.exists(d2):
+									found_sprite = True
+									d = d2
+									if DEBUG:
+										print("%s Character ID: %3d, %s filename [%s] found in master image directory, OK" % (char_type, char_id, sprite_file_name, sprite_file))
+									
+							if found_sprite:
+								# Check file dimensions match the class stated for this character (e.g. 32x32, 96x96 or whatever)
+								try:
+									img = Image.open(d)
+									
+									if sprite_file_name == 'portrait_name':
+										my_sizes = SPRITE_SIZES['SPRITE_CLASS_PORTRAIT']
+										this_type = 'SPRITE_CLASS_PORTRAIT'
+									else:
+										my_sizes = SPRITE_SIZES[sprite_type]
+										this_type = sprite_type
+										
+									if (img.width == my_sizes['w']) and (img.height == my_sizes['h']):
+										if DEBUG:
+											print("%s Character ID: %3d, %s dimensions [%sx%s] match class [%s], OK" % (char_type, char_id, sprite_file_name, img.width, img.height, this_type))
+											
+										b = bmp_to_target()
+										b.load(d)
+										if b.out():
+										
+											if DEBUG:
+												print("%s Character ID: %3d, Adding processed bitmap [%s] to list" % (char_type, char_id, sprite_file))
+												print("%s Character ID: %3d, Any future reference to this bitmap will reuse this data" % (char_type, char_id))
+											bitmaps[this_type][sprite_file] = { 'file' : d, 'converter' : b }	
+										else:
+											print("%s Character ID: %d" % (char_type, char_id))
+											print("- ERROR: Conversion of [%s] to native [%s] binary data failed" % (sprite_file, target['target']))
+											valid = False
+										
+									else:
+										valid = False
+										print("%s Character ID: %d" % (char_type, char_id))
+										print("- ERROR: This character has an invalid %s size of [%sx%s] which does not match class [%s]" % (sprite_file_name, img.width, img.height, this_type))
+										print("- ERROR: Allowed dimensions for this sprite class are [%sx%s]" % (my_sizes['w'], my_sizes['h']))
+									img.close()
+								except Exception as e:
+									valid = False
+									print("%s Character ID: %3d" % (char_type, char_id))
+									print("- ERROR: This character has an %s filename which could not be opened [%s]" % (sprite_file_name, sprite_file))
+									print("- ERROR: %s" % e)
+							else:
+								valid = False
+								print("%s Character ID: %3d" % (char_type, char_id))
+								print("- ERROR: This character has a %s filename which was not found [%s]" % (sprite_file_name, sprite_file))
+								print("- ERROR: Sprite files for this adventure should be found in: [%s OR %s]" % ((import_dir + BMP_SOURCES + "master/"), (import_dir + BMP_SOURCES +  target['suffix'] + "/")))
+							
+					else:
+						print("%s Character ID: %3d, %s bitmap [%s] has already been processed" % (char_type, char_id, sprite_file_name, sprite_file))
+						valid = True
 				if DEBUG:
 					print("-")
 		
@@ -504,8 +460,9 @@ def generate_characters(import_dir = None):
 							if item_slot in ITEM_SLOT_TYPES.keys():
 								if slot_type in ITEM_SLOT_TYPES[item_slot]['slots']:
 									if DEBUG:
-										print("%s Character ID: %3d, item slot: [%6s], item id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
+										print("%s Character ID: %3d, item slot: [%6s], item id: [%3d] [%18s]" % (char_type, char_id, slot_type, slot_item_id, item['name']))
 								else:
+									valid = False
 									print("%s Character ID: %3d, item slot: [%6s], invalid item id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
 									print("- ERROR: This character has an assigned item that has to go in one of these slots: %s" % ITEM_SLOT_TYPES[item_slot]['slots'])
 							else:
@@ -539,10 +496,15 @@ def generate_characters(import_dir = None):
 			for char_id in char_ids:
 				for slot_type in WEAPON_SLOTS:
 					slot_item_id = char_entries[char_id][slot_type]
+					
 					if slot_item_id > 0:
 						if slot_item_id in weapon_ids:
+							
+							# Load the item record
+							item = game_weapons.WEAPONS[slot_item_id]
+							
 							if DEBUG:
-								print("%s Character ID: %3d, weapon slot: [%6s], weapon id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
+								print("%s Character ID: %3d, weapon slot: [%6s], weapon id: [%3d] [%18s]" % (char_type, char_id, slot_type, slot_item_id, item['name']))
 						else:
 							valid = False
 							print("%s Character ID: %3d, weapon slot: [%6s], invalid weapon id: [%3d]" % (char_type, char_id, slot_type, slot_item_id))
@@ -591,10 +553,220 @@ def generate_characters(import_dir = None):
 				print("GOOD: All characters have valid stat entries")
 			else:
 				return False
+	
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 2a.")
+	print("#")
+	print("# Generating native format sprite assets [%s]" % target['target'])
+	print("#")
+	print("###################################################################################")
+	
+	# Generate bitmap data files
+	for sprite_type in bitmaps.keys():
+		i = 1 # Sprites always start from 1, sprite id 0 == no sprite
+		valid = True
+		print("Processing %s" % sprite_type)
 		
+		data_size = 0
+		for sprite in bitmaps[sprite_type].keys():
+			if data_size == 0:
+				data_size = len(bitmaps[sprite_type][sprite]['converter'].bytes)
+			else:
+				if data_size != len(bitmaps[sprite_type][sprite]['converter'].bytes):
+					for sprite in bitmaps[sprite_type].keys():
+						bitmaps[sprite_type][sprite]['id'] = i	
+						print("- ID:%3d --> %13s [%s bytes]" % (i, sprite, len(bitmaps[sprite_type][sprite]['converter'].bytes)))
+					print("ERROR! - Not all bitmap sizes are identical!")
+					print("ERROR! - PLease investigate why all bitmaps are not the same size!")
+					valid = False
+					return False
+			
+		print("New ID mapping for %s" % sprite_type)
+		for sprite in bitmaps[sprite_type].keys():
+			bitmaps[sprite_type][sprite]['id'] = i
 				
+			print("- ID:%3d --> %13s [%s bytes]" % (i, sprite, len(bitmaps[sprite_type][sprite]['converter'].bytes)))
+				
+			i += 1
+		
+		if len(bitmaps[sprite_type].keys()) > 0:
+			try:
+				sprite_output_filename = SPRITE_SIZES[sprite_type]['file']
+				out = import_dir + OUT_DIR + target['suffix'] + "/" + sprite_output_filename
+				print("Writing %s data to %s" % (sprite_type, out))
+				f = open(out, "wb")
+				offset = 0
+				for sprite in bitmaps[sprite_type].keys():
+					print("- ID:%3d added at offset %5d" % (bitmaps[sprite_type][sprite]['id'], offset))	
+					for px in bitmaps[sprite_type][sprite]['converter'].bytes:
+						f.write(px.to_bytes(1, byteorder='big'))
+					offset += len(bitmaps[sprite_type][sprite]['converter'].bytes)
+				f.flush()
+				f.close()
+				print("Done")
+				print("")
+			except Exception as e:
+				print("ERROR! Unable to write sprite dat file [%s]" % sprite_output_filename)
+				print("ERROR! %s" % e)
+				return False
+				
+	print("GOOD: All graphics assets have been written")
+		
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 2b.")
+	print("#")
+	print("# Generating native format portrait assets [%s]" % target['target'])
+	print("#")
+	print("###################################################################################")
+	
+	data_size = 0
+	for sprite in portraits.keys():
+		if data_size == 0:
+			data_size = len(portraits[sprite]['converter'].bytes)
+		else:
+			if data_size != len(portraits[sprite]['converter'].bytes):
+				print("ERROR - Not all portrait sizes are identical!")
+				valid = False
+		
+		
+	for sprite in portraits.keys():
+		portraits[sprite]['id'] = i
+			
+		print("- ID:%3d --> %13s [%s bytes]" % (i, sprite, len(portraits[sprite]['converter'].bytes)))
+			
+		i += 1
+	
+	if len(bitmaps[sprite_type].keys()) > 0:
+		try:
+			sprite_output_filename = SPRITE_SIZES[sprite_type]['file']
+			out = import_dir + OUT_DIR + target['suffix'] + "/" + sprite_output_filename
+			print("")
+			print("Writing to %s" % out)
+			f = open(out, "wb")
+			offset = 0
+			for sprite in portraits.keys():
+				print("- ID:%3d added at offset %5d" % (portraits[sprite]['id'], offset))	
+				for b in portraits[sprite]['converter'].bytes:
+					f.write(b.to_bytes(1, byteorder='big'))
+				offset += len(portraits[sprite]['converter'].bytes)
+			f.close()
+			print("Done")
+		except Exception as e:
+			print("ERROR! Unable to write portrait dat file [%s]" % sprite_output_filename)
+			print("ERROR! %s" % e)
+			return False
+				
+	print("-")
+		
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 3.")
+	print("#")
+	print("# Generating monsters.dat")
+	print("#")
+	print("###################################################################################")
+				
+	character_type = "MONSTER"
+	character_ids = monster_ids
+	character_entries = game_characters.MONSTER
+		
+	for character_id in char_ids:
+		
+		character = char_entries[character_id]
+		#print(character)
+		record = character_to_record(character_id, character_type, character, item_ids, weapon_ids, bitmaps[character['sprite_type']])
+		if record is False:
+			print("ERROR! Unable to generate a character data record")
+			return False
+		print("")
 
-def generate_story(import_dir = None):
+def character_to_record(character_id, character_type, character, item_ids, weapon_ids, bitmaps):
+	""" Generates the string of bytes that represents a character/npc/monster in a datafile """
+	
+	record = []
+	
+	print("-- Character: %s" % character['name'])
+	
+	######################################################
+	# 1. (2 bytes) ID of character
+	######################################################
+	byte_list = character_id.to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	print("-- +%2s bytes, ID: %s" % (len(byte_list), character_id))
+	
+	######################################################
+	# 2. (1 bytes) TYPE of character (MONSTER/NPC)
+	######################################################
+	character_type_lookup = False
+	
+	if character['type'] in CHARACTER_TYPES.keys():
+		character_type_lookup = CHARACTER_TYPES[character['type']]
+		
+	if character_type_lookup is not False:
+		byte_list = character_type_lookup.to_bytes(1, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		print("-- +%2s bytes, CHARACTER TYPE: %s" % (len(byte_list), character_type_lookup))
+	else:
+		print("ERROR - Unable to determine valid character type for ID:%s %s" %(character_id, character['type']))
+		return False
+	
+	######################################################
+	# 3. (1 bytes) SPRITE TYPE (NORMAL/BOSS)
+	######################################################
+	sprite_type_lookup = False
+	
+	if character['sprite_type'] in SPRITE_CLASSES.keys():
+		sprite_type_lookup = SPRITE_CLASSES[character['sprite_type']]
+	
+	if sprite_type_lookup is not False:
+		byte_list = sprite_type_lookup.to_bytes(1, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		print("-- +%2s bytes, SPRITE TYPE: %s" % (len(byte_list), sprite_type_lookup))
+	else:
+		print("ERROR - Unable to determine valid sprite type for ID:%s %s" %(character_id, character['sprite_type']))
+		return False
+	
+	######################################################
+	# 4. (6 bytes) SPRITE 1, 2 and 3 ID (ID of the bitmaps processed earlier)
+	######################################################
+	for sprite in ["sprite_name", "sprite_name2", "sprite_name3"]:
+
+		sprite_id_lookup = False
+	
+		sprite_filename = character[sprite]
+		
+		if sprite_filename == "":
+			sprite_id_lookup = 0
+		
+		else:
+			if sprite_filename in bitmaps.keys():
+				sprite_id_lookup = bitmaps[sprite_filename]['id']
+			else:
+				print("ERROR - Unable to find sprite for ID:%s %s" %(character_id, sprite_filename))
+				return False
+				
+		if sprite_id_lookup is not False:
+			byte_list = sprite_id_lookup.to_bytes(2, byteorder='big')
+			for b in byte_list:
+				record.append(b.to_bytes(1, byteorder='big'))
+			print("-- +%2s bytes, SPRITE %s: %s" % (len(byte_list), sprite, sprite_id_lookup))
+	
+	######################################################
+	# 5. (2 bytes) PORTRAIT SPRITE (ID of the bitmaps processed earlier)
+	######################################################
+	
+	return record
+
+
+def generate_story(import_dir = None, target = None):
 	""" Generates a story/game world location datafile from a map.py file """
 	
 	print("")
@@ -718,7 +890,7 @@ def generate_story(import_dir = None):
 	print("...done!")
 		
 
-def generate_world(import_dir = None):
+def generate_world(import_dir = None, target = None):
 	""" Generates a story/game world location datafile from a map.py file """
 	
 	print("")
@@ -1749,27 +1921,30 @@ if __name__ == "__main__":
 	adventure = "leafy_glade"
 	sys.path.append(adventure)
 	
-	#status = generate_world(import_dir = adventure)
-	#if status is False:
-	#	print("Not continuing. Please fix errors in world map file.")
-	#	sys.exit(1)
-		
-	#status = generate_story(import_dir = adventure)
-	#if status is False:
-	#	print("Not continuing. Please fix errors in story file.")
-	#	sys.exit(1)
-		
-	status = generate_characters(import_dir = adventure)
-	if status is False:
-		print("Not continuing. Please fix errors in monster file.")
-		sys.exit(1)	
-		
-	#status = generate_items(import_dir = adventure)
-	#if status is False:
-	#	print("Not continuing. Please fix errors in item file.")
-	#	sys.exit(1)
+	target = choose_target(adventure = adventure)
+	if target:
 	
-	#status = generate_weapons(import_dir = adventure)
-	#if status is False:
-	#	print("Not continuing. Please fix errors in weapon file.")
-	#	sys.exit(1)
+		#status = generate_world(import_dir = adventure, target = target)
+		#if status is False:
+		#	print("Not continuing. Please fix errors in world map file.")
+		#	sys.exit(1)
+			
+		#status = generate_story(import_dir = adventure, target = target)
+		#if status is False:
+		#	print("Not continuing. Please fix errors in story file.")
+		#	sys.exit(1)
+			
+		status = generate_characters(import_dir = adventure, target = target)
+		if status is False:
+			print("Not continuing. Please fix errors in monster file.")
+			sys.exit(1)	
+			
+		#status = generate_items(import_dir = adventure, target = target)
+		#if status is False:
+		#	print("Not continuing. Please fix errors in item file.")
+		#	sys.exit(1)
+		
+		#status = generate_weapons(import_dir = adventure, target = target)
+		#if status is False:
+		#	print("Not continuing. Please fix errors in weapon file.")
+		#	sys.exit(1)
