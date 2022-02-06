@@ -51,7 +51,15 @@
 #define DATA_LOAD_WEP_INDEXFILE			-37 	// Error opening weapon index file
 #define DATA_LOAD_WEP_DATFILE			-38 	// Error opening weapon dat file
 #define DATA_LOAD_NPCMEMORY				-39 	// Unable to malloc memory for new NPC entry
-#define DRAW_OPEN_BMPFILE				-40		// Unable to open bitmap file for async display
+#define DATA_LOAD_SPRITEFILE			-40		// Unable to open sprite datafile
+#define DATA_LOAD_PORTRAITFILE			-41		// Unable to open portrait datafile
+#define DATA_LOAD_BOSSFILE				-42		// Unable to open boss sprite datafile
+#define DATA_LOAD_MONSTERFILE			-43		// Unable to open monster datafile
+#define DATA_LOAD_NPCFILE				-44		// Unable to open npc datafile
+#define DATA_LOAD_MONSTERFILE_SEEK		-45		// Unable to seek in monster/npc datafile
+#define DATA_LOAD_MONSTER_MISMATCH		-46		// The found monster id does not match the search id
+#define DRAW_OPEN_BMPFILE				-50		// Unable to open bitmap file for async display
+
 
 // Generic file error messages
 #define GENERIC_FILE_MSG				"File Access Error!"
@@ -63,6 +71,17 @@
 #define DATA_LOAD_MAP_MISMATCH_MSG		"The loaded MAP location does not match. Datafile consistency error!"
 #define DATA_LOAD_STORY_INDEX_MSG		"Unable to open STORY .idx file."
 #define DATA_LOAD_STORY_DAT_MSG			"Unable to open STORY .dat file."
+#define DATA_LOAD_MONSTER_DAT_MSG		"Unable to open MONSTER .dat file."
+#define DATA_LOAD_NPC_DAT_MSG			"Unable to open NPC .dat file."
+#define DATA_LOAD_SPRITE_DAT_MSG		"Unable to open SPRITE .dat file."
+#define DATA_LOAD_PORTRAIT_DAT_MSG		"Unable to open PORTRAIT .dat file."
+#define DATA_LOAD_BOSS_DAT_MSG			"Unable to open BOSS .dat file."
+#define DATA_LOAD_SPRITE_DAT_READ		"Unable to read sufficient bytes from SPRITE .dat file."
+#define DATA_LOAD_PORTRAIT_DAT_READ	"Unable to read sufficient bytes from PORTRAIT .dat file."
+#define DATA_LOAD_BOSS_DAT_READ			"Unable to read sufficient bytes from BOSS .dat file."
+#define DATA_LOAD_MONSTER_DAT_READ		"Unable to read sufficient bytes from MONSTER/NPC .dat file."
+#define DATA_LOAD_MONSTER_DAT_SEEK		"Unable to seek to correct location in MONSTER/NPC .dat file."
+#define DATA_LOAD_MONSTER_MISMATCH_MSG	"The loaded MONSTER does not match. Datafile consistency error!"
 
 // Out of memory error messages
 #define GENERIC_MEMORY_MSG 				"Memory Error!"																// Used as a title

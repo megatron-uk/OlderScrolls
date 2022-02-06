@@ -22,9 +22,6 @@
 #ifndef _DRAW_QL_DEF_H
 #define _DRAW_QL_DEF_H
 
-//#ifndef _GAME_H
-//#include "../common/game.h"
-//#endif
 #ifndef _BMP_H
 #include "bmp_ql.h"
 #endif
@@ -50,8 +47,8 @@
 #define PIXEL_RED_STIPPLED 		0x00AA
 #define PIXEL_YELLOW			0xAA55  // Stipples a 8x1 set of pixels in alternativing 
 										// green/red to simulate yellow
-#define MODE_PIXEL_OR			0x01
-#define MODE_PIXEL_SET			0x00
+#define MODE_PIXEL_OR			1
+#define MODE_PIXEL_SET			0
 		
 
 // Bitmaps, backgrounds and monster sprites
@@ -67,6 +64,16 @@
 // SPRITE_CLASS_LARGE
 // ???
 
+// Storage sizes
+#define SPRITE_TYPE_NON	E		0
+#define SPRITE_TYPE_NORMAL		1
+#define SPRITE_TYPE_BOSS		2
+#define SPRITE_NORMAL_WORDS		(DRAW_PC_WIDTH * DRAW_PC_HEIGHT) / 8
+#define SPRITE_NORMAL_BYTES		SPRITE_NORMAL_WORDS * 2
+#define SPRITE_PORTRAIT_WORDS	(DRAW_PORTRAIT_WIDTH * DRAW_PORTRAIT_HEIGHT) / 8
+#define SPRITE_PORTRAIT_BYTES	SPRITE_PORTRAIT_WORDS * 2
+#define SPRITE_BOSS_WORDS		(DRAW_BOSS_WIDTH * DRAW_BOSS_WIDTH) / 8
+#define SPRITE_BOSS_BYTES		SPRITE_BOSS_WORDS * 2
 
 // Background images
 #define DRAW_BG_WIDTH			384		// BG images are (up to) these dimensions
@@ -76,20 +83,20 @@
 
 // Small/monster/player sprite data
 typedef struct sspritedata {
-	unsigned char	width;					// X resolution in pixels
-	unsigned char 	height;					// Y resolution in pixels
-	unsigned char	bpp;					// Bits per pixel
-	unsigned short	portrait[(DRAW_PORTRAIT_WIDTH * DRAW_PORTRAIT_WIDTH) / 8];		// Array of QL pixels (16bits = 8 pixels)
-	unsigned short	pixels[(DRAW_PC_WIDTH * DRAW_PC_WIDTH) / 8];					// Array of QL pixels (16bits = 8 pixels)
+	unsigned char	width;			// X resolution in pixels - always 32
+	unsigned char 	height;			// Y resolution in pixels - always 32
+	unsigned char	bpp;			// Bits per pixel - N/A on QL
+	unsigned short	portrait[SPRITE_PORTRAIT_WORDS];		// Array of QL pixels (16bits = 8 pixels)
+	unsigned short	pixels[SPRITE_NORMAL_WORDS];			// Array of QL pixels (16bits = 8 pixels)
 } ssprite_t;
 
 // Large/boss sprite data
 typedef struct lspritedata {
-	unsigned char	width;			// X resolution in pixels
-	unsigned char 	height;			// Y resolution in pixels
-	unsigned char	bpp;			// Bits per pixel
-	unsigned short	portrait[(DRAW_PORTRAIT_WIDTH * DRAW_PORTRAIT_WIDTH) / 8];		// Array of QL pixels (16bits = 8 pixels)
-	unsigned short	pixels[(DRAW_BOSS_WIDTH * DRAW_BOSS_WIDTH) / 8];				// Array of QL pixels (16bits = 8 pixels)
+	unsigned char	width;			// X resolution in pixels - always 96
+	unsigned char 	height;			// Y resolution in pixels - always 96
+	unsigned char	bpp;			// Bits per pixel - N/A on QL
+	unsigned short	portrait[SPRITE_PORTRAIT_WORDS];		// Array of QL pixels (16bits = 8 pixels)
+	unsigned short	pixels[SPRITE_BOSS_WORDS];				// Array of QL pixels (16bits = 8 pixels)
 } lsprite_t;
 
 // Screen definition
@@ -118,9 +125,9 @@ typedef struct screendata {
 	
 	// Always hold the player character sprite/portrait in memory
 	// pixel data is *retained* after use
-	ssprite_t *players[4]; 			// Bitmap data for players        
-	ssprite_t *enemies[6]; 	// Bitmap data for enemy sprites       
-	lsprite_t *boss;							// We only support one boss per level and they have a large sprite
+	ssprite_t *players[4]; 		// Bitmap data for players        
+	ssprite_t *enemies[6]; 		// Bitmap data for enemy sprites       
+	lsprite_t *boss[1];			// We (currently) only support one boss per level and they have a large sprite
 } Screen_t;	
 
 #endif
@@ -144,5 +151,6 @@ void draw_FontSymbol(unsigned char i, fontdata_t *fontdata, unsigned short fill,
 
 int draw_BitmapAsync(Screen_t *screen, int bmpfile);
 int draw_BitmapAsyncFull(Screen_t *screen, unsigned short x, unsigned short y, char *filename);
+int draw_Sprite(Screen_t *screen, unsigned short x, unsigned short y, ssprite_t *sprite, unsigned char portrait);
 
 #endif

@@ -35,6 +35,9 @@
 
 int data_LoadStory(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
 int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short id);
+int data_LoadSprite(Screen_t *screen, ssprite_t *sprite, unsigned short id);
+int data_LoadPortrait(Screen_t *screen, ssprite_t *sprite, unsigned short id);
+int data_LoadBoss(Screen_t *screen, lsprite_t *lsprite, unsigned short id);
 int data_AddNPC(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char id);
 struct NPCList * data_FindNPC(struct NPCList *npclist, unsigned char id);
 struct NPCList * data_LastNPC(struct NPCList *npclist);
@@ -42,6 +45,6 @@ unsigned char data_CountNPC(struct NPCList *npclist);
 
 // This is defined here and not in data.h as not all targets support bitmap sprites
 // as part of the player creation routine (e.g. text mode targets)
-unsigned char data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t *playersprite);
+int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t *playersprite, lsprite_t *bosssprite, unsigned char character_type, short character_id);
 
 #endif

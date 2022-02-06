@@ -25,13 +25,26 @@
 
 #define FONT_8X8		"font8x8_bmp"	// Note the underscore as present when copied to the QL filesystem
 #define FONT_8X8_FANCY	"font8x8b_bmp"	// Locations, NPC names, fancy words in story text etc
-#define WEAPON_DAT	"weapon_dat"
-#define MONSTER_DAT	"monster_dat"
-#define ITEM_DAT	"item_dat"
-#define MAP_DAT		"world_dat"
-#define MAP_IDX		"world_idx"
-#define STORY_DAT	"story_dat"
-#define STORY_IDX	"story_idx"
-#define TEST_IMAGE	"image_bmp"
+
+// Items
+#define WEAPON_DAT		"weapon_dat"
+#define ITEM_DAT		"item_dat"
+// People and monsters
+#define MONSTER_DAT		"monster_dat"	// Fixed size entries
+#define NPC_DAT			"npc_dat"		// Fixed size entries, identical to MONSTER_DAT entries
+// Locations and story text
+#define MAP_DAT			"world_dat"		
+#define MAP_IDX			"world_idx"		// Map location is variable size, so read from index
+#define STORY_DAT		"story_dat"
+#define STORY_IDX		"story_idx"		// Story entry is variable size, so read from index
+// Graphic assets
+#define SPRITE_DAT		"sprite_dat"	// Fixed size entries, see below
+#define PORTRAIT_DAT 	"portrait_dat"	// Fixed size entries, see below
+#define BOSS_DAT		"boss_dat"		// Fixed size entries, see below
+
+#define SPRITE_DAT_SIZE		256		// Size of graphics elements are specific to QL bitmap modes only
+#define PORTRAIT_DAT_SIZE	256		// Size of graphics elements are specific to QL bitmap modes only
+#define BOSS_DAT_SIZE		2304	// Size of graphics elements are specific to QL bitmap modes only
+#define MONSTER_ENTRY_SIZE	91		// Size of a single monster/npc datafile entry
 
 #endif

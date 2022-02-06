@@ -86,7 +86,10 @@ void game_Init(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstat
 	gamestate->level_visits[1] = 1;
 	
 	// Initialise a new player character and their sprites
-	data_CreateCharacter(screen, gamestate->players->player[0], screen->players[0]);
+	data_CreateCharacter(screen, gamestate->players->player[0], screen->players[0], NULL, CHARACTER_TYPE_MONSTER, 1);
+	for (i = 1; i < MAX_PLAYERS; i++){
+		data_CreateCharacter(screen, gamestate->players->player[i], screen->players[i], NULL, CHARACTER_TYPE_MONSTER, 0);
+	}
 }
 
 void game_Exit(Screen_t *screen){

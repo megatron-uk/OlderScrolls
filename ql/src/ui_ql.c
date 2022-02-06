@@ -179,10 +179,10 @@ void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 		
 		if (gamestate->players->player[i]->level > 0){
 			// Only draw portraits of existing party characters
-			draw_BitmapAsyncFull(screen, UI_SIDEBAR_PORTRAIT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, "portrait_bmp");
+			draw_Sprite(screen, UI_SIDEBAR_PORTRAIT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, screen->players[i], 1);
 		} else {
-			// Otherwise draw a placeholder portrait
-			draw_BitmapAsyncFull(screen, UI_SIDEBAR_PORTRAIT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, "skull_bmp");
+			// Otherwise draw a placeholder portrait for a default character
+			draw_Sprite(screen, UI_SIDEBAR_PORTRAIT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, screen->players[i], 1);
 		}
 	}
 	
@@ -365,13 +365,14 @@ void ui_DrawError(Screen_t *screen, char *title, char *text, short errorcode){
 	
 	sprintf(buf, "Error code: <w>[%d]\n", errorcode);
 	
-	draw_Box(screen, UI_ERROR_START_X, UI_ERROR_START_Y, (28) * 8, 52, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_SET);
+	draw_Box(screen, UI_ERROR_START_X, UI_ERROR_START_Y, (29 * 8), 52, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_SET);
 	draw_String(screen, UI_ERROR_START_X / 8 + 1, UI_ERROR_START_Y + 4, 28, 1, 0, screen->font_8x8, PIXEL_GREEN, (char *)title);
 	draw_String(screen, UI_ERROR_START_X / 8 + 1, UI_ERROR_START_Y + 16, 28, 3, 0,	screen->font_8x8, PIXEL_RED, (char *)text);
 	draw_String(screen, UI_ERROR_START_X / 8 + 1, UI_ERROR_START_Y + 40, 28, 1, 0,	screen->font_8x8, PIXEL_RED, (char *)buf);
 		
-	// Flip the screen buffer - in case this is a fatal error, don't wait for redraw.
+	// Flip the screen buffer - all errors are fatal -  don't wait for redraw.
 	draw_Flip(screen);
+	input_Wait(screen, INPUT_CONFIRM);
 }
 
 void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
@@ -425,7 +426,7 @@ void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 	draw_String(screen, 1, 15, 48, 11, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
 	
 	sprintf((char *)gamestate->text_buffer, "<g>Graphics Data<C>\n");
-	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Double buffering?\n- <r>%6d<C> Screen state\n- <r>%6d<C> Bitmap font\n- <r>%6d<C> PC/Enemy GFX\n- <r>%6d<C> Boss GFX\n", screen->indirect, (screen->indirect * SCREEN_BYTES) + sizeof(screen), sizeof(fontdata_t), sizeof(ssprite_t), sizeof(lsprite_t));
+	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Double buffering?\n- <r>%6d<C> Screen state\n- <r>%6d<C> Bitmap font\n- <r>%6d<C> PC/Enemy GFX\n- <r>%6d<C> Boss GFX\n- <r>%6d<C> Sprite size\n- <r>%6d<C> Boss size", screen->indirect, (screen->indirect * SCREEN_BYTES) + sizeof(Screen_t), sizeof(fontdata_t), sizeof(ssprite_t) * (MAX_PLAYERS + MAX_MONSTER_TYPES), sizeof(lsprite_t), SPRITE_NORMAL_BYTES, SPRITE_BOSS_BYTES);
 	draw_String(screen, 36, 96, 48, 11, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
 		
 	// Calculate largest free blocks of memory that remain

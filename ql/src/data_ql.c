@@ -36,9 +36,9 @@
 #ifndef _UI_H
 #include "../common/ui.h"
 #endif
-#ifndef _BMP_H
-#include "bmp_ql.h"
-#endif
+//#ifndef _BMP_H
+//#include "bmp_ql.h"
+//#endif
 #ifndef _DRAW_H
 #include "../common/draw.h"
 #endif
@@ -95,7 +95,7 @@ int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 	// (2 bytes) Primary text ID
 	read(f, &levelstate->text, 2);
 
-	// (32 bytes) Level name
+	// (32 bytes) Level name 
 	read(f, &levelstate->name, MAX_LEVEL_NAME_SIZE);
 	
 	// =====================================
@@ -358,7 +358,7 @@ int data_LoadStory(Screen_t *screen, GameState_t *gamestate, LevelState_t *level
 }
 
 /*
-unsigned char data_LoadItem(Screen_t *screen, ItemState_t *itemstate, unsigned char id){
+int data_LoadItem(Screen_t *screen, ItemState_t *itemstate, unsigned char id){
 	// Load a single item definition from disk
 	
 	// Check for item in cache
@@ -370,48 +370,200 @@ unsigned char data_LoadItem(Screen_t *screen, ItemState_t *itemstate, unsigned c
 }
 */
 
-unsigned char data_LoadWeapon(Screen_t *screen, WeaponState_t *weaponstate, unsigned char id){
+int data_LoadWeapon(Screen_t *screen, WeaponState_t *weaponstate, unsigned char id){
 	// Load a single weapon definition from disk
 	
 	return DATA_LOAD_OK;
 }
 
-unsigned char data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t *playersprite){
+int data_LoadSprite(Screen_t *screen, ssprite_t *sprite, unsigned short id){
+	// Load a single (non boss) sprite into a ssprite_t structure
+	
+	int status;
+	int f;
+	
+	f = open(SPRITE_DAT, O_RDONLY);
+	if (f < 0){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_SPRITE_DAT_MSG, f);
+		return DATA_LOAD_SPRITEFILE;	
+	}
+	
+	// The position in the file is the storage size of a sprite * sprite_ID
+	lseek(f, SPRITE_NORMAL_BYTES * id, SEEK_SET);
+	status = read(f, sprite->pixels, SPRITE_DAT_SIZE);
+	close(f);
+	if (status < SPRITE_DAT_SIZE){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_SPRITE_DAT_READ, status);
+		return DATA_LOAD_SPRITEFILE;
+	}
+	
+	// Sprites are always a fixed size
+	sprite->width = DRAW_PC_WIDTH;
+	sprite->height = DRAW_PC_HEIGHT;
+	sprite->bpp = 0;
+	
+	return DATA_LOAD_OK;
+	
+}
+
+int data_LoadPortrait(Screen_t *screen, ssprite_t *sprite, unsigned short id){
+	// Load a single portrait sprite into a ssprite_t structure
+	
+	int f;
+	int status;
+	
+	f = open(PORTRAIT_DAT, O_RDONLY);
+	if (f < 0){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_PORTRAIT_DAT_MSG, f);
+		return DATA_LOAD_PORTRAITFILE;	
+	}
+	
+	// The position in the file is the storage size of a sprite * sprite_ID
+	lseek(f, PORTRAIT_DAT_SIZE * id, SEEK_SET);
+	status = read(f, sprite->portrait, PORTRAIT_DAT_SIZE);
+	close(f);
+	if (status < PORTRAIT_DAT_SIZE){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_PORTRAIT_DAT_READ, status);
+		return DATA_LOAD_BOSSFILE;
+	}
+	
+	// Sprites are always a fixed size
+	sprite->width = DRAW_PORTRAIT_WIDTH;
+	sprite->height = DRAW_PORTRAIT_HEIGHT;
+	sprite->bpp = 0;
+	
+	return DATA_LOAD_OK;
+	
+}
+
+int data_LoadBoss(Screen_t *screen, lsprite_t *lsprite, unsigned short id){
+	// Load single boss sprite into a lsprite_t structure
+	
+	int f;
+	int status;
+	
+	f = open(BOSS_DAT, O_RDONLY);
+	if (f < 0){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_BOSS_DAT_MSG, f);
+		return DATA_LOAD_BOSSFILE;	
+	}
+	
+	// The position in the file is the storage size of a sprite * sprite_ID
+	lseek(f, BOSS_DAT_SIZE * id, SEEK_SET);
+	status = read(f, lsprite->pixels, BOSS_DAT_SIZE);
+	close(f);
+	if (status < BOSS_DAT_SIZE){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_BOSS_DAT_READ, status);
+		return DATA_LOAD_BOSSFILE;
+	}
+	
+	// Sprites are always a fixed size
+	lsprite->width = DRAW_BOSS_WIDTH;
+	lsprite->height = DRAW_BOSS_HEIGHT;
+	lsprite->bpp = 0;
+	
+	return DATA_LOAD_OK;
+}
+
+int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t *playersprite, lsprite_t *bosssprite, unsigned char character_type, short character_id){
 	// Create a new player, party or enemy character
 	// and load their sprite/portrait data
 	
+	int f;
+	int status;
+	unsigned short sprite_id, portrait_id;
 	unsigned char i;
 	unsigned char w = 0;
+	int seek_offset = MONSTER_ENTRY_SIZE * character_id;
 	
-	// Option 1 - we create a character based on set attributes of a monster ID 
+	//printf("searching id: %d\n", character_id);
 	
-	// Option 2 - we create a character based on 
-	
-	// Option 3
-	
-	strncpy(playerstate->name, "Bob the dog", MAX_PLAYER_NAME);
-	strncpy(playerstate->short_name, "Bob", MAX_SHORT_NAME);
-	for (i = 0; i < MAX_ITEMS; i++){
-		playerstate->items[i] = 0;	
+	// character_type NPC
+	// Load from the NPC.DAT file
+	if (character_type == CHARACTER_TYPE_NPC){
+		f = open(NPC_DAT, O_RDONLY);
+		if (f < 0){
+			ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_NPC_DAT_MSG, status);
+			return DATA_LOAD_NPCFILE;	
+		}
+	} else {
+		// character_type MONSTER / BOSS
+		// Load data from the MONSTER.DAT file
+		f = open(MONSTER_DAT, O_RDONLY);
+		if (f < 0){
+			ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_MONSTER_DAT_MSG, status);
+			return DATA_LOAD_MONSTERFILE;	
+		}
 	}
-	//memcpy(playerstate->items, 0, MAX_ITEMS);
 	
-	playerstate->player_class = HUMAN_UNTRAINED;
-	playerstate->level = 1;
+	// Seek to correct monster entry location
+	status = lseek(f, seek_offset, SEEK_SET);
+	if (status != seek_offset){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_MONSTER_DAT_SEEK, DATA_LOAD_MONSTERFILE_SEEK);
+		return DATA_LOAD_MONSTERFILE;
+	}
 	
-	// Core stats
-	playerstate->str = 10;
-	playerstate->dex = 10;
-	playerstate->con = 10;
-	playerstate->wis = 10;
-	playerstate->intl = 10;
-	playerstate->chr = 10;
-	playerstate->profile = 0;
-	playerstate->hp = 4;
-	playerstate->hp_reset = 10;
-	playerstate->status = 0x00000000;
+	// 1. (2 bytes) character ID
+	read(f, &playerstate->id, 2);
+	if (playerstate->id != character_id){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_MONSTER_MISMATCH_MSG, DATA_LOAD_MONSTER_MISMATCH);
+		return DATA_LOAD_MONSTER_MISMATCH;	
+	}
 	
+	// 2. (18 bytes) character name
+	status = read(f, playerstate->name, MAX_PLAYER_NAME);
+	strncpy(playerstate->short_name, playerstate->name, MAX_SHORT_NAME);
+	
+	// 3. (1 byte) character type (boss, enemy, npc)
+	read(f, &playerstate->type, 1);
+	
+	// 4. (1 byte) character sprite type (boss, normal monster)
+	read(f, &playerstate->sprite_type, 1);
+	
+	// 5a. (2 bytes) initial sprite ID 
+	read(f, &sprite_id, 2);
+	// 5b. (38 bytes) all other sprite IDs (not supported yet on QL)
+	lseek(f, 38, SEEK_CUR);
+	
+	// 6. (2 bytes) portrait sprite ID 
+	read(f, &portrait_id, 2);
+	
+	// 7. (1 byte) character class	
+	read(f, &playerstate->player_class, 1);
+	
+	// 8. (1 byte) character level
+	read(f, &playerstate->level, 1);
+	
+	// 9. (2 bytes) attack profile / aggression profile
+	read(f, &playerstate->profile, 2);
+	
+	// 10. (1 byte) str
+	read(f, &playerstate->str, 1);
+	
+	// 11. (1 byte) dex
+	read(f, &playerstate->dex, 1);
+	
+	// 12. (1 byte) con
+	read(f, &playerstate->con, 1);
+	
+	// 13. (1 byte) wis
+	read(f, &playerstate->wis, 1);
+	
+	// 14. (1 byte) intl
+	read(f, &playerstate->intl, 1);
+	
+	// 15. (1 byte) chr
+	read(f, &playerstate->chr, 1);
+	
+	// 16. (2 bytes) hp
+	read(f, &playerstate->hp, 2);
+	playerstate->hp_reset = playerstate->hp; // Copy HP to hp_reset
+	
+	// 17. (4 bytes) status effects bitfield
+	read(f, &playerstate->status, 4);
+		
 	// Equipped items
+	
 	playerstate->head = 0;
 	playerstate->body = 0;
 	playerstate->option = 0;
@@ -423,6 +575,8 @@ unsigned char data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate,
 	playerstate->hits_taken = 0;
 	playerstate->hits_caused = 0;
 	
+	close(f);
+	
 	// Load weapon one
 	w = 0;
 	if (w){
@@ -433,6 +587,25 @@ unsigned char data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate,
 	w = 0;
 	if (w){
 		data_LoadWeapon(screen, playerstate->weapon_l, w);
+	}
+	
+	// Set initial items to empty
+	for (i = 0; i < MAX_ITEMS; i++){
+		playerstate->items[i] = 0;	
+	}
+	
+	if (playerstate->type == CHARACTER_TYPE_BOSS){
+		status = data_LoadBoss(screen, bosssprite, sprite_id); 		// Load the large, 96x96 boss sprite
+	} else {
+		status = data_LoadSprite(screen, playersprite, sprite_id); // Load a regular 32x32 player/enemy sprite
+	}
+	if (status != DATA_LOAD_OK){
+		return status;
+	}
+	
+	status = data_LoadPortrait(screen, playersprite, portrait_id); 	// Load the portrait/headshot
+	if (status != DATA_LOAD_OK){
+		return status;
 	}
 	
 	return DATA_LOAD_OK;

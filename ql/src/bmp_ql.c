@@ -59,7 +59,7 @@ int bmp_ReadImage(int bmpfile, bmpdata_t *bmpdata, unsigned char header, unsigne
 		lseek(bmpfile, DATA_OFFSET_OFFSET, SEEK_SET);
 
 		// Read data offset value
-		read(bmpfile, &bmpdata->offset, 4);
+		status = read(bmpfile, &bmpdata->offset, 4);
 
 		// offset is a little-endian 32bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->offset = swap_int32(bmpdata->offset);
@@ -68,7 +68,7 @@ int bmp_ReadImage(int bmpfile, bmpdata_t *bmpdata, unsigned char header, unsigne
 		lseek(bmpfile, WIDTH_OFFSET, SEEK_SET);
 
 		// Read width value
-		read(bmpfile, &bmpdata->width, 4);
+		status = read(bmpfile, &bmpdata->width, 4);
 
 		// width is a little-endian 32bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->width = swap_int32(bmpdata->width);
@@ -77,7 +77,7 @@ int bmp_ReadImage(int bmpfile, bmpdata_t *bmpdata, unsigned char header, unsigne
 		lseek(bmpfile, HEIGHT_OFFSET, SEEK_SET);
 
 		// Read height value
-		read(bmpfile, &bmpdata->height, 4);
+		status = read(bmpfile, &bmpdata->height, 4);
 
 		// Height is a little-endian 32bit,, and Sinclair QL is big-endian so swap it
 		bmpdata->height = swap_int32(bmpdata->height);
@@ -86,7 +86,7 @@ int bmp_ReadImage(int bmpfile, bmpdata_t *bmpdata, unsigned char header, unsigne
 		lseek(bmpfile, BITS_PER_PIXEL_OFFSET, SEEK_SET);
 
 		// Read bpp value
-		read(bmpfile, &bmpdata->bpp, 2);
+		status = read(bmpfile, &bmpdata->bpp, 2);
 
 		// BPP is a little-endian 16bit, and Sinclair QL is big-endian, so swap it
 		bmpdata->bpp = swap_int16(bmpdata->bpp);
@@ -95,7 +95,7 @@ int bmp_ReadImage(int bmpfile, bmpdata_t *bmpdata, unsigned char header, unsigne
 		lseek(bmpfile, COMPRESS_OFFSET, SEEK_SET);
 		
 		// Read compression value
-		read(bmpfile, &bmpdata->compressed, sizeof(bmpdata->compressed));
+		status = read(bmpfile, &bmpdata->compressed, sizeof(bmpdata->compressed));
 				
 		// compression is a little-endian 32bit,, and Sinclair QL is big-endian so swap it
 		bmpdata->compressed = swap_int32(bmpdata->compressed);
@@ -208,7 +208,7 @@ int bmp_ReadImage(int bmpfile, bmpdata_t *bmpdata, unsigned char header, unsigne
 					return BMP_ERR_READ;
 				}
 			}
-			// Else... the read() already left us at the next row	
+			// Else... the status = read() already left us at the next row	
 		}
 		
 		return BMP_OK;

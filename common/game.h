@@ -35,7 +35,7 @@
 
 #define MAX_PLAYERS			4
 #define MAX_PLAYER_NAME 	18
-#define MAX_SHORT_NAME 		6
+#define MAX_SHORT_NAME 		8
 #define MAX_REWARD_ITEMS 	6		// Number of items that may be rewarded upon visiting a location, or upon defeat of primary monster(s)
 #define MAX_ITEMS 			32		// The size of player inventory
 #define MAX_LEVEL_NAME_SIZE 32		// How long a level name can be
@@ -44,6 +44,7 @@
 #define MAX_CHARACTERS		256		// Number of monsters, npcs or player characters (8 bit ID)
 #define MAX_REQUIREMENTS 	8		// Actions can have prerequisites (or even multiple prerequisities) before they happen
 #define MAX_MONSTER_TYPES 	6		// The number of monsters in each location
+#define MAX_BOSS_TYPES		1
 #define MAX_EFFECTS			5		// maximum number of effects a spell or item can have
 #define MAX_DAMAGE_TYPES	3
 #define REQUIREMENT_BYTES 	5		// 5 bytes per requirement
@@ -92,6 +93,11 @@
 #define STATUS_LIGHTNING_RESISTANCE	0x20000000
 #define STATUS_MAGICAL_RESISTANCE		0x40000000
 #define STATUS_PHYSICAL_RESISTANCE		0x80000000
+
+// Characters can be of 3 different types
+#define CHARACTER_TYPE_MONSTER 0
+#define CHARACTER_TYPE_NPC		1
+#define CHARACTER_TYPE_BOSS		2
 
 // Structure representing the data associated with a single weapon
 // This is everything we need to know in order to carry out combat with this weapon
@@ -155,15 +161,17 @@ typedef struct {
 
 // Structure representing the status of a single NPC or PC
 typedef struct {
-	char name[MAX_PLAYER_NAME];						// Full player character name, e.g. Argus the Dread
-	char short_name[MAX_SHORT_NAME];					// Player character name, e.g. Argus
 	
+	char name[MAX_PLAYER_NAME + 1];			// Full player character name, e.g. Argus the Dread
+	char short_name[MAX_SHORT_NAME + 1];	// Player character name, e.g. Argus
+
+	unsigned short id;					// Character ID
+	unsigned char type;					// CHARACTER_TYPE_NPC, CHARACTER_TYPE_MONSTER, CHARACTER_TYPE_BOSS
+	unsigned char sprite_type;			// SPRITE_CLASS_NORMAL, SPRITE_CLASS_BOSS
 	unsigned char player_class;			// HUMAN_ROGUE, HUMAN_UNTRAINED, BEAST_MAGIC etc, see monsters.h
 	unsigned char level;				// 1-10
 	unsigned short profile;				// Melee, Ranged, Magic Attack, Magic Support behaviour
 										// 4 bits each for how aggressive the character is in that area.
-	
-										
 										
 	// Core stats
 	unsigned char str;					// 0-20
@@ -174,8 +182,8 @@ typedef struct {
 	unsigned char chr;					// 0-20
 	
 	// Hitpoints and status effects
-	unsigned char hp;					// Current Hit points
-	unsigned char hp_reset;				// Base/original Hit points
+	unsigned short hp;					// Current Hit points
+	unsigned short hp_reset;			// Base/original Hit points
 	unsigned long status;				// 32bit bitfield of status effects - see status.h
 	
 	// Equipped items

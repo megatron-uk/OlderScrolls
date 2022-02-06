@@ -158,11 +158,13 @@ int screen_Init(Screen_t *screen){
 		}
 	}
 	
-	screen->boss = (lsprite_t *) calloc(sizeof(lsprite_t), 1);
-	if (screen->boss == NULL){
-		// COuld not allocate memory for boss sprite
-		ui_DrawError(screen, GENERIC_MEMORY_MSG, SCREEN_INIT_MEMORY_MSG, SCREEN_INIT_BOSS_SPRITEMEMORY);
-		return SCREEN_INIT_BOSS_SPRITEMEMORY;
+	for (i = 0; i < MAX_BOSS_TYPES; i++){
+		screen->boss[i] = (lsprite_t *) calloc(sizeof(lsprite_t), 1);
+		if (screen->boss[i] == NULL){
+			// COuld not allocate memory for boss sprite
+			ui_DrawError(screen, GENERIC_MEMORY_MSG, SCREEN_INIT_MEMORY_MSG, SCREEN_INIT_BOSS_SPRITEMEMORY);
+			return SCREEN_INIT_BOSS_SPRITEMEMORY;
+		}
 	}
 	
 	// Close file handle used to load font bitmap file
@@ -791,7 +793,7 @@ void draw_FontSymbol(unsigned char ascii_num, fontdata_t *fontdata, unsigned sho
 	}
 }
 
-
+/*
 int draw_BitmapAsync(Screen_t *screen, int bmpfile){
 	// Load from file, decode and display, line by line
 	// Every time the function is called, another line is read, decoded and displayed
@@ -1074,4 +1076,143 @@ int draw_BitmapAsyncFull(Screen_t *screen, unsigned short x, unsigned short y, c
 	close(f);
 	screen->dirty = 1;
 	return status;
+}
+*/
+
+int draw_Sprite(Screen_t *screen, unsigned short x, unsigned short y, ssprite_t *sprite, unsigned char portrait){
+	// Display a normal (non-boss) sprite on screen at the given coordinates
+	
+	unsigned short *p;				// Pointer to the current position in screen memory
+	unsigned short start_addr = 0;	// The screen address of the first (top left) pixel
+	unsigned short end_addr = 0;	// The screen address of the last (bottom right) pixel
+	unsigned short i = 0; 			// Outer (rows) loop counter
+	unsigned short ii = 0; 			// Inner (screen words) loop counter
+	unsigned short mask = 0;
+	unsigned char pixel_left = 0;	// left byte of a 16bit QL pixel
+	unsigned char pixel_right = 0;	// right byte of a 16bit QL pixel
+	unsigned char start_bits = 0;	// Number of leading pixels we skip if not on an 8 pixel boundary
+	unsigned char end_bits = 0;		// Number of trailing pixels we skip if not on an 8 pixel boundary
+	unsigned char remain_bits = 0;	// Number of leading pixels we display, if not on an 8 pixel boundary
+	unsigned char last_word = 0;	// The number of screen words we write in any single row of pixels
+	unsigned char i_start = 0;
+	unsigned char i_end = 0;
+	unsigned char i_start_pos = 0;
+	unsigned short *pixels;			// Pointer to either the sprite->portrait or sprite->pixels data
+	
+	if (portrait){
+		pixels = (unsigned short*) sprite->portrait;
+	} else {
+		pixels = (unsigned short*) sprite->pixels;	
+	}
+	
+	//printf("%d x %d @ %d,%d\n", sprite->width, sprite->height, x, y);
+	
+	// Get coordinates
+	draw_GetXY(x, y, &start_addr, &start_bits);
+	draw_GetXY(x + sprite->width, y + sprite->height, &end_addr, &end_bits);
+	
+	// How many pixels we have can display at position x (!=8 if we are not directly on an 8 pixel screen boundary)
+	remain_bits = 8 - start_bits;
+	
+	// Reposition screen write position for current x/y position
+	p = (unsigned short*) screen->buf;
+	p += start_addr;
+	
+	// The number of screen words we write in any row
+	last_word = sprite->width / 8;
+	
+	// For every row of pixels in the sprite....
+	for(i = 0; i < sprite->height; i++){
+				
+		// Write any starting pixels if not on a 8 pixel boundary
+		if (start_bits != 0){
+						
+			//pixel_left = (unsigned char)((sprite->pixels[i * last_word] & 0xff00) >> 8) >> start_bits;
+			//pixel_right = (unsigned char)(sprite->pixels[i * last_word] & 0x00ff) >> start_bits;
+			pixel_left = (unsigned char)((pixels[i * last_word] & 0xff00) >> 8) >> start_bits;
+			pixel_right = (unsigned char)(pixels[i * last_word] & 0x00ff) >> start_bits;
+			mask = (pixel_left << 8) + pixel_right;
+			
+			// OR with any existing leading bits; safest
+			*p = *p | mask;
+			
+			// Move on pointer to next screen location
+			p++;
+			
+			// Save a copy of the current 8 pixels (including those we masked off)
+			// So that we can use them in the main inner loop
+			//mask = sprite->pixels[i * last_word];
+			mask = pixels[i * last_word];
+			
+			// The main inner loop now needs to start 1 word into the pixel array
+			i_start = (i * last_word) + 1;
+			i_start_pos = 1;
+		} else {
+			i_start = i * last_word;
+			i_start_pos = 0;
+		}
+		
+		// Construct the mask for the last word if it doesn't end on a 8 pixel boundary
+		if (end_bits != 0){
+			i_end = 1;
+		} else {
+			i_end = 0;	
+		}
+				
+		// Starting from +1 (if we are not on an 8 pixel boundary)
+		// Construct each 8 pixel block in turn, using the masked-off
+		// bits of the previous 8 pixels, if necessary.
+		// Copy to screen/buffer
+		// Increment screen/buffer word pointer
+		
+		// For every screen word (8 pixels) on this row
+		
+		for(ii = i_start; ii < (i_start + last_word - 1); ii++){
+			if (i_start_pos){
+				// This is tricky if we are not on an 8 pixel boundary....
+				
+				// Use the last pixels we masked off from the previous word
+				pixel_left = (unsigned char)((mask & 0xff00) >> 8) << remain_bits;
+				pixel_right = (unsigned char)(mask & 0x00ff) << remain_bits;
+				
+				// Add on the first pixels from the current word
+				//pixel_left += (unsigned char)((sprite->pixels[ii] & 0xff00) >> 8) >> start_bits;
+				//pixel_right += (unsigned char)(sprite->pixels[ii] & 0x00ff) >> start_bits;
+				pixel_left += (unsigned char)((pixels[ii] & 0xff00) >> 8) >> start_bits;
+				pixel_right += (unsigned char)(pixels[ii] & 0x00ff) >> start_bits;
+				
+				*p = (unsigned short)(pixel_left << 8) + pixel_right;
+				
+				// Store the current word for the next pass
+				//mask = sprite->pixels[ii];
+				mask = pixels[ii];
+				
+			} else {
+				// On a 8 pixel boundary, just copy the next block of 8 pixels
+				//*p = sprite->pixels[ii];
+				*p = pixels[ii];
+			}
+			p++;
+		}
+		
+		// If we have any end bits, set the last 8 pixels
+		if (i_end){
+			// Use the last pixels we masked off from the previous word
+			pixel_left = (unsigned char)((mask & 0xff00) >> 8) << remain_bits;
+			pixel_right = (unsigned char)(mask & 0x00ff) << remain_bits;
+	
+			// OR with any existing trailing bits; safest
+			*p = *p | (unsigned short)(pixel_left << 8) + pixel_right;
+		}
+		
+		// Reposition screen memory pointer to next row
+		p = (unsigned short*) screen->buf;
+		p += start_addr + (i * SCREEN_WORDS_PER_ROW);
+		
+		// Next row, increment by an image width worth of pixels into the data
+		i_start += last_word;
+	}
+	
+	return BMP_OK;
+	
 }
