@@ -28,7 +28,7 @@ from PIL import Image	# For verifying sprite bitmap dimensions and colour depth
 
 from datasettings import *
 
-DEBUG =1
+DEBUG =0
 
 ##################################################################################
 #
@@ -42,6 +42,8 @@ class bmp_to_target:
 
 	def __init__(self, target = None):
 		""" Test """
+		
+		self.debug = 0
 		
 		# The raw image
 		self.bmp = None
@@ -63,7 +65,7 @@ class bmp_to_target:
 	def load(self, filename = None):
 		""" Loads an image from disk """
 		try:
-			if DEBUG:
+			if self.debug:
 				print("INFO - load() Loading [%s]" % filename)
 			self.bmp = Image.open(filename)
 			return True
@@ -164,7 +166,7 @@ class bmp_to_target:
 		for pixel_block in ql_pixel_blocks:
 			self.bytes.append(pixel_block)
 			
-		if DEBUG:
+		if self.debug:
 			print("INFO - out_ql() Generated %s bytes of data" % len(self.bytes))
 		
 		return True
@@ -281,6 +283,7 @@ def generate_characters(import_dir = None, target = None):
 
 		if len(char_ids) > 0:
 			
+			print("")
 			print("###################################################################################")
 			print("#")
 			print("# Step 1.")
@@ -351,84 +354,87 @@ def generate_characters(import_dir = None, target = None):
 					print("%s Character ID: %3d" % (char_type, char_id))
 					print("- ERROR: This character does not have a valid sprite class defined [%s]" % sprite_type)
 
-				for sprite_file_name in ['sprite_name', 'sprite_name2', 'sprite_name3', 'portrait_name']:
+				for sprite_file_class in ['resting_sprite', 'attack_sprite', 'magic_sprite', 'wounded_sprite', 'death_sprite', 'portrait_name']:
 					
-					sprite_file = char_entries[char_id][sprite_file_name]
+					#sprite_file = char_entries[char_id][sprite_file_class]
 
-					if sprite_file not in bitmaps[sprite_type].keys():
-	
-						# Only check for filenames which are not blank
-						if sprite_file == "":
-							print("%s Character ID: %3d, !!WARNING!! %s filename is blank, assuming no sprite? !!WARNING!!" % (char_type, char_id, sprite_file_name))
-						else:
-							if DEBUG:
-								print("%s Character ID: %3d, %s filename [%s], OK" % (char_type, char_id, sprite_file_name, sprite_file))
-				
-							# Check file is present!
-							found_sprite = False
-							d1 = import_dir + BMP_SOURCES + target['suffix'] + "/" + sprite_file
-							d2 = import_dir + BMP_SOURCES + "master/" + sprite_file
-							if os.path.exists(d1):
-								found_sprite = True
-								d = d1
-								if DEBUG:
-									print("%s Character ID: %3d, %s filename [%s] found for target [%s], OK" % (char_type, char_id, sprite_file_name, sprite_file, target['target']))
+					if sprite_file_class == 'portrait_name':
+						my_sizes = SPRITE_SIZES['SPRITE_CLASS_PORTRAIT']
+						this_type = 'SPRITE_CLASS_PORTRAIT'
+					else:
+						my_sizes = SPRITE_SIZES[sprite_type]
+						this_type = sprite_type
+
+					for sprite_file in char_entries[char_id][sprite_file_class]:
+
+						if sprite_file not in bitmaps[this_type].keys():
+		
+							# Only check for filenames which are not blank
+							if sprite_file == "":
+								print("%s Character ID: %3d, !!WARNING!! %s filename is blank, assuming no sprite? !!WARNING!!" % (char_type, char_id, sprite_file_class))
 							else:
-								if os.path.exists(d2):
+								if DEBUG:
+									print("%s Character ID: %3d, %s filename [%s], OK" % (char_type, char_id, sprite_file_class, sprite_file))
+					
+								# Check file is present!
+								found_sprite = False
+								d1 = import_dir + BMP_SOURCES + target['suffix'] + "/" + sprite_file
+								d2 = import_dir + BMP_SOURCES + "master/" + sprite_file
+								if os.path.exists(d1):
 									found_sprite = True
-									d = d2
+									d = d1
 									if DEBUG:
-										print("%s Character ID: %3d, %s filename [%s] found in master image directory, OK" % (char_type, char_id, sprite_file_name, sprite_file))
-									
-							if found_sprite:
-								# Check file dimensions match the class stated for this character (e.g. 32x32, 96x96 or whatever)
-								try:
-									img = Image.open(d)
-									
-									if sprite_file_name == 'portrait_name':
-										my_sizes = SPRITE_SIZES['SPRITE_CLASS_PORTRAIT']
-										this_type = 'SPRITE_CLASS_PORTRAIT'
-									else:
-										my_sizes = SPRITE_SIZES[sprite_type]
-										this_type = sprite_type
-										
-									if (img.width == my_sizes['w']) and (img.height == my_sizes['h']):
+										print("%s Character ID: %3d, %s filename [%s] found for target [%s], OK" % (char_type, char_id, sprite_file_class, sprite_file, target['target']))
+								else:
+									if os.path.exists(d2):
+										found_sprite = True
+										d = d2
 										if DEBUG:
-											print("%s Character ID: %3d, %s dimensions [%sx%s] match class [%s], OK" % (char_type, char_id, sprite_file_name, img.width, img.height, this_type))
-											
-										b = bmp_to_target()
-										b.load(d)
-										if b.out():
+											print("%s Character ID: %3d, %s filename [%s] found in master image directory, OK" % (char_type, char_id, sprite_file_class, sprite_file))
 										
+								if found_sprite:
+									# Check file dimensions match the class stated for this character (e.g. 32x32, 96x96 or whatever)
+									try:
+										img = Image.open(d)
+																				
+										if (img.width == my_sizes['w']) and (img.height == my_sizes['h']):
 											if DEBUG:
-												print("%s Character ID: %3d, Adding processed bitmap [%s] to list" % (char_type, char_id, sprite_file))
-												print("%s Character ID: %3d, Any future reference to this bitmap will reuse this data" % (char_type, char_id))
-											bitmaps[this_type][sprite_file] = { 'file' : d, 'converter' : b }	
+												print("%s Character ID: %3d, %s dimensions [%sx%s] match class [%s], OK" % (char_type, char_id, sprite_file_class, img.width, img.height, this_type))
+												
+											b = bmp_to_target()
+											b.load(d)
+											if b.out():
+											
+												if DEBUG:
+													print("%s Character ID: %3d, Adding processed bitmap to bitmaps[%s][%s]" % (char_type, char_id, this_type, sprite_file))
+													print("%s Character ID: %3d, Any future reference to this bitmap will reuse this data" % (char_type, char_id))
+												bitmaps[this_type][sprite_file] = { 'file' : d, 'converter' : b }	
+											else:
+												print("%s Character ID: %d" % (char_type, char_id))
+												print("- ERROR: Conversion of [%s] to native [%s] binary data failed" % (sprite_file, target['target']))
+												valid = False
+											
 										else:
-											print("%s Character ID: %d" % (char_type, char_id))
-											print("- ERROR: Conversion of [%s] to native [%s] binary data failed" % (sprite_file, target['target']))
 											valid = False
-										
-									else:
+											print("%s Character ID: %d" % (char_type, char_id))
+											print("- ERROR: This character has an invalid %s size of [%sx%s] which does not match class [%s]" % (sprite_file_class, img.width, img.height, this_type))
+											print("- ERROR: Allowed dimensions for this sprite class are [%sx%s]" % (my_sizes['w'], my_sizes['h']))
+										img.close()
+									except Exception as e:
 										valid = False
-										print("%s Character ID: %d" % (char_type, char_id))
-										print("- ERROR: This character has an invalid %s size of [%sx%s] which does not match class [%s]" % (sprite_file_name, img.width, img.height, this_type))
-										print("- ERROR: Allowed dimensions for this sprite class are [%sx%s]" % (my_sizes['w'], my_sizes['h']))
-									img.close()
-								except Exception as e:
+										print("%s Character ID: %3d" % (char_type, char_id))
+										print("- ERROR: This character has an %s filename which could not be opened [%s]" % (sprite_file_class, sprite_file))
+										print("- ERROR: %s" % e)
+								else:
 									valid = False
 									print("%s Character ID: %3d" % (char_type, char_id))
-									print("- ERROR: This character has an %s filename which could not be opened [%s]" % (sprite_file_name, sprite_file))
-									print("- ERROR: %s" % e)
-							else:
-								valid = False
-								print("%s Character ID: %3d" % (char_type, char_id))
-								print("- ERROR: This character has a %s filename which was not found [%s]" % (sprite_file_name, sprite_file))
-								print("- ERROR: Sprite files for this adventure should be found in: [%s OR %s]" % ((import_dir + BMP_SOURCES + "master/"), (import_dir + BMP_SOURCES +  target['suffix'] + "/")))
-							
-					else:
-						print("%s Character ID: %3d, %s bitmap [%s] has already been processed" % (char_type, char_id, sprite_file_name, sprite_file))
-						valid = True
+									print("- ERROR: This character has a %s filename which was not found [%s]" % (sprite_file_name, sprite_file))
+									print("- ERROR: Sprite files for this adventure should be found in: [%s OR %s]" % ((import_dir + BMP_SOURCES + "master/"), (import_dir + BMP_SOURCES +  target['suffix'] + "/")))
+								
+						else:
+							if DEBUG:
+								print("%s Character ID: %3d, %s bitmap [%s] has already been processed" % (char_type, char_id, sprite_file_class, sprite_file))
+							valid = True
 				if DEBUG:
 					print("-")
 		
@@ -565,7 +571,12 @@ def generate_characters(import_dir = None, target = None):
 	
 	# Generate bitmap data files
 	for sprite_type in bitmaps.keys():
-		i = 1 # Sprites always start from 1, sprite id 0 == no sprite
+		
+		if sprite_type == 'SPRITE_CLASS_PORTRAIT':
+			i = 0 # Portraits always start from 0
+		else:
+			i = 1 # Sprites always start from 1, sprite id 0 == no sprite
+			
 		valid = True
 		print("Processing %s" % sprite_type)
 		
@@ -596,7 +607,8 @@ def generate_characters(import_dir = None, target = None):
 				sprite_output_filename = SPRITE_SIZES[sprite_type]['file']
 				out = import_dir + OUT_DIR + target['suffix'] + "/" + sprite_output_filename
 				print("Writing %s data to %s" % (sprite_type, out))
-				f = open(out, "wb")
+				tmp = out + ".tmp"
+				f = open(tmp, "wb", buffering=0)
 				offset = 0
 				for sprite in bitmaps[sprite_type].keys():
 					print("- ID:%3d added at offset %5d" % (bitmaps[sprite_type][sprite]['id'], offset))	
@@ -605,6 +617,9 @@ def generate_characters(import_dir = None, target = None):
 					offset += len(bitmaps[sprite_type][sprite]['converter'].bytes)
 				f.flush()
 				f.close()
+				if os.path.exists(out):
+					os.remove(out)
+				os.rename(tmp, out)
 				print("Done")
 				print("")
 			except Exception as e:
@@ -613,92 +628,99 @@ def generate_characters(import_dir = None, target = None):
 				return False
 				
 	print("GOOD: All graphics assets have been written")
-		
-	print("")
-	print("###################################################################################")
-	print("#")
-	print("# Step 2b.")
-	print("#")
-	print("# Generating native format portrait assets [%s]" % target['target'])
-	print("#")
-	print("###################################################################################")
-	
-	data_size = 0
-	for sprite in portraits.keys():
-		if data_size == 0:
-			data_size = len(portraits[sprite]['converter'].bytes)
-		else:
-			if data_size != len(portraits[sprite]['converter'].bytes):
-				print("ERROR - Not all portrait sizes are identical!")
-				valid = False
-		
-		
-	for sprite in portraits.keys():
-		portraits[sprite]['id'] = i
-			
-		print("- ID:%3d --> %13s [%s bytes]" % (i, sprite, len(portraits[sprite]['converter'].bytes)))
-			
-		i += 1
-	
-	if len(bitmaps[sprite_type].keys()) > 0:
-		try:
-			sprite_output_filename = SPRITE_SIZES[sprite_type]['file']
-			out = import_dir + OUT_DIR + target['suffix'] + "/" + sprite_output_filename
-			print("")
-			print("Writing to %s" % out)
-			f = open(out, "wb")
-			offset = 0
-			for sprite in portraits.keys():
-				print("- ID:%3d added at offset %5d" % (portraits[sprite]['id'], offset))	
-				for b in portraits[sprite]['converter'].bytes:
-					f.write(b.to_bytes(1, byteorder='big'))
-				offset += len(portraits[sprite]['converter'].bytes)
-			f.close()
-			print("Done")
-		except Exception as e:
-			print("ERROR! Unable to write portrait dat file [%s]" % sprite_output_filename)
-			print("ERROR! %s" % e)
-			return False
 				
 	print("-")
 		
-	print("")
-	print("###################################################################################")
-	print("#")
-	print("# Step 3.")
-	print("#")
-	print("# Generating monsters.dat")
-	print("#")
-	print("###################################################################################")
-				
-	character_type = "MONSTER"
-	character_ids = monster_ids
-	character_entries = game_characters.MONSTER
+	for char_type in ["NPC","MONSTER"]:
 		
-	for character_id in char_ids:
+		if char_type == "MONSTER":
+			character_type = "MONSTER"
+			character_file = "monster.dat"
+			character_ids = monster_ids
+			character_entries = game_characters.MONSTER
 		
-		character = char_entries[character_id]
-		#print(character)
-		record = character_to_record(character_id, character_type, character, item_ids, weapon_ids, bitmaps[character['sprite_type']])
-		if record is False:
-			print("ERROR! Unable to generate a character data record")
-			return False
+		if char_type == "NPC":
+			character_type = "NPC"
+			character_file = "npc.dat"
+			character_ids = npc_ids
+			character_entries = game_characters.NPC
+		
 		print("")
+		print("###################################################################################")
+		print("#")
+		print("# Step 3.")
+		print("#")
+		print("# Generating %s (%s)" % (character_type, character_file))
+		print("#")
+		print("###################################################################################")
+			
+		character_records = []
+			
+		for character_id in character_ids:
+			
+			character = character_entries[character_id]
+			data = character_to_record(character_id, character_type, character, item_ids, weapon_ids, bitmaps)
+			if data is False:
+				print("ERROR! Unable to generate a character data record")
+				return False
+			else:
+				record = {
+					'id' : character_id,
+					'offset' : 0,
+					'data' : data,
+					'character' : character,
+				}
+				character_records.append(record)
+				
+		print("")
+		print("Writing %s data..." % character_type)
+		try:
+			f = open(import_dir + OUT_DIR + target['suffix'] + "/" + character_file, "wb")
+			offset = 0
+			for record in character_records:
+				record['offset'] = offset
+				print("- Character ID: %3d [%18s] at offset %5d" % (record['id'], record['character']['name'], offset))
+				for b in record['data']:
+					f.write(b)
+				offset += len(record['data'])
+			f.close()
+		except Exception as e:
+			print("ERROR! Unable to write datafile")
+			print("ERROR! %s" % e)
+			return False
+		print("...done!")
 
 def character_to_record(character_id, character_type, character, item_ids, weapon_ids, bitmaps):
 	""" Generates the string of bytes that represents a character/npc/monster in a datafile """
 	
 	record = []
 	
-	print("-- Character: %s" % character['name'])
+	print("-- Character ID: %3s [%18s]" % (character_id, character['name']))
 	
 	######################################################
-	# 1. (2 bytes) ID of character
+	# 0. (2 bytes) ID of character
 	######################################################
 	byte_list = character_id.to_bytes(2, byteorder='big')
 	for b in byte_list:
 		record.append(b.to_bytes(1, byteorder='big'))
-	print("-- +%2s bytes, ID: %s" % (len(byte_list), character_id))
+	if DEBUG:
+		print("-- +%2s bytes, ID: %s" % (len(byte_list), character_id))
+	
+	######################################################
+	# 1. (18 bytes) character name (MAX_PLAYER_NAME)
+	######################################################
+	byte_list = []
+	if len(character['name']) > MAX_PLAYER_NAME:
+		print("ERROR! Character name [%s] is greater than %d bytes!!!" % (character['name'], MAX_PLAYER_NAME))
+		return False
+	for c in character['name']:
+		byte_list.append(ord(c).to_bytes(1, byteorder='big'))
+	for i in range(len(byte_list), MAX_PLAYER_NAME):
+		byte_list.append(0x00.to_bytes(1, byteorder='big'))
+	for b in byte_list:
+		record.append(b)
+	if DEBUG:
+		print("-- +%2s bytes, name: [%s]" % (len(byte_list), character['name']))
 	
 	######################################################
 	# 2. (1 bytes) TYPE of character (MONSTER/NPC)
@@ -712,9 +734,11 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 		byte_list = character_type_lookup.to_bytes(1, byteorder='big')
 		for b in byte_list:
 			record.append(b.to_bytes(1, byteorder='big'))
-		print("-- +%2s bytes, CHARACTER TYPE: %s" % (len(byte_list), character_type_lookup))
+		
+		if DEBUG:
+			print("-- +%2s bytes, CHARACTER TYPE: %s" % (len(byte_list), character_type_lookup))
 	else:
-		print("ERROR - Unable to determine valid character type for ID:%s %s" %(character_id, character['type']))
+		print("ERROR - Unable to determine valid character type for character ID:%s %s" %(character_id, character['type']))
 		return False
 	
 	######################################################
@@ -729,40 +753,305 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 		byte_list = sprite_type_lookup.to_bytes(1, byteorder='big')
 		for b in byte_list:
 			record.append(b.to_bytes(1, byteorder='big'))
-		print("-- +%2s bytes, SPRITE TYPE: %s" % (len(byte_list), sprite_type_lookup))
+		if DEBUG:
+			print("-- +%2s bytes, SPRITE TYPE: %s" % (len(byte_list), sprite_type_lookup))
 	else:
-		print("ERROR - Unable to determine valid sprite type for ID:%s %s" %(character_id, character['sprite_type']))
+		print("ERROR - Unable to determine valid sprite type for character ID:%s %s" %(character_id, character['sprite_type']))
 		return False
 	
 	######################################################
-	# 4. (6 bytes) SPRITE 1, 2 and 3 ID (ID of the bitmaps processed earlier)
+	# 4. (2 bytes) per SPRITE filename(ID of the bitmaps processed earlier)
+	#    Up to SPRITE_ANIMATION_FRAMES per sprite class
 	######################################################
-	for sprite in ["sprite_name", "sprite_name2", "sprite_name3"]:
-
-		sprite_id_lookup = False
-	
-		sprite_filename = character[sprite]
+	for sprite_file_class in ["resting_sprite", "attack_sprite", "magic_sprite", "wounded_sprite", "death_sprite"]:
 		
-		if sprite_filename == "":
-			sprite_id_lookup = 0
+		sprite_size = character['sprite_type']
 		
-		else:
-			if sprite_filename in bitmaps.keys():
-				sprite_id_lookup = bitmaps[sprite_filename]['id']
+		#SPRITE_ANIMATION_FRAMES
+		sprite_frames = 0
+		for sprite_filename in character[sprite_file_class]:
+			
+			sprite_id_lookup = False
+		
+			#sprite_filename = character[sprite]
+			
+			if sprite_filename == "":
+				sprite_id_lookup = 0
+			
 			else:
-				print("ERROR - Unable to find sprite for ID:%s %s" %(character_id, sprite_filename))
-				return False
+				if sprite_filename in bitmaps[sprite_size].keys():
+					sprite_id_lookup = bitmaps[sprite_size][sprite_filename]['id']
+				else:
+					print("ERROR - Unable to find processed sprite for character ID:%s %s %s" %(character_id, sprite_file_class, sprite_filename))
+					return False
+					
+			if sprite_id_lookup is not False:
+				byte_list = sprite_id_lookup.to_bytes(2, byteorder='big')
+				for b in byte_list:
+					record.append(b.to_bytes(1, byteorder='big'))
+				if DEBUG:
+					print("-- +%2s bytes, %s SPRITE FRAME %s: %s" % (len(byte_list), sprite_file_class, sprite_frames, sprite_id_lookup))
 				
-		if sprite_id_lookup is not False:
-			byte_list = sprite_id_lookup.to_bytes(2, byteorder='big')
-			for b in byte_list:
-				record.append(b.to_bytes(1, byteorder='big'))
-			print("-- +%2s bytes, SPRITE %s: %s" % (len(byte_list), sprite, sprite_id_lookup))
+			sprite_frames += 1
+		
+		# Add in null sprites if we don't have enough full frames
+		if sprite_frames < SPRITE_ANIMATION_FRAMES:
+			
+			for i in range(sprite_frames, SPRITE_ANIMATION_FRAMES):
+				byte_list = (0).to_bytes(2, byteorder='big')
+				for b in byte_list:
+					record.append(b.to_bytes(1, byteorder='big'))
+				if DEBUG:
+					print("-- +%2s bytes, %s NULL SPRITE FRAME %s" % (len(byte_list), sprite_file_class, i))
+				
+		if sprite_frames > SPRITE_ANIMATION_FRAMES:
+			print("ERROR - Too many animation frames [%s] are defined for ID:%s %s" %(sprite_frames, character_id, sprite_file_class))
+			print("ERROR - Maximum animation frames is %s" % SPRITE_ANIMATION_FRAMES)
+			return False
 	
 	######################################################
 	# 5. (2 bytes) PORTRAIT SPRITE (ID of the bitmaps processed earlier)
 	######################################################
 	
+	sprite_id_lookup = False
+	sprite_file_class = "portrait_name"
+	sprite_filename = character["portrait_name"][0]
+	
+	if sprite_filename == "":
+		sprite_id_lookup = 0
+	
+	else:
+		
+		if sprite_filename in bitmaps['SPRITE_CLASS_PORTRAIT'].keys():
+			sprite_id_lookup = bitmaps['SPRITE_CLASS_PORTRAIT'][sprite_filename]['id']
+		else:
+			print("ERROR - Unable to find processed portrait for character ID:%s %s %s" %(character_id, sprite_file_class, sprite_filename))
+			return False
+			
+	if sprite_id_lookup is not False:
+		byte_list = sprite_id_lookup.to_bytes(2, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		#if DEBUG:
+		print("-- +%2s bytes, %s 0: %s" % (len(byte_list), sprite_file_class, sprite_id_lookup))
+	
+	######################################################
+	# 6. (1 byte) Character CLASS (HUMAN_UNTRAINED, HUMAN_BARD, BEAST, etc)
+	######################################################
+	
+	class_type_lookup = False
+	
+	if character['class'] in MONSTER_CLASSES.keys():
+		class_type_lookup = MONSTER_CLASSES[character['class']]
+	
+	if class_type_lookup is not False:
+		byte_list = sprite_type_lookup.to_bytes(1, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		if DEBUG:
+			print("-- +%2s bytes, character class: %s" % (len(byte_list), class_type_lookup))
+	else:
+		print("ERROR - Unable to determine valid character class for character ID:%s %s" %(character_id, character['class']))
+		return False
+	
+	######################################################
+	# 7. (1 byte) Character LEVEL
+	######################################################
+	
+	byte_list = character['level'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character level: %s" % (len(byte_list), character['level']))
+	
+	######################################################
+	# 8. (2 bytes) Character attack/defense/aggression profile
+	######################################################
+	
+	byte_list = character['profile'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character profile: %s" % (len(byte_list), character['profile']))
+	
+	######################################################
+	# 9. (1 bytes) Character str
+	######################################################
+	
+	byte_list = character['str'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character str: %s" % (len(byte_list), character['str']))
+	
+	######################################################
+	# 10. (1 bytes) Character dex
+	######################################################
+	
+	byte_list = character['dex'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character dex: %s" % (len(byte_list), character['dex']))
+	
+	######################################################
+	# 11. (1 bytes) Character con
+	######################################################
+	
+	byte_list = character['con'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character con: %s" % (len(byte_list), character['con']))
+	
+	######################################################
+	# 12. (1 bytes) Character wis
+	######################################################
+	
+	byte_list = character['wis'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character wis: %s" % (len(byte_list), character['wis']))
+	
+	######################################################
+	# 13. (1 bytes) Character intl
+	######################################################
+	
+	byte_list = character['intl'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character intl: %s" % (len(byte_list), character['intl']))
+	
+	######################################################
+	# 14. (1 bytes) Character chr
+	######################################################
+	
+	byte_list = character['chr'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character chr: %s" % (len(byte_list), character['chr']))
+	
+	######################################################
+	# 15. (2 bytes) Character hp
+	######################################################
+	
+	byte_list = character['hp'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character hp: %s" % (len(byte_list), character['hp']))
+	
+	######################################################
+	# 16. (4 bytes) Character status effects
+	######################################################
+	
+	byte_list = character['status'].to_bytes(4, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character status: %s" % (len(byte_list), character['status']))
+	
+	######################################################
+	# 17. (2 bytes) item equipped to head
+	######################################################
+	
+	if character['head'] < 0:
+		character['head'] = 0
+	byte_list = character['head'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, head: %s" % (len(byte_list), character['head']))
+	
+	######################################################
+	# 18. (2 bytes) item equipped to body
+	######################################################
+	
+	if character['body'] < 0:
+		character['body'] = 0
+	byte_list = character['body'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, body: %s" % (len(byte_list), character['body']))
+	
+	######################################################
+	# 19. (2 bytes) item equipped to option slot
+	######################################################
+	
+	if character['option'] < 0:
+		character['option'] = 0
+	byte_list = character['option'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, option: %s" % (len(byte_list), character['option']))
+	
+	######################################################
+	# 20. (2 bytes) weapon equipped to right hand
+	######################################################
+	
+	if character['weapon_r'] < 0:
+		character['weapon_r'] = 0
+	byte_list = character['weapon_r'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, weapon_r: %s" % (len(byte_list), character['weapon_r']))
+	
+	######################################################
+	# 21. (2 bytes) weapon equipped to left hand
+	######################################################
+	
+	if character['weapon_l'] < 0:
+		character['weapon_l'] = 0
+	byte_list = character['weapon_l'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, weapon_l: %s" % (len(byte_list), character['weapon_l']))
+	
+	######################################################
+	# 22. (1 bytes) formation in battle
+	######################################################
+	
+	byte_list = character['formation'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, formation: %s" % (len(byte_list), character['formation']))
+	
+	######################################################
+	# 23. (5 bytes) spells equipped
+	######################################################
+	
+	spells_added = 0
+	byte_list = []
+	for spell in character['spells']:
+		byte_list.append(spell.to_bytes(1, byteorder='big'))
+		spells_added += 1
+		
+	if spells_added < MAX_SPELLS:
+		for i in range(spells_added, MAX_SPELLS):
+			byte_list.append((0).to_bytes(1, byteorder='big'))
+		
+	if spells_added > MAX_SPELLS:
+		print("ERROR - Too many spells are defined for character ID:%s" %(character_id))
+		return False
+	if DEBUG:
+		print("-- +%2s bytes, spells: %s" % (len(byte_list), character['spells']))
+	
+	
+	
+	#################
+	# End of record
+	#################
+	
+	print("[%3d] bytes total" % len(record))
+	#print(record)
 	return record
 
 
@@ -860,7 +1149,7 @@ def generate_story(import_dir = None, target = None):
 		offset += new_record['size']
 		
 	try:
-		f = open(import_dir + OUT_DIR + "/story.dat", "wb")
+		f = open(import_dir + OUT_DIR + target['suffix'] + "/story.dat", "wb")
 		offset = 0
 		for record in records:
 			print("- ID: %3d at offset %5d" % (record['id'], record['offset']))
@@ -875,7 +1164,7 @@ def generate_story(import_dir = None, target = None):
 	print("")
 	print("Pass 2: Writing Index")
 	try:
-		f = open(import_dir + OUT_DIR + "/story.idx", "wb")
+		f = open(import_dir + OUT_DIR + target['suffix'] + "/story.idx", "wb")
 		for record in records:
 			index = []
 			index += record['size'].to_bytes(2, byteorder='big')
@@ -1201,7 +1490,7 @@ def generate_world(import_dir = None, target = None):
 	print("")
 	print("Pass 1: Writing data...")
 	try:
-		f = open(import_dir + OUT_DIR + "/world.dat", "wb")
+		f = open(import_dir + OUT_DIR + target['suffix'] + "/world.dat", "wb")
 		offset = 0
 		for record in records:
 			record['offset'] = offset
@@ -1218,7 +1507,7 @@ def generate_world(import_dir = None, target = None):
 	print("")
 	print("Pass 2: Writing Index")
 	try:
-		f = open(import_dir + OUT_DIR + "/world.idx", "wb")
+		f = open(import_dir + OUT_DIR + target['suffix'] + "/world.idx", "wb")
 		for record in records:
 			index = []
 			index += record['size'].to_bytes(2, byteorder='big')
@@ -1924,15 +2213,15 @@ if __name__ == "__main__":
 	target = choose_target(adventure = adventure)
 	if target:
 	
-		#status = generate_world(import_dir = adventure, target = target)
-		#if status is False:
-		#	print("Not continuing. Please fix errors in world map file.")
-		#	sys.exit(1)
+		status = generate_world(import_dir = adventure, target = target)
+		if status is False:
+			print("Not continuing. Please fix errors in world map file.")
+			sys.exit(1)
 			
-		#status = generate_story(import_dir = adventure, target = target)
-		#if status is False:
-		#	print("Not continuing. Please fix errors in story file.")
-		#	sys.exit(1)
+		status = generate_story(import_dir = adventure, target = target)
+		if status is False:
+			print("Not continuing. Please fix errors in story file.")
+			sys.exit(1)
 			
 		status = generate_characters(import_dir = adventure, target = target)
 		if status is False:

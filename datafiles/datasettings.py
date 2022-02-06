@@ -47,6 +47,7 @@ MAX_PLAYER_NAME = 18		# as per game.h
 MAX_SHORT_NAME = 6			# as per game.h
 MAX_CHARACTERS = 256		# as per game.h
 MAX_BMP_FILENAME = 8		# Limit filenames to 8 characters and no '.' to be valid on all targets
+MAX_SPELLS = 5
 ALLOWED_FILENAME_CHARS = string.ascii_lowercase + string.digits + "_"
 BMP_SOURCES	= "/bmp/"		# bitmap images for this dataset should be within
 							# a sub-directory of the adventure folder, named '/bmp/master'
@@ -279,6 +280,8 @@ SPRITE_SIZES = {
 	"SPRITE_CLASS_LARGE" 		: { 'w' : 96, 'h' : 96, 'file' : 'boss.dat' },
 	"SPRITE_CLASS_PORTRAIT" 	: { 'w' : 32, 'h' : 32, 'file' : 'portrait.dat' },
 }
+
+SPRITE_ANIMATION_FRAMES = 4
 
 MAX_STATS = {
 	'str' 	: { 'min' : 1, 'max' : 20 },
