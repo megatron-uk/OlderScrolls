@@ -249,7 +249,7 @@ void ui_DrawStatusBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *le
 	screen->dirty = 1;
 }
 
-void ui_DrawNavigation(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
+void ui_DrawNavigationChoice(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
 	// Overlays a navigation window with the available exits for a given level
 	
 	unsigned char i;
@@ -296,6 +296,37 @@ void ui_DrawNavigation(Screen_t *screen, GameState_t *gamestate, LevelState_t *l
 	
 	draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y+ (11 * 8), 14, 2, 0, screen->font_8x8, PIXEL_GREEN, "...press a key");
 	
+	screen->dirty = 1;
+}
+
+void ui_DrawTalkChoice(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
+	// Draws a dialogue box into which the available NPC characters we can talk to are placed
+	unsigned char row = 2;		// Start character choice labels offset below the window title
+	unsigned char i;
+	
+	draw_Box(screen, UI_TALKCHOICE_START_X, UI_TALKCHOICE_START_Y, (24 * 8), UI_TALKCHOICE_HEIGHT, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_SET);
+	draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y, 16, 2, 0, screen->font_8x8, PIXEL_GREEN, "Select Character");
+	
+	if (levelstate->has_npc1){
+		sprintf(gamestate->buf, "<r>1<C>. %s", gamestate->enemies->enemy[0]->name);
+		draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y + (row * 8), 28, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf);
+		row += 2;
+		draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y + (row * 8), 28, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf);
+		row += 2;
+	}
+	if (levelstate->has_npc2){
+		if (levelstate->has_npc1 && levelstate->has_npc2){
+			sprintf(gamestate->buf, "<r>2<C>- %s", gamestate->enemies->enemy[1]->name);
+		} else {
+			sprintf(gamestate->buf, "<r>1<C>- %s", gamestate->enemies->enemy[1]->name);
+		}
+		draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y + (row * 8), 28, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf);
+		row += 2;
+	}
+	if (row < 6){
+		row = 6;
+	}
+	draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y+ (row * 8), 14, 2, 0, screen->font_8x8, PIXEL_GREEN, "...press a key");
 	screen->dirty = 1;
 }
 

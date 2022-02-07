@@ -62,6 +62,17 @@
 #define INPUT_W_		0x77		// lowercase 'w'
 #define INPUT_Y			0x59		// uppercase 'Y'
 #define INPUT_Y_		0x79		// lowercase 'y'
+#define INPUT_1			0x31		// 1
+#define INPUT_2			0x32		// 2
+#define INPUT_3			0x33		// 3
+#define INPUT_4			0x34		// 4
+#define INPUT_5			0x35		// 5
+#define INPUT_6			0x36		// 6
+#define INPUT_7			0x37		// 7
+#define INPUT_8			0x38		// 8
+#define INPUT_9			0x39		// 9
+#define INPUT_0			0x30		// 0
+
 
 #endif
 

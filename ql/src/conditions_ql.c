@@ -39,15 +39,20 @@ unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsig
 	unsigned char i;
 	unsigned char cond[COND_LENGTH];
 	
+	
+	// Empty condition lists always evaluate to true
+	if (number == 0){
+		return 1;	
+	}
+	
 	// Test each group of COND_LENGTH bytes in turn, incrementing
 	// the total_false or total_true variable based on the whether they
 	// return 1 or 0.
-	
 	for(i = 0; i < number; i++){
 		
 		// Get next condition 
 		memcpy(cond, requires + (i * COND_LENGTH), COND_LENGTH);
-		
+		//printf("Checking condition: %d\n", cond[0]);
 		// Call correct condition check function
 		switch(cond[0]){
 			case SIMPLE_COND_TYPE:
@@ -400,31 +405,6 @@ unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate,
 	
 	for (player = 1; player <= 4; player++){
 		pc = gamestate->players->player[player - 1];
-		/*switch(player){
-			case 1:
-				pc = gamestate->p1;
-			case 2:
-				if (gamestate->p2){
-					pc = gamestate->p2;
-				} else {
-					pc = NULL;
-				}
-				break;
-			case 3:
-				if (gamestate->p3){
-					pc = gamestate->p3;
-				} else {
-					pc = NULL;;
-				}
-				break;
-			case 4:
-				if (gamestate->p4){
-					pc = gamestate->p4;
-				} else {
-					pc = NULL;;
-				}
-				break;
-		}*/
 		if (pc != NULL){
 			for (i = 0; i < MAX_ITEMS; i++){
 				pc_item_type = (pc->items[i] & 0xff00) >> 2;

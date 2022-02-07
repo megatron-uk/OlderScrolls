@@ -331,12 +331,14 @@ typedef struct {
 	unsigned char items_eval_type;
 	
 	// Which NPCs may appear
+	unsigned char has_npc1;
 	unsigned char npc1;									// ID of NPC
 	unsigned char npc1_require[MAX_REQUIREMENTS * REQUIREMENT_BYTES];	// To see this NPC, these requirements must be met
 	unsigned char npc1_require_number;
 	unsigned char npc1_eval_type;						// EMPTY, AND, OR, etc.
 	unsigned short npc1_text;							// ID of text shown when talking to this NPC
 	
+	unsigned char has_npc2;
 	unsigned char npc2;									// ID of NPC
 	unsigned char npc2_require[MAX_REQUIREMENTS * REQUIREMENT_BYTES];	// To see this NPC, these requirements must be met
 	unsigned char npc2_require_number;

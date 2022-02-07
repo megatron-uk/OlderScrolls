@@ -314,6 +314,11 @@ int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 	// Monsters have not spawned yet
 	levelstate->spawned = 0;
 	
+	//printf("n: exit id:%d text id:%d\n", levelstate->north, levelstate->north_text);
+	//printf("s: exit id:%d text id:%d\n", levelstate->south, levelstate->south_text);
+	//printf("e: exit id:%d text id:%d\n", levelstate->east, levelstate->east_text);
+	//printf("w: exit id:%d text id:%d\n", levelstate->west, levelstate->west_text);
+	
 	close(f);
 	return DATA_LOAD_OK;
 }

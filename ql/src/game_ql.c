@@ -159,6 +159,9 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 	// Apply any ongoing status effects (bleeding, poison, etc)
 	// Display any status effect text
 	
+	// Display party sidebar
+	ui_DrawSideBar(screen, gamestate, levelstate);
+	
 	// If monsters are spawned - go to combat, but print before_spawn or before_respawn text
 	c = game_CheckMonsterSpawn(gamestate, levelstate, 0, 1);
 	if(c){
@@ -225,9 +228,6 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 		input_Set(INPUT_N);
 		input_Set(INPUT_N_);
 	}
-	
-	// Display party sidebar
-	ui_DrawSideBar(screen, gamestate, levelstate);
 	
 	// Draw the available options in the status bar	
 	ui_DrawStatusBar(screen, gamestate, levelstate, 1, 1);
@@ -320,8 +320,25 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 				// ======================================
 				// Set talk game mode
 				// ======================================
-				//game_Talk();
-				// e = 1;
+				game_CheckTalk(screen, gamestate, levelstate, 1, 0);
+				while(!e){
+					c = input_Get(screen);
+					switch(c){
+						case INPUT_1:
+							// Do dialogue with npc 1
+							e = 1;
+							break;
+						case INPUT_2:
+							// Do dialogue with npc 2
+							e = 1;
+							break;
+						case INPUT_CANCEL:
+							e = 1;
+							break;
+						default:
+							break;
+					}
+				}
 				break;	
 			//case INPUT_BARTER:
 			//case INPUT_BARTER_:
@@ -431,8 +448,74 @@ unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelStat
 	// Returns a flag indicating if there is an NPC to talk to.
 	// Prints 'you can talk to <character_name> to the main ui if set
 	
+	unsigned char add_it = 0;
 	unsigned char can_talk = 0;
+	unsigned char first = 0x0A;
+	unsigned char added_1 = 0;
+	unsigned char added_2 = 0;
 	
+	if (add_inputs){
+		input_Clear();
+	}
+	
+	if (levelstate->npc1 || levelstate->npc2){
+		if (levelstate->npc1){
+			add_it = 1;
+			// Check conditions
+			if (levelstate->npc1 > 0){
+				levelstate->has_npc1 = 0;
+				add_it = 0;
+				if (check_Cond(gamestate, levelstate, levelstate->npc1_require, levelstate->npc1_require_number, levelstate->npc1_eval_type)){
+					// Add option
+					add_it = 1;
+					levelstate->has_npc1 = 1;
+					// Load NPC into enemy slot 0
+					data_CreateCharacter(screen, gamestate->enemies->enemy[0], screen->enemies[0], NULL, CHARACTER_TYPE_NPC, levelstate->npc1);
+				}
+				if (add_it){
+					can_talk = 1;
+					if (add_inputs){
+						input_Set(INPUT_1);
+						added_1 = 1;
+					}
+				}
+			}
+		}
+		if (levelstate->npc2){
+			add_it = 1;
+			// Check conditions
+			if (levelstate->npc2 > 0){
+				levelstate->has_npc2 = 0;
+				add_it = 0;
+				if (check_Cond(gamestate, levelstate, levelstate->npc2_require, levelstate->npc2_require_number, levelstate->npc2_eval_type)){
+					// Add option
+					add_it = 1;
+					levelstate->has_npc2 = 1;
+					// Load NPC into enemy slot 1
+					data_CreateCharacter(screen, gamestate->enemies->enemy[1], screen->enemies[1], NULL, CHARACTER_TYPE_NPC, levelstate->npc2);
+				}
+				if (add_it){
+					can_talk = 1;
+					if (add_inputs){
+						if (added_1){
+							input_Set(INPUT_2);
+							added_2 = 1;
+						} else {
+							input_Set(INPUT_1);
+							added_1 = 1;
+						}						
+					}
+				}
+			}
+		}
+	}
+	if (add_inputs){
+		input_Set(INPUT_CANCEL);
+		if (can_talk){
+			ui_DrawTalkChoice(screen, gamestate, levelstate);
+			draw_Flip(screen);	
+		}
+	}
 	return can_talk;
 }
 
@@ -468,9 +551,13 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 				}
 				can_move = 1;
 				if (add_text){
-					data_LoadStory(screen, gamestate, levelstate, levelstate->north_text);
+					if (levelstate->north_text > 0){
+						data_LoadStory(screen, gamestate, levelstate, levelstate->north_text);
+					} else {
+						sprintf(gamestate->buf, "You can <r>M<C>ove <g>north<C>.");
+					}
 					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
-					first = 0;
+					first = 0x20;
 				}
 			}
 		}
@@ -491,9 +578,13 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 				}
 				can_move = 1;
 				if (add_text){
-					data_LoadStory(screen, gamestate, levelstate, levelstate->south_text);
+					if (levelstate->south_text > 0){
+						data_LoadStory(screen, gamestate, levelstate, levelstate->south_text);
+					} else {
+						sprintf(gamestate->buf, "You can <r>M<C>ove <g>south<C>.");
+					}
 					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
-					first = 0;
+					first = 0x20;
 				}
 			}
 		}
@@ -514,9 +605,13 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 				}
 				can_move = 1;
 				if (add_text){
-					data_LoadStory(screen, gamestate, levelstate, levelstate->east_text);
+					if (levelstate->east_text > 0){
+						data_LoadStory(screen, gamestate, levelstate, levelstate->east_text);
+					} else {
+						sprintf(gamestate->buf, "You can <r>M<C>ove <g>east<C>.");
+					}
 					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
-					first = 0;
+					first = 0x20;
 				}
 			}
 		}
@@ -537,9 +632,13 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 				}
 				can_move = 1;
 				if (add_text){
-					data_LoadStory(screen, gamestate, levelstate, levelstate->west_text);
+					if (levelstate->west_text > 0){
+						data_LoadStory(screen, gamestate, levelstate, levelstate->west_text);
+					} else {
+						sprintf(gamestate->buf, "You can <r>M<C>ove <g>west<C>.");
+					}
 					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
-					first = 0;
+					first = 0x20;
 				}
 			}
 		}
@@ -547,7 +646,7 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 	if (add_inputs){
 		input_Set(INPUT_CANCEL);
 		if (can_move){
-			ui_DrawNavigation(screen, gamestate, levelstate);
+			ui_DrawNavigationChoice(screen, gamestate, levelstate);
 			draw_Flip(screen);	
 		}
 	}
