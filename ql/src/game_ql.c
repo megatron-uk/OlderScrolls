@@ -192,10 +192,10 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 		
 		// Are any NPC's active?
 		// Add 'talk' options
-		//if (game_CheckTalk(gamestate, levelstate, 0, (char *) input_allowed)){
-		//	input_Set(INPUT_TALK);
-		//	input_Set(INPUT_TALK_);
-		//}
+		if (game_CheckTalk(screen, gamestate, levelstate, 0, 1)){
+			input_Set(INPUT_TALK);
+			input_Set(INPUT_TALK_);
+		}
 		
 		// Are there any shops in this location?
 		// Add 'barter' options
@@ -221,10 +221,9 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 	// Draw the main window text now
 	remain = ui_DrawMainWindowText(screen, gamestate, levelstate, 0, (char *) gamestate->text_buffer);
 	if (remain > 0){
-		// while (remain){
-			// Show 'press button to view next page'
-			// Show next page
-		//}
+		// More text than can be shown on one page...
+		input_Set(INPUT_N);
+		input_Set(INPUT_N_);
 	}
 	
 	// Display party sidebar
@@ -257,6 +256,13 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 							break;
 					}
 				}
+			case INPUT_N:
+			case INPUT_N_:
+				// ======================================
+				// Allow player to page through to next page of dialogue
+				// ======================================
+				remain = ui_DrawMainWindowText(screen, gamestate, levelstate, remain, (char *) gamestate->text_buffer);
+				break;
 			case INPUT_MOVE:
 			case INPUT_MOVE_:
 				// ======================================
@@ -419,6 +425,15 @@ unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *level
 	}
 	return can_fight;
 	
+}
+
+unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text){
+	// Returns a flag indicating if there is an NPC to talk to.
+	// Prints 'you can talk to <character_name> to the main ui if set
+	
+	unsigned char can_talk = 0;
+	
+	return can_talk;
 }
 
 unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text){

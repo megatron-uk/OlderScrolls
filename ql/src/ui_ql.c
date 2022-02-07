@@ -237,8 +237,8 @@ void ui_DrawStatusBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *le
 				draw_String(screen, 44, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>B<C>arter");
 			}
 			
-			if ((input_allowed[i] == INPUT_PLAYER) || (input_allowed[i] == INPUT_PLAYER_)){
-				draw_String(screen, 52, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>P<C>layer");
+			if ((input_allowed[i] == INPUT_N) || (input_allowed[i] == INPUT_N_)){
+				draw_String(screen, 52, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>N<C>ext");
 			}
 			
 			if ((input_allowed[i] == INPUT_QUIT) || (input_allowed[i] == INPUT_QUIT_)){
@@ -316,6 +316,9 @@ unsigned short ui_DrawMainWindowText(Screen_t *screen, GameState_t *gamestate, L
 	//
 	// A subsequent call with the same string, and a non-zero 'remain'
 	// parameter will redraw the text from that offset.
+	
+	// Clear main text window
+	draw_Box(screen, UI_MAIN_WINDOW_X, UI_MAIN_WINDOW_Y, UI_MAIN_WINDOW_WIDTH, UI_MAIN_WINDOW_HEIGHT, 0, PIXEL_CLEAR, PIXEL_BLACK, MODE_PIXEL_SET);
 	
 	remain = draw_String(screen, UI_MAIN_WINDOW_TEXT_X, UI_MAIN_WINDOW_TEXT_Y, UI_MAIN_WINDOW_MAX_CHARS,	UI_MAIN_WINDOW_MAX_ROWS, remain, screen->font_8x8, UI_MAIN_WINDOW_COLOUR, c);
 	

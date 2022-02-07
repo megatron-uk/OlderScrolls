@@ -49,6 +49,10 @@
 #define UI_HP_WARN_LEVEL			50 // HP under this percentage will show in a different colour
 
 // Text areas
+#define UI_MAIN_WINDOW_X			8
+#define UI_MAIN_WINDOW_Y			13
+#define UI_MAIN_WINDOW_WIDTH		392
+#define UI_MAIN_WINDOW_HEIGHT		193
 #define UI_MAIN_WINDOW_TEXT_X		1
 #define UI_MAIN_WINDOW_TEXT_Y		14
 #define UI_MAIN_WINDOW_MAX_CHARS	48
