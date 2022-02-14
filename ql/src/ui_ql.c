@@ -70,7 +70,7 @@ void ui_Draw(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate)
 	draw_VLine(screen, UI_SIDEBAR_START_X + 1, UI_SIDEBAR_START_Y + 1, UI_SIDEBAR_HEIGHT - 1, UI_OUTER_BORDER_COLOUR, MODE_PIXEL_OR);
 
 	// Game Engine name in title bar
-	draw_String(screen, UI_TITLEBAR_TEXT_X, UI_TITLEBAR_TEXT_Y, 24, 1, 0, screen->font_8x8, PIXEL_GREEN, ENGINE_TARGET_NAME);
+	draw_String(screen, UI_TITLEBAR_TEXT_X, UI_TITLEBAR_TEXT_Y, 24, 1, 0, screen->font_8x8, PIXEL_GREEN, ENGINE_TARGET_NAME, MODE_PIXEL_OR);
 	
 	screen->dirty = 1;
 
@@ -105,7 +105,7 @@ void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 		if (gamestate->players->player[i]->level){
 
 			// Draw field titles
-			draw_String(screen, UI_SIDEBAR_STAT_TEXT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 4, 0, screen->font_8x8, PIXEL_WHITE, "HP:\nLv:\nFm:\nSt:");
+			draw_String(screen, UI_SIDEBAR_STAT_TEXT_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 4, 0, screen->font_8x8, PIXEL_WHITE, "HP:\nLv:\nFm:\nSt:", MODE_PIXEL_SET);
 			
 			// ===================================================
 			// Hitpoints
@@ -117,9 +117,9 @@ void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 			
 			sprintf(buf, "%03d", gamestate->players->player[i]->hp);
 			if (((gamestate->players->player[i]->hp * 100) / gamestate->players->player[i]->hp_reset) > UI_HP_WARN_LEVEL){
-				draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen->font_8x8, PIXEL_GREEN, buf);
+				draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen->font_8x8, PIXEL_GREEN, buf, MODE_PIXEL_SET);
 			} else {
-				draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen->font_8x8, PIXEL_RED, buf);
+				draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 1, 3, 1, 0, screen->font_8x8, PIXEL_RED, buf, MODE_PIXEL_SET);
 			}
 			
 			// ===================================================
@@ -127,7 +127,7 @@ void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 			// Just shows the level number of the current player
 			// ===================================================
 			sprintf(buf, "%03d", gamestate->players->player[i]->level);
-			draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 9, 3, 1, 0, screen->font_8x8, PIXEL_WHITE, buf);
+			draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 9, 3, 1, 0, screen->font_8x8, PIXEL_WHITE, buf, MODE_PIXEL_SET);
 		
 			// ===================================================
 			// Combat formation
@@ -145,7 +145,7 @@ void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 			if (gamestate->players->player[i]->formation == FORMATION_REAR){
 				sprintf(buf, "Rear");
 			}
-			draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 17, 5, 1, 0, screen->font_8x8, PIXEL_WHITE, buf);
+			draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 17, 5, 1, 0, screen->font_8x8, PIXEL_WHITE, buf, MODE_PIXEL_SET);
 			
 			// ===================================================
 			// Status
@@ -153,19 +153,19 @@ void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 			// Red if any status effects
 			// ===================================================
 			if (gamestate->players->player[i]->status == STATUS_OK){
-				sprintf(buf, "<g>Okay");
+				sprintf(buf, "<g>Good");
 			} else {
 				sprintf(buf, "<r>Check");
 			}
-			draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 25, 8, 1, 0, screen->font_8x8, PIXEL_WHITE, buf);
+			draw_String(screen, UI_SIDEBAR_STAT_VALUES_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 25, 8, 1, 0, screen->font_8x8, PIXEL_WHITE, buf, MODE_PIXEL_SET);
 		
 			// Name
 			sprintf(buf, "%d: %s", (i + 1), gamestate->players->player[i]->short_name);
-			draw_String(screen, UI_SIDEBAR_PC_NAME_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, buf);
+			draw_String(screen, UI_SIDEBAR_PC_NAME_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, buf, MODE_PIXEL_SET);
 		} else {
 			// Name
 			sprintf(buf, "%d: ----", (i + 1));
-			draw_String(screen, UI_SIDEBAR_PC_NAME_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, buf);
+			draw_String(screen, UI_SIDEBAR_PC_NAME_X, UI_SIDEBAR_PORTRAIT_Y + (UI_SIDEBAR_BLOCK * i) + 36, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, buf, MODE_PIXEL_SET);
 		}
 	}
 	
@@ -196,53 +196,57 @@ void ui_DrawStatusBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *le
 	unsigned char i;
 	
 	// Clear the status bar
-	draw_Box(screen, 4, UI_STATUSBAR_START_Y + 2, SCREEN_WIDTH - 6, (SCREEN_HEIGHT - UI_STATUSBAR_START_Y) - 6, 2, PIXEL_BLACK, PIXEL_BLACK, MODE_PIXEL_OR);
+	draw_Box(screen, 8, UI_STATUSBAR_START_Y + 4, SCREEN_WIDTH - 16, (SCREEN_HEIGHT - UI_STATUSBAR_START_Y) - 8, 0, PIXEL_CLEAR, PIXEL_BLACK, MODE_PIXEL_SET);
 	
 	// Draw blank buttons
 	if (buttons){
-		draw_Box(screen, 6, 236, 60, 14, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_OR);
-		draw_Box(screen, 70, 236, 60, 14, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_OR);
-		draw_Box(screen, 134, 236, 60, 14, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_OR);
-		draw_Box(screen, 198, 236, 82, 14, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_OR);
-		draw_Box(screen, 284, 236, 56, 14, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_OR);
-		draw_Box(screen, 344, 236, 62, 14, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_OR);
-		draw_Box(screen, 410, 236, 66, 14, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_OR);
-		draw_Box(screen, 480, 236, 24, 14, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_OR);
+		draw_Box(screen, 6, 236, 60, 14, 2, PIXEL_RED_STIPPLED, PIXEL_CLEAR, MODE_PIXEL_SET);
+		draw_Box(screen, 70, 236, 60, 14, 2, PIXEL_RED_STIPPLED, PIXEL_CLEAR, MODE_PIXEL_SET);
+		draw_Box(screen, 134, 236, 60, 14, 2, PIXEL_RED_STIPPLED, PIXEL_CLEAR, MODE_PIXEL_SET);
+		draw_Box(screen, 198, 236, 82, 14, 2, PIXEL_RED_STIPPLED, PIXEL_CLEAR, MODE_PIXEL_SET);
+		draw_Box(screen, 284, 236, 56, 14, 2, PIXEL_RED_STIPPLED, PIXEL_CLEAR, MODE_PIXEL_SET);
+		draw_Box(screen, 344, 236, 62, 14, 2, PIXEL_RED_STIPPLED, PIXEL_CLEAR, MODE_PIXEL_SET);
+		draw_Box(screen, 410, 236, 66, 14, 2, PIXEL_RED_STIPPLED, PIXEL_CLEAR, MODE_PIXEL_SET);
+		draw_Box(screen, 480, 236, 24, 14, 2, PIXEL_RED_STIPPLED, PIXEL_CLEAR, MODE_PIXEL_SET);
 	}
 	
 	// Draw labels on the buttons
 	if (labels){
 		for (i = 0; i < MAX_ALLOWED_INPUTS; i++){
 			if ((input_allowed[i] == INPUT_MOVE) || (input_allowed[i] == INPUT_MOVE_)){
-				draw_String(screen, 2, 240, 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>M<C>ove");
+				draw_String(screen, 2, 240, 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>M<C>ove", MODE_PIXEL_SET);
 			}
 				
 			if ((input_allowed[i] == INPUT_TALK) || (input_allowed[i] == INPUT_TALK_)){
-				draw_String(screen, 10, 240, 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>T<C>alk");			
+				draw_String(screen, 10, 240, 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>T<C>alk", MODE_PIXEL_SET);			
 			}
 			
+			// FIGHT and LOOT are mutually exclusive - so they display in the same option box
 			if ((input_allowed[i] == INPUT_FIGHT) || (input_allowed[i] == INPUT_FIGHT_)){
-				draw_String(screen, 18, 240, 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>F<C>ight");
+				draw_String(screen, 18, 240, 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>F<C>ight", MODE_PIXEL_SET);
+			}
+			if ((input_allowed[i] == INPUT_LOOT) || (input_allowed[i] == INPUT_LOOT_)){
+				draw_String(screen, 18, 240, 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>L<C>oot", MODE_PIXEL_SET);
 			}
 			
 			if ((input_allowed[i] == INPUT_WITHDRAW) || (input_allowed[i] == INPUT_WITHDRAW_)){
-				draw_String(screen, 26, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>W<C>ithdraw");
+				draw_String(screen, 26, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>W<C>ithdraw", MODE_PIXEL_SET);
 			}
 			
 			if ((input_allowed[i] == INPUT_REST) || (input_allowed[i] == INPUT_REST_)){
-				draw_String(screen, 37, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>R<C>est");
+				draw_String(screen, 37, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>R<C>est", MODE_PIXEL_SET);
 			}
 			
 			if ((input_allowed[i] == INPUT_BARTER) || (input_allowed[i] == INPUT_BARTER_)){
-				draw_String(screen, 44, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>B<C>arter");
+				draw_String(screen, 44, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>B<C>arter", MODE_PIXEL_SET);
 			}
 			
 			if ((input_allowed[i] == INPUT_N) || (input_allowed[i] == INPUT_N_)){
-				draw_String(screen, 52, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>N<C>ext");
+				draw_String(screen, 52, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>N<C>ext", MODE_PIXEL_SET);
 			}
 			
 			if ((input_allowed[i] == INPUT_QUIT) || (input_allowed[i] == INPUT_QUIT_)){
-				draw_String(screen, 61, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>Q");
+				draw_String(screen, 61, 240, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>Q", MODE_PIXEL_SET);
 			}	
 		}
 	}
@@ -252,89 +256,276 @@ void ui_DrawStatusBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *le
 void ui_DrawNavigationChoice(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
 	// Overlays a navigation window with the available exits for a given level
 	
+	
 	unsigned char i;
-	unsigned char row = 3;		// Start exit labels offset below the window title
+	unsigned char c;
+	unsigned char e = 0;		// Exit
+	unsigned char row = 2;		// Start exit labels offset below the window title
 	unsigned char have_n = 0;
 	unsigned char have_s = 0;
 	unsigned char have_e = 0;
 	unsigned char have_w = 0;
 	
-	draw_Box(screen, UI_NAVBOX_START_X, UI_NAVBOX_START_Y, UI_NAVBOX_WIDTH, UI_NAVBOX_HEIGHT, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_SET);
-	draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y, 11, 2, 0, screen->font_8x8, PIXEL_GREEN, "Select Destination");
+	ui_DrawPopup(screen, UI_NAVBOX_START_X, UI_NAVBOX_START_Y, UI_NAVBOX_WIDTH, UI_NAVBOX_HEIGHT, "Destination", 1);
 	
 	// Only print out the current allowed navigation options
 	for (i = 0; i < MAX_ALLOWED_INPUTS; i++){
 		if ((input_allowed[i] == INPUT_N) || (input_allowed[i] == INPUT_N_)){
 			if (!have_n){
-				draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (row * 8), 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>N<C>orth");
-				row += 2;
+				draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (10), 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>N<C>orth", MODE_PIXEL_SET);
 				have_n = 1;
 			}
 		}
 		if ((input_allowed[i] == INPUT_S) || (input_allowed[i] == INPUT_S_)){
 			if (!have_s){
-				draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (row * 8), 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>S<C>outh");
+				draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (18), 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>S<C>outh", MODE_PIXEL_SET);
 				row += 2;
 				have_s = 1;
 			}
 		}
 		if ((input_allowed[i] == INPUT_E) || (input_allowed[i] == INPUT_E_)){
 			if (!have_e){
-				draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (row * 8), 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>E<C>ast");
+				draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (26), 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>E<C>ast", MODE_PIXEL_SET);
 				row += 2;
 				have_e = 1;
 			}
 		}
 		if ((input_allowed[i] == INPUT_W) || (input_allowed[i] == INPUT_W_)){
 			if (!have_w){
-				draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (row * 8), 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>W<C>est");
+				draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (34), 8, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>W<C>est", MODE_PIXEL_SET);
 				row += 2;
 				have_w = 1;
 			}
 		}
 	}
-	
-	draw_String(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y+ (11 * 8), 14, 2, 0, screen->font_8x8, PIXEL_GREEN, "...press a key");
-	
+		
 	screen->dirty = 1;
+	draw_Flip(screen);
+	
+	while(!e){
+		c = input_Get(screen);
+		switch(c){
+			case INPUT_N:
+			case INPUT_N_:
+				// Highlight option
+				draw_SelectedString(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (10), 5, PIXEL_WHITE, "North");				
+				gamestate->level_previous = gamestate->level;
+				gamestate->level = levelstate->north;
+				e = 1;
+				break;
+			case INPUT_S:
+			case INPUT_S_:
+				draw_SelectedString(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (18), 5, PIXEL_WHITE, "South");
+				gamestate->level_previous = gamestate->level;
+				gamestate->level = levelstate->south;
+				e = 1;
+				break;
+			case INPUT_E:
+			case INPUT_E_:
+				draw_SelectedString(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (26), 5, PIXEL_WHITE, "East");
+				gamestate->level_previous = gamestate->level;
+				gamestate->level = levelstate->east;
+				e = 1;
+				break;
+			case INPUT_W:
+			case INPUT_W_:
+				draw_SelectedString(screen, UI_NAVBOX_TEXT_X, UI_NAVBOX_TEXT_Y + (34), 5, PIXEL_WHITE, "West");
+				gamestate->level_previous = gamestate->level;
+				gamestate->level = levelstate->west;
+				e = 1;
+				break;
+			case INPUT_CANCEL:
+				e = 1;
+				break;
+			default:
+				break;
+		}
+	}
+	
 }
 
 void ui_DrawTalkChoice(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
 	// Draws a dialogue box into which the available NPC characters we can talk to are placed
 	unsigned char row = 2;		// Start character choice labels offset below the window title
 	unsigned char i;
+	unsigned char e = 0;
+	unsigned char c;
+	unsigned short remain = 0;
+		
+	unsigned char input1_y = 0;
+	unsigned char input2_y = 0;
+	unsigned char input3_y = 0;
+	unsigned char flash_y = 0;
 	
-	draw_Box(screen, UI_TALKCHOICE_START_X, UI_TALKCHOICE_START_Y, (24 * 8), UI_TALKCHOICE_HEIGHT, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_SET);
-	draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y, 16, 2, 0, screen->font_8x8, PIXEL_GREEN, "Select Character");
+	ui_DrawPopup(screen, UI_TALKCHOICE_START_X, UI_TALKCHOICE_START_Y, UI_TALKCHOICE_WIDTH, UI_TALKCHOICE_HEIGHT, "Select Character", 1);
 	
 	if (levelstate->has_npc1){
-		sprintf(gamestate->buf, "<r>1<C>. %s", gamestate->enemies->enemy[0]->name);
-		draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y + (row * 8), 28, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf);
-		row += 2;
-		draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y + (row * 8), 28, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf);
-		row += 2;
+		sprintf(gamestate->buf, "<r>1<C>. %s", gamestate->enemies->enemy[1]->name);
+		input1_y = UI_TALKCHOICE_TEXT_Y + (row * 8);
+		draw_String(screen, UI_TALKCHOICE_TEXT_X, input1_y, 28, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf, MODE_PIXEL_SET);
+	} else {
+		draw_String(screen, UI_TALKCHOICE_TEXT_X, input1_y, 28, 1, 0, screen->font_8x8, PIXEL_WHITE, "1. ---", MODE_PIXEL_SET);
 	}
 	if (levelstate->has_npc2){
-		if (levelstate->has_npc1 && levelstate->has_npc2){
-			sprintf(gamestate->buf, "<r>2<C>- %s", gamestate->enemies->enemy[1]->name);
-		} else {
-			sprintf(gamestate->buf, "<r>1<C>- %s", gamestate->enemies->enemy[1]->name);
+		sprintf(gamestate->buf, "<r>2<C>- %s", gamestate->enemies->enemy[2]->name);
+		input2_y = input1_y + (2 * 8);
+		draw_String(screen, UI_TALKCHOICE_TEXT_X, input2_y, 28, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf, MODE_PIXEL_SET);
+	} else {
+		draw_String(screen, UI_TALKCHOICE_TEXT_X, input2_y, 28, 1, 0, screen->font_8x8, PIXEL_WHITE, "2. ---", MODE_PIXEL_SET);
+	}
+	if (levelstate->has_npc3){
+		sprintf(gamestate->buf, "<r>3<C>- %s", gamestate->enemies->enemy[3]->name);
+		input3_y = input1_y + (3 * 8);
+		draw_String(screen, UI_TALKCHOICE_TEXT_X, input3_y, 28, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf, MODE_PIXEL_SET);
+	} else {
+		draw_String(screen, UI_TALKCHOICE_TEXT_X, input3_y, 28, 1, 0, screen->font_8x8, PIXEL_WHITE, "3. ---", MODE_PIXEL_SET);
+	}
+		
+	draw_Flip(screen);
+	
+	levelstate->selected_npc = 0;
+	while(!e){
+		c = input_Get(screen);
+		switch(c){
+			case INPUT_1:
+				levelstate->selected_npc = 1;;
+				flash_y = input1_y;
+				break;
+			case INPUT_2:
+				levelstate->selected_npc = 2;
+				flash_y = input2_y;
+				break;
+			case INPUT_3:
+				levelstate->selected_npc = 3;
+				flash_y = input3_y;
+				break;
+			case INPUT_CANCEL:
+				e = 1;
+				break;
+			default:
+				if (levelstate->selected_npc){
+					// Flash selected option - we backspace 6 characters, as there are 6 control codes in 
+					// the string which displays the selected NPC name.
+					draw_SelectedString(screen, UI_TALKCHOICE_TEXT_X, flash_y, strlen(gamestate->buf) - 6, PIXEL_WHITE, gamestate->buf);
+					remain = ui_NPCDialogue(screen, gamestate, levelstate, 0, 1);
+					if (remain > 0){
+						// More text than can be shown on one page...
+						input_Set(INPUT_N);
+						input_Set(INPUT_N_);
+					}
+					while(!e){
+						c = input_Get(screen);
+						switch(c){
+							case INPUT_N:
+							case INPUT_N_:
+								// Keep scrolling through dialogue
+								remain = ui_NPCDialogue(screen, gamestate, levelstate, remain, 0);
+								break;
+							case INPUT_CANCEL:
+								e = 1;
+								break;
+							default:
+								break;
+						}
+					}
+				}
+				break;
 		}
-		draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y + (row * 8), 28, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf);
-		row += 2;
 	}
-	if (row < 6){
-		row = 6;
-	}
-	draw_String(screen, UI_TALKCHOICE_TEXT_X, UI_TALKCHOICE_TEXT_Y+ (row * 8), 14, 2, 0, screen->font_8x8, PIXEL_GREEN, "...press a key");
+	
 	screen->dirty = 1;
+}
+
+void ui_DrawPopup(Screen_t *screen, unsigned short x, unsigned short y, unsigned short w, unsigned short h, char *title, unsigned char animate){
+	// Draws a 'popup' box with a solid title bar and a title string
+	// The box is animated by appearing to roll down from the title bar.
+	
+	unsigned char line = 0;
+	unsigned char pc = (h / screen->popup_steps);
+	unsigned char new_y = y + 10;
+	unsigned char new_h = h - 10;
+
+	// Draw solid title bar and popup title
+	draw_Box(screen, x, y, w, 10, 1, PIXEL_RED, PIXEL_RED, MODE_PIXEL_SET);
+	draw_String(screen, (x / 8) + 1, y + 2, (w / 8), 1, 0, screen->font_8x8, PIXEL_WHITE, title, MODE_PIXEL_OR);
+	
+	if (animate){
+		// Animate the box getting bigger
+		for (line = 0; line < new_h; line++){
+			if (line % pc == 0){
+				draw_Box(screen, x, new_y, w, line + 1, 1, PIXEL_RED, PIXEL_BLACK, MODE_PIXEL_SET);
+				screen_Vsync(screen, 2);
+				draw_Flip(screen);
+			}
+		}
+	}
+	draw_Box(screen, x, new_y, w, new_h, 1, PIXEL_RED, PIXEL_BLACK, MODE_PIXEL_SET);	
+	
 }
 
 void ui_DrawLocationName(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
 	// Draws the location name in the title bar
 	
-	draw_String(screen, UI_TITLEBAR_MAX_CHARS - (strlen((char *)levelstate->name)), UI_TITLEBAR_TEXT_Y, MAX_LEVEL_NAME_SIZE, 1, 0, screen->font_8x8, PIXEL_WHITE, (char *)levelstate->name);
+	draw_String(screen, UI_TITLEBAR_MAX_CHARS - (strlen((char *)levelstate->name)), UI_TITLEBAR_TEXT_Y, MAX_LEVEL_NAME_SIZE, 1, 0, screen->font_8x8, PIXEL_WHITE, (char *)levelstate->name, MODE_PIXEL_SET);
 	screen->dirty = 1;
+}
+
+unsigned short ui_NPCDialogue(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, unsigned char animate){
+	// Draws the dialogue window, places portrait images and shows the text from the selected npc (npc_choice), 
+	// which can be either levelstate->npc1 or leveltstate->npc2
+	
+	unsigned short next_remain = 0;
+	unsigned char npc = 0;
+	unsigned short npc_id = 0;
+	unsigned short npc_text_id = 0;
+	unsigned char npc_unique_dialogue_id = 0;
+	
+	npc = levelstate->selected_npc;
+	
+	if (npc == 1){
+		npc_text_id = levelstate->npc1_text;
+		npc_unique_dialogue_id = levelstate->npc1_text_unique_id;
+	}
+	if (npc == 2){		
+		npc_text_id = levelstate->npc2_text;
+		npc_unique_dialogue_id = levelstate->npc2_text_unique_id;
+	}
+	if (npc == 3){		
+		npc_text_id = levelstate->npc3_text;
+		npc_unique_dialogue_id = levelstate->npc3_text_unique_id;
+	} 
+	npc_id = gamestate->enemies->enemy[npc]->id;
+	
+	// We don't need to load data on every page turn of this dialogue box...
+	if (remain == 0){
+		// Load the dialogue entry for this NPC
+		data_LoadStory(screen, gamestate, levelstate, npc_text_id);
+		
+		// Register this NPC
+		data_AddNPC(screen, gamestate, levelstate, npc_id);
+		
+		// Register this unique dialogue for this NPC
+		// ... in case there are any condition checks on
+		// this conversation having taken place
+		data_IncrementNPCTalk(screen, gamestate, levelstate, npc_id, npc_unique_dialogue_id);
+	}
+	
+	// Animate a popup window to hold the NPC details and dialogue text
+	ui_DrawPopup(screen, UI_NPCDIALOGUE_START_X, UI_NPCDIALOGUE_START_Y, UI_NPCDIALOGUE_WIDTH + 4, UI_NPCDIALOGUE_HEIGHT, gamestate->enemies->enemy[npc]->name, animate);
+	
+	// Display the portrait for this NPC
+	draw_Box(screen, UI_NPCDIALOGUE_START_X + 2, UI_NPCDIALOGUE_START_Y + 12, DRAW_PORTRAIT_WIDTH + 1, DRAW_PORTRAIT_HEIGHT + 1, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_OR);
+	draw_Sprite(screen, UI_NPCDIALOGUE_START_X + 3, UI_NPCDIALOGUE_START_Y + 13, screen->enemies[npc], 1);
+	
+	next_remain = draw_String(screen, (UI_NPCDIALOGUE_START_X / 8) + 6, UI_NPCDIALOGUE_START_Y + 13, ((UI_NPCDIALOGUE_WIDTH - DRAW_PORTRAIT_WIDTH)/ 8) - 1, 8, remain, screen->font_8x8, UI_MAIN_WINDOW_COLOUR, gamestate->buf, MODE_PIXEL_SET);
+	if (next_remain > 0){
+		// Right justify the text, minus the 4 displayable characters
+		draw_String(screen, ((UI_NPCDIALOGUE_START_X + UI_NPCDIALOGUE_WIDTH) / 8) - 4, UI_NPCDIALOGUE_START_Y + UI_NPCDIALOGUE_HEIGHT - 10, 16, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>N<C>ext", MODE_PIXEL_SET);
+	} else {
+		// Right justify the text, minus the 6 displayable characters
+		draw_String(screen, ((UI_NPCDIALOGUE_START_X + UI_NPCDIALOGUE_WIDTH) / 8) - 6, UI_NPCDIALOGUE_START_Y + UI_NPCDIALOGUE_HEIGHT - 10, 24, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>Esc<C>ape", MODE_PIXEL_SET);
+	}
+	return next_remain;
 }
 
 unsigned short ui_DrawMainWindowText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, char *c){
@@ -351,7 +542,7 @@ unsigned short ui_DrawMainWindowText(Screen_t *screen, GameState_t *gamestate, L
 	// Clear main text window
 	draw_Box(screen, UI_MAIN_WINDOW_X, UI_MAIN_WINDOW_Y, UI_MAIN_WINDOW_WIDTH, UI_MAIN_WINDOW_HEIGHT, 0, PIXEL_CLEAR, PIXEL_BLACK, MODE_PIXEL_SET);
 	
-	remain = draw_String(screen, UI_MAIN_WINDOW_TEXT_X, UI_MAIN_WINDOW_TEXT_Y, UI_MAIN_WINDOW_MAX_CHARS,	UI_MAIN_WINDOW_MAX_ROWS, remain, screen->font_8x8, UI_MAIN_WINDOW_COLOUR, c);
+	remain = draw_String(screen, UI_MAIN_WINDOW_TEXT_X, UI_MAIN_WINDOW_TEXT_Y, UI_MAIN_WINDOW_MAX_CHARS,	UI_MAIN_WINDOW_MAX_ROWS, remain, screen->font_8x8, UI_MAIN_WINDOW_COLOUR, c, MODE_PIXEL_SET);
 	
 	// Mark screen as dirty, ready to be repainted
 	screen->dirty = 1;
@@ -370,43 +561,80 @@ void ui_DrawSplashText(Screen_t *screen, GameState_t *gamestate, LevelState_t *l
 	// - current adventure intro (story text ID 1)
 	
 	// Adventure Name	
-	draw_String(screen, UI_MAIN_WINDOW_TEXT_X + 12, UI_MAIN_WINDOW_TEXT_Y + (3 * 8), UI_MAIN_WINDOW_MAX_CHARS, 1, 0, screen->font_8x8, PIXEL_GREEN, (char *) gamestate->name);
+	draw_String(screen, UI_MAIN_WINDOW_TEXT_X + 12, UI_MAIN_WINDOW_TEXT_Y + (3 * 8), UI_MAIN_WINDOW_MAX_CHARS, 1, 0, screen->font_8x8, PIXEL_GREEN, (char *) gamestate->name, MODE_PIXEL_SET);
 	// Engine Name	
-	draw_String(screen, UI_MAIN_WINDOW_TEXT_X + 12, UI_MAIN_WINDOW_TEXT_Y + (5 * 8), UI_MAIN_WINDOW_MAX_CHARS, 1, 0,	screen->font_8x8, PIXEL_GREEN, ENGINE_TARGET_NAME);
+	draw_String(screen, UI_MAIN_WINDOW_TEXT_X + 12, UI_MAIN_WINDOW_TEXT_Y + (5 * 8), UI_MAIN_WINDOW_MAX_CHARS, 1, 0,	screen->font_8x8, PIXEL_GREEN, ENGINE_TARGET_NAME, MODE_PIXEL_SET);
 	// Print the introductory text
-	draw_String(screen, UI_MAIN_WINDOW_TEXT_X, UI_MAIN_WINDOW_TEXT_Y + (9 * 8), UI_MAIN_WINDOW_MAX_CHARS, 14, 0,	screen->font_8x8, PIXEL_WHITE, (char *) gamestate->text_buffer);
+	draw_String(screen, UI_MAIN_WINDOW_TEXT_X, UI_MAIN_WINDOW_TEXT_Y + (9 * 8), UI_MAIN_WINDOW_MAX_CHARS, 14, 0,	screen->font_8x8, PIXEL_WHITE, (char *) gamestate->text_buffer, MODE_PIXEL_SET);
 	// Key to continue message
-	draw_String(screen, UI_MAIN_WINDOW_TEXT_X, UI_MAIN_WINDOW_TEXT_Y + (23 * 8), UI_MAIN_WINDOW_MAX_CHARS, 1, 0,	screen->font_8x8, PIXEL_RED, "... Press return to start this adventure!");
+	draw_String(screen, UI_MAIN_WINDOW_TEXT_X, UI_MAIN_WINDOW_TEXT_Y + (23 * 8), UI_MAIN_WINDOW_MAX_CHARS, 1, 0,	screen->font_8x8, PIXEL_RED, "... Press return to start this adventure!", MODE_PIXEL_SET);
 	
 	// Mark screen as dirty, ready to be repainted
 	screen->dirty = 1;
 }
 
-void ui_DrawYesNo(Screen_t *screen, char *title){
+unsigned char ui_DrawYesNo(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, char *title){
 	// Draw a box with a title of 'title'
 	// Print 'Yes' and 'No' in the box
-
-	draw_Box(screen, UI_YESNO_START_X, UI_YESNO_START_Y, (strlen((char *)title) + 8) * 8, 42, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_SET);
-	draw_String(screen, UI_YESNO_START_X / 8 + 1, UI_YESNO_START_Y + 4, strlen((char *)title), 1, 0, screen->font_8x8, PIXEL_GREEN, (char *)title);	
-	draw_String(screen, UI_YESNO_START_X / 8 + 1, UI_YESNO_START_Y + 16, 14, 3, 0, screen->font_8x8, PIXEL_WHITE, "<r>Y<C>es\n<r>N<C>o\n<g>...press a key");
-	screen->dirty = 1;
+	unsigned char c;
+	unsigned char e = 0;
+	unsigned char ret = 0;
+	
+	// Set all the inputs we allow
+	input_Clear();
+	input_Set(INPUT_Y);
+	input_Set(INPUT_Y_);
+	input_Set(INPUT_N);
+	input_Set(INPUT_N_);
+	input_Set(INPUT_CANCEL);
+	
+	ui_DrawPopup(screen, UI_YESNO_START_X, UI_YESNO_START_Y, (strlen((char *)title) + 8) * 8, 38, (char *)title, 1);
+	draw_String(screen, UI_YESNO_START_X / 8 + 1, UI_YESNO_START_Y + 16, (strlen((char *)title) + 8), 3, 0, screen->font_8x8, PIXEL_WHITE, "<r>Y<C>es", MODE_PIXEL_SET);
+	draw_String(screen, UI_YESNO_START_X / 8 + 1, UI_YESNO_START_Y + 24, (strlen((char *)title) + 8), 3, 0, screen->font_8x8, PIXEL_WHITE, "<r>N<C>o", MODE_PIXEL_SET);
+	draw_Flip(screen);
+	
+	// Wait for user input
+	while(!e){
+		c = input_Get(screen);
+		switch(c){
+			case INPUT_Y:
+			case INPUT_Y_:
+				draw_SelectedString(screen, UI_YESNO_START_X / 8 + 1, UI_YESNO_START_Y + 16, 3, PIXEL_WHITE, "Yes");	
+				e = 1;
+				ret = 1;
+				break;
+			case INPUT_N:
+			case INPUT_N_:
+			case INPUT_CANCEL:
+				draw_SelectedString(screen, UI_YESNO_START_X / 8 + 1, UI_YESNO_START_Y + 24, 2, PIXEL_WHITE, "No");
+				e = 1;
+				ret = 0;
+				break;
+			default:
+				break;
+		}
+	}
+	return ret;
 }
 
 void ui_DrawError(Screen_t *screen, char *title, char *text, short errorcode){
-	// Draw 'an error has occurred' box
+	// Draw 'an error has occurred' box, with a title, body text and an error code
 	
 	char buf[32];
 	
-	sprintf(buf, "Error code: <w>[%d]\n", errorcode);
+	// Popup, including title
+	ui_DrawPopup(screen, UI_ERROR_START_X, UI_ERROR_START_Y, (30 * 8), (7 * 8), (char *)title, 1);
 	
-	draw_Box(screen, UI_ERROR_START_X, UI_ERROR_START_Y, (29 * 8), 52, 2, PIXEL_RED_STIPPLED, PIXEL_BLACK, MODE_PIXEL_SET);
-	draw_String(screen, UI_ERROR_START_X / 8 + 1, UI_ERROR_START_Y + 4, 28, 1, 0, screen->font_8x8, PIXEL_GREEN, (char *)title);
-	draw_String(screen, UI_ERROR_START_X / 8 + 1, UI_ERROR_START_Y + 16, 28, 3, 0,	screen->font_8x8, PIXEL_RED, (char *)text);
-	draw_String(screen, UI_ERROR_START_X / 8 + 1, UI_ERROR_START_Y + 40, 28, 1, 0,	screen->font_8x8, PIXEL_RED, (char *)buf);
+	// Main body
+	draw_String(screen, UI_ERROR_START_X / 8 + 1, UI_ERROR_START_Y + 12, 28, 3, 0,	screen->font_8x8, PIXEL_RED, (char *)text, MODE_PIXEL_SET);
+	
+	// Error code in footer
+	sprintf(buf, "Error code: <w>[%d]\n", errorcode);
+	draw_String(screen, UI_ERROR_START_X / 8 + 1, UI_ERROR_START_Y + 48, 28, 1, 0,	screen->font_8x8, PIXEL_RED, (char *)buf, MODE_PIXEL_SET);
 		
 	// Flip the screen buffer - all errors are fatal -  don't wait for redraw.
 	draw_Flip(screen);
-	input_Wait(screen, INPUT_CONFIRM);
+	input_WaitAndReturn(screen);
 }
 
 void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
@@ -423,9 +651,9 @@ void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 	unsigned char *mem4;
 	unsigned int size_bytes = 0;
 	unsigned int total_bytes = 0;
-	unsigned int base1 = 512;
-	unsigned int base2 = 256;
-	unsigned int base3 = 128;
+	unsigned int base1 = 2048;
+	unsigned int base2 = 1024;
+	unsigned int base3 = 256;
 	unsigned int base4 = 8;
 	
 	draw_Clear(screen);
@@ -450,21 +678,23 @@ void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 		secondary += gamestate->level_defeated_secondary[i];
 	}
 	
-	draw_String(screen, UI_TITLEBAR_MAX_CHARS - (strlen("DEBUG SCREEN")), UI_TITLEBAR_TEXT_Y, MAX_LEVEL_NAME_SIZE, 1, 0, screen->font_8x8, PIXEL_RED, "DEBUG SCREEN");
+	draw_String(screen, UI_TITLEBAR_MAX_CHARS - (strlen("DEBUG SCREEN")), UI_TITLEBAR_TEXT_Y, MAX_LEVEL_NAME_SIZE, 1, 0, screen->font_8x8, PIXEL_RED, "DEBUG SCREEN", MODE_PIXEL_SET);
 	
 	// Print data structure sizes	
 	sprintf((char *)gamestate->text_buffer, "<g>Data Structures<C>\n- <r>%6d<C> BMP buffers\n- <r>%6d<C> Gamestate (inc text buffers)\n- <r>%6d<C> Levelstate\n- <r>%6d<C> per NPC state, (total: <r>%db<C>)\n- <r>%6d<C> Partystate (total: <r>%dx<C>)\n- <r>%6d<C> Enemystate (total: <r>%dx<C>)\n", (sizeof(bmpdata_t) + sizeof(bmpstate_t)), sizeof(GameState_t), sizeof(LevelState_t), sizeof(struct NPCList), (npcs * sizeof(struct NPCList)), (sizeof(PartyState_t) + (MAX_PLAYERS * sizeof(PlayerState_t))), MAX_PLAYERS, (sizeof(EnemyState_t) + (MAX_MONSTER_TYPES * sizeof(PlayerState_t))), MAX_MONSTER_TYPES);
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Weapon\n", sizeof(WeaponState_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Spell\n", sizeof(SpellState_t));
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> per Item\n", sizeof(ItemState_t));
-	draw_String(screen, 1, 15, 48, 11, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+	draw_String(screen, 1, 15, 48, 11, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer, MODE_PIXEL_SET);
 	
 	sprintf((char *)gamestate->text_buffer, "<g>Graphics Data<C>\n");
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> Double buffering?\n- <r>%6d<C> Screen state\n- <r>%6d<C> Bitmap font\n- <r>%6d<C> PC/Enemy GFX\n- <r>%6d<C> Boss GFX\n- <r>%6d<C> Sprite size\n- <r>%6d<C> Boss size", screen->indirect, (screen->indirect * SCREEN_BYTES) + sizeof(Screen_t), sizeof(fontdata_t), sizeof(ssprite_t) * (MAX_PLAYERS + MAX_MONSTER_TYPES), sizeof(lsprite_t), SPRITE_NORMAL_BYTES, SPRITE_BOSS_BYTES);
-	draw_String(screen, 36, 96, 48, 11, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+	draw_String(screen, 36, 96, 48, 11, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer, MODE_PIXEL_SET);
 		
 	// Calculate largest free blocks of memory that remain
-	sprintf((char *)gamestate->text_buffer, "<g>Memory Free<C>\n");
+	sprintf((char *)gamestate->text_buffer, "<g>Memory Free<C> wait...\n");
+	draw_String(screen, 1, 104, 48, 6, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer, MODE_PIXEL_SET);
+	sprintf((char *)gamestate->text_buffer, "<g>Memory Free<C>        \n");
 	mem = get_FreeBlock(&size_bytes, base1, base1);
 	total_bytes += size_bytes;
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 1st (%db chunks)\n", size_bytes, base1);
@@ -480,7 +710,7 @@ void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 	mem4 = get_FreeBlock(&size_bytes, base4, base4);
 	total_bytes += size_bytes;
 	sprintf((char *)gamestate->text_buffer + strlen((char *)gamestate->text_buffer), "- <r>%6d<C> 4th (%db)\n- <r>%6d<C> Total Bytes Free\n", size_bytes, base4, total_bytes);
-	draw_String(screen, 1, 104, 48, 6, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
+	draw_String(screen, 1, 104, 48, 6, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer, MODE_PIXEL_SET);
 	
 	// Free any memory allocated!
 	if (mem){
@@ -498,8 +728,8 @@ void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 
 	// Game progress details
 	sprintf((char *)gamestate->text_buffer, "<g>Game Progress\n<C>\n- <r>%6d<C> PC in player party\n- <r>%6d<C> NPCs met\n- <r>%6d<C> Locations discovered\n- <r>%6d<C> Primary spawns\n- <r>%6d<C> Secondary spawns\n", players, npcs, locations, primary, secondary);
-	draw_String(screen, 1, 160, 48, 6, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer);
-	draw_String(screen, 1, SCREEN_HEIGHT - 10, 32, 1, 0, screen->font_8x8, PIXEL_RED, "Press [ESC] to return to game");
+	draw_String(screen, 1, 160, 48, 6, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer, MODE_PIXEL_SET);
+	draw_String(screen, 1, SCREEN_HEIGHT - 10, 32, 1, 0, screen->font_8x8, PIXEL_RED, "Press [ESC] to return to game", MODE_PIXEL_SET);
 	
 	screen->dirty = 1;
 }

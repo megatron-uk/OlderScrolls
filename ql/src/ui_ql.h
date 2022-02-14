@@ -65,28 +65,34 @@
 #define UI_TITLEBAR_MAX_CHARS		63
 
 // Navigation window popup
-#define UI_NAVBOX_START_X			170
-#define UI_NAVBOX_START_Y			80
-#define UI_NAVBOX_WIDTH				124
-#define UI_NAVBOX_HEIGHT			102
-#define UI_NAVBOX_TEXT_X			22
+#define UI_NAVBOX_START_X			190
+#define UI_NAVBOX_START_Y			130
+#define UI_NAVBOX_WIDTH				128
+#define UI_NAVBOX_HEIGHT			50
+#define UI_NAVBOX_TEXT_X			25
 #define UI_NAVBOX_TEXT_Y			UI_NAVBOX_START_Y + 4
 
 // Talk choice window popup
-#define UI_TALKCHOICE_START_X			170
-#define UI_TALKCHOICE_START_Y			110
+#define UI_TALKCHOICE_START_X			190
+#define UI_TALKCHOICE_START_Y			140
 #define UI_TALKCHOICE_WIDTH				164
-#define UI_TALKCHOICE_HEIGHT			62
-#define UI_TALKCHOICE_TEXT_X			22
-#define UI_TALKCHOICE_TEXT_Y			UI_TALKCHOICE_START_Y + 4
+#define UI_TALKCHOICE_HEIGHT			52
+#define UI_TALKCHOICE_TEXT_X			25
+#define UI_TALKCHOICE_TEXT_Y			UI_TALKCHOICE_START_Y + 2
+
+// NPC dialogue window popup
+#define UI_NPCDIALOGUE_START_X		30
+#define UI_NPCDIALOGUE_START_Y		70
+#define UI_NPCDIALOGUE_WIDTH		304
+#define UI_NPCDIALOGUE_HEIGHT		90
 
 // Yes/No popup boxes
 #define UI_YESNO_START_X			160
-#define UI_YESNO_START_Y			170
+#define UI_YESNO_START_Y			140
 
 // Error popup boxes
-#define UI_ERROR_START_X			110
-#define UI_ERROR_START_Y			100
+#define UI_ERROR_START_X			140
+#define UI_ERROR_START_Y			20
 
 #endif
 
@@ -105,11 +111,13 @@ void ui_DrawSplashText(Screen_t *screen, GameState_t *gamestate, LevelState_t *l
 void ui_DrawLocationName(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawNavigationChoice(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawTalkChoice(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawYesNo(Screen_t *screen, char *title);
+unsigned char ui_DrawYesNo(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, char *title);
 void ui_DrawError(Screen_t *screen, char *title, char *text, short errorcode);
 void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+void ui_DrawPopup(Screen_t *screen, unsigned short x, unsigned short y, unsigned short w, unsigned short h, char *title, unsigned char animate);
 
 // Area-specific text display routines
 unsigned short ui_DrawMainWindowText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, char *c);
+unsigned short ui_NPCDialogue(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, unsigned char animate);
 
 #endif

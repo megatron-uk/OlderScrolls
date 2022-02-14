@@ -164,4 +164,4 @@ unsigned char check_Monster(GameState_t *gamestate, LevelState_t *levelstate, ch
 unsigned char check_NPC(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
 unsigned char check_Item(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
 unsigned char check_Weapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond);
-unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond, char *item_weapon);
+unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond, char item_weapon);

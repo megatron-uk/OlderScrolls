@@ -33,13 +33,17 @@
 
 void game_Init(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate); 		// Init game data
 void game_Exit(Screen_t *screen); 															// De-init game data
-void game_Splash(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate); 	// Show a splash screen on game start
-void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate); 		// Main village/location 'hub' screen
+
+// Game modes or screens
 void game_Combat(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);		// Turn based console-style combat
+void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate); 		// Main village/location 'hub' screen
+void game_Splash(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate); 	// Show a splash screen on game start
 void game_Quit(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);		// Quit confirmation
 
-unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
+// Checks and popups which can interrupts the main game modes
+unsigned char game_CheckLoot(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
 unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
 unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
+unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
 
 #endif

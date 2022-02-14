@@ -233,6 +233,7 @@ struct NPCList {
 	unsigned char talked_count;			// Number of times talked
 	unsigned short talked_time;			// Last turn number we talked to them
 	unsigned short death_time;			// Time of death / turn number
+	long double discussions;			// 64bit bitfield of up to 64 unique dialogues that have occurred.
 	struct NPCList *next;				// Pointer to next NPC record
 };
 
@@ -337,6 +338,7 @@ typedef struct {
 	unsigned char npc1_require_number;
 	unsigned char npc1_eval_type;						// EMPTY, AND, OR, etc.
 	unsigned short npc1_text;							// ID of text shown when talking to this NPC
+	unsigned char npc1_text_unique_id;					// Unique id of this conversation
 	
 	unsigned char has_npc2;
 	unsigned char npc2;									// ID of NPC
@@ -344,6 +346,17 @@ typedef struct {
 	unsigned char npc2_require_number;
 	unsigned char npc2_eval_type;						// EMPTY, AND, OR, etc.
 	unsigned short npc2_text;							// ID of text shown when talking to this NPC
+	unsigned char npc2_text_unique_id;					// Unique id of this conversation
+	
+	unsigned char has_npc3;
+	unsigned char npc3;									// ID of NPC
+	unsigned char npc3_require[MAX_REQUIREMENTS * REQUIREMENT_BYTES];	// To see this NPC, these requirements must be met
+	unsigned char npc3_require_number;
+	unsigned char npc3_eval_type;						// EMPTY, AND, OR, etc.
+	unsigned short npc3_text;							// ID of text shown when talking to this NPC
+	unsigned char npc3_text_unique_id;					// Unique id of this conversation
+	
+	unsigned char selected_npc;
 	
 } LevelState_t;
 

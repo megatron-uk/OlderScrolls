@@ -337,10 +337,14 @@ unsigned char check_NPC(GameState_t *gamestate, LevelState_t *levelstate, char *
 	
 	// 2 bytes
 	check_value = (cond[3] << 2) + cond[4];
-	
+	//printf("Finding npc [%d]\n", check_npc_id);	
 	npc = data_FindNPC(gamestate->npcs, check_npc_id);
 	if (npc){
+		
 		// Met this NPC
+		if (check_type == COND_NPC_TALK){
+			return 1;	
+		}
 		
 		// Are they alive?
 		if (check_type == COND_NPC_ALIVE){
@@ -378,6 +382,7 @@ unsigned char check_NPC(GameState_t *gamestate, LevelState_t *levelstate, char *
 			}
 		}
 	} else {
+		
 		// Not yet met this NPC, so they default to being alive
 		if (check_type == COND_NPC_ALIVE){
 			return 1;	
@@ -390,42 +395,62 @@ unsigned char check_NPC(GameState_t *gamestate, LevelState_t *levelstate, char *
 	return 0;
 }
 
-unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond, char *item_weapon){
+unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond, char item_weapon){
 	
 	unsigned char check_type = 0;
 	unsigned char check_item_id = 0;
+	unsigned char check_item_qty = 0;
 	unsigned char i;
 	unsigned char player;
 	char pc_item_type;
 	unsigned char pc_item_id;
 	PlayerState_t *pc;
 	
-	check_type = cond[2];
-	check_item_id = cond[3];
+	check_type = cond[1];
+	check_item_id = cond[2];
+	check_item_qty = cond[3];
+	
+	//printf("check itemweapon [Check type:%d Item:%d Qty:%d], for type [%c]\n", check_type, check_item_id, check_item_qty, item_weapon);
 	
 	for (player = 1; player <= 4; player++){
 		pc = gamestate->players->player[player - 1];
-		if (pc != NULL){
+		if ((pc != NULL) && (pc->level != 0)){
+			//printf("check itemweapon pc %s\n", pc->name);
 			for (i = 0; i < MAX_ITEMS; i++){
 				pc_item_type = (pc->items[i] & 0xff00) >> 2;
 				pc_item_id = (unsigned char) (pc->items[i] & 0x00ff);
 				
-				if ((pc_item_id == check_item_id) && (pc_item_type == *item_weapon)){
-					if (check_type == COND_ITEM_OWN) return 1;
-					if (check_type == COND_ITEM_NOTOWN) return 0;
+				if ((pc_item_id == check_item_id) && (pc_item_type == item_weapon)){
+					if (check_type == COND_ITEM_OWN){
+						//printf("check not own - return 1");
+						return 1;
+					}
+					if (check_type == COND_ITEM_NOTOWN){
+						//printf("check not own - return 0");
+						return 0;
+					}
 				}		
 			}
 		}
 	}
-	return 0;	
+	// Fall through from other checks
+	
+	if (check_type == COND_ITEM_NOTOWN){
+		//printf("item not found, success\n");
+		return 1;
+	}
+	if (check_type == COND_ITEM_OWN){
+		//printf("item not found, failure\n");
+		return 0;
+	}
 }
 
 unsigned char check_Item(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
 	
-	return check_ItemWeapon(gamestate, levelstate, cond, "i");
+	return check_ItemWeapon(gamestate, levelstate, cond, 0x69); // ASCII 'i' - check for item
 }
 
 unsigned char check_Weapon(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
 	
-	return check_ItemWeapon(gamestate, levelstate, cond, "w");
+	return check_ItemWeapon(gamestate, levelstate, cond, 0x77); // ASCII 'w' - check for weapon
 }

@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <qdos.h>
 
+#include "poll.h"
 #ifndef _BMP_H
 #include "bmp_ql.h"
 #endif
@@ -63,7 +64,7 @@ int screen_Init(Screen_t *screen){
 	screen->x = SCREEN_WIDTH;
 	screen->y = SCREEN_HEIGHT;
 	screen->indirect = 1;
-	screen->offscreen = calloc(SCREEN_BYTES, 1);
+	screen->offscreen = NULL;//calloc(SCREEN_BYTES, 1);
 	if (screen->offscreen == NULL){
 		
 		// Couldn't allocate memory for offscreen buffer
@@ -79,6 +80,16 @@ int screen_Init(Screen_t *screen){
 		//printf("- Offscreen buffer: %d bytes\n", SCREEN_BYTES);
 		screen->buf = (unsigned short*) screen->offscreen;
 	}
+	
+	// ==========================================
+	// Number of frames of animation when opening new windows
+	// ==========================================
+	screen->popup_steps = 1;
+	
+	// ==========================================
+	// Initialise vblank timer
+	// ==========================================
+	poll_init(&screen->vblank_timer);
 	
 	// ==========================================
 	// Open the QDOS input/output channel
@@ -181,6 +192,14 @@ void screen_Exit(Screen_t *screen){
 	}
 }
 
+void screen_Vsync(Screen_t *screen, unsigned char wait){
+	// Return after 'wait' amount of vblank interrupts
+	
+	screen->vblank_timer = 0;
+	while(screen->vblank_timer < wait){	
+	}
+}
+
 void draw_Clear(Screen_t *screen){
 	// Clear screen (or offscreen buffer)
 	
@@ -202,9 +221,6 @@ void draw_Flip(Screen_t *screen){
 	// if currently enabled.
 	
 	if (screen->dirty){
-	
-		// Check for vsync
-		// TO DO
 		
 		// Copy offscreen buffer
 		if (screen->indirect){
@@ -557,31 +573,32 @@ void draw_Box(Screen_t *screen, unsigned short x, unsigned short y,
 		}
 	}
 	
-	// Detect if we need to offset rows for cross-hatching effect
-	if (borderpx > 1){
-		if (draw_IsStippled(borderfill)){
-			enable_pad = 1;
-		} else {
-			enable_pad = 0;
-		}
-	}
-	pad = 0;
-	
 	// Borders
-	for (i = 0; i < borderpx; i++){
-		// Top line
-		draw_HLine(screen, x, y + i, length, borderfill, pad, mode);
-		// Left
-		draw_VLine(screen, x + i, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
-		// Right
-		draw_VLine(screen, x + (length - i) - 1, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
-		// Bottom
-		draw_HLine(screen, x, y + height - i, length, borderfill, pad, mode);
-		if (enable_pad){
-			if (pad == 1){
-				pad = 0;
+	if (borderfill != PIXEL_CLEAR){
+		// Detect if we need to offset rows for cross-hatching effect
+		if (borderpx > 1){
+			if (draw_IsStippled(borderfill)){
+				enable_pad = 1;
 			} else {
-				pad = 1;
+				enable_pad = 0;
+			}
+		}
+		pad = 0;
+		for (i = 0; i < borderpx; i++){
+			// Top line
+			draw_HLine(screen, x, y + i, length, borderfill, pad, mode);
+			// Left
+			draw_VLine(screen, x + i, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
+			// Right
+			draw_VLine(screen, x + (length - i) - 1, y + borderpx - pad, height - (borderpx * 2) + 1 + pad, borderfill, MODE_PIXEL_OR);
+			// Bottom
+			draw_HLine(screen, x, y + height - i, length, borderfill, pad, mode);
+			if (enable_pad){
+				if (pad == 1){
+					pad = 0;
+				} else {
+					pad = 1;
+				}
 			}
 		}
 	}
@@ -607,7 +624,66 @@ void draw_GetStringXY(unsigned short col, unsigned short y, unsigned short *addr
 	return;
 }
 
-unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c){
+void draw_SelectedString(Screen_t *screen, unsigned char col, unsigned char y, unsigned char max_chars, unsigned short fill, char *c){
+	// Highlight and flash a selected string of text on screen several times
+	
+	unsigned short x1;
+	unsigned short w;
+	unsigned char y1;
+	unsigned char h;
+	unsigned char i;
+	
+	x1 = (col * 8);
+	w = (8 * max_chars) + 1;
+	y1 = y - 1;
+	h = 8 + 1;
+
+	draw_StringInvert(screen, col, y, max_chars, screen->font_8x8);
+	draw_Flip(screen);
+	screen_Vsync(screen, 8);
+	for (i = 0; i < 4; i++){
+		// Invert text and highlight
+		draw_StringInvert(screen, col, y, max_chars, screen->font_8x8);
+		draw_Flip(screen);
+		screen_Vsync(screen, 2);
+		// Normal text
+		draw_StringInvert(screen, col, y, max_chars, screen->font_8x8);
+		draw_Flip(screen);
+		screen_Vsync(screen, 2);
+	}
+}
+
+void draw_StringInvert(Screen_t *screen, unsigned char col, unsigned char y, unsigned char max_chars, fontdata_t *fontdata){
+	// Invert the colours of an already existing string on screen
+	unsigned short start_p;
+	unsigned short *p;
+	unsigned char font_row;
+	unsigned char pos;
+	unsigned short word;
+	
+	draw_GetStringXY(col, y, &start_p);
+	
+	// Reposition write position
+	p = (unsigned short*) screen->buf;
+	p += start_p;
+	
+	// For every row of data in a font (default is 8 rows)
+	for(font_row = 0; font_row < fontdata->height + 1; font_row++){
+		
+		// For every character on this line
+		for (pos = 0; pos < max_chars; pos++){
+			word = *p;
+			*p = ~word;
+			p++;
+		}
+		// Increment write position to next row of characters
+		p = (unsigned short*) screen->buf;
+		p += start_p;
+		p += (font_row + 1) * SCREEN_WORDS_PER_ROW;;
+	}
+}
+
+unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c, unsigned char mode){
 	// Put a string of text on the screen, at a set of coordinates (x,y
 	// using a specific font.
 	// max_chars and max_rows defines a bounding box
@@ -625,6 +701,8 @@ unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y,
 	unsigned short mask;
 	unsigned short pos;
 	unsigned char i;
+	unsigned short row_size = (8 * SCREEN_WORDS_PER_ROW);
+	unsigned short string_len = strlen(c);
 	
 	unsigned char current_rows = 0;
 	unsigned char current_chars = 0;
@@ -645,7 +723,8 @@ unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y,
 	
 	current_chars = 0;
 	current_rows = 1;
-	for (pos = offset_chars; pos < strlen(c); pos++){
+	
+	for (pos = offset_chars; pos < string_len; pos++){
 		// If we started the loop after processing a tag, unset the skip variable
 		skip = 0;
 		// Next character
@@ -653,7 +732,7 @@ unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y,
 		// Is this the start of a new tag?
 		if (i == TEXT_TAG_START){
 			// Have we got at least 2 more characters before end of string?
-			if ((pos + 2) <= (strlen(c))){
+			if ((pos + 2) <= string_len){
 				// Is the character +2 from our current position a closing tag?
 				if (c[pos + 2] == TEXT_TAG_END){					
 					// Figure out the tag
@@ -699,7 +778,7 @@ unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y,
 				if (current_rows < max_rows){
 					// We have at least 1 more row of text left
 					p = (unsigned short*) screen->buf;
-					start_p += (8 * SCREEN_WORDS_PER_ROW); // Set a new start position to this new line
+					start_p += row_size; // Set a new start position to this new line
 					p += start_p;
 					current_chars = 0;
 					current_rows++;	
@@ -711,12 +790,12 @@ unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y,
 				}
 			} else {
 			
-				if ((word_length(c, pos) + current_chars) <= max_chars){
+				if ((word_length(c, pos, string_len) + current_chars) <= max_chars){
 					// This character and the rest of word up to the next space or 
 					// newline CAN fit on current row
 					
 					// Find the bitmap for this character in the font table
-					draw_FontSymbol(i, fontdata, fill, p);
+					draw_FontSymbol(i, fontdata, fill, p, mode);
 					p = (unsigned short*) screen->buf;
 					current_chars++;
 					p += start_p + current_chars;
@@ -727,13 +806,13 @@ unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y,
 					if (current_rows < max_rows){
 						// We have at least 1 more row of text left
 						p = (unsigned short*) screen->buf;
-						start_p += (8 * SCREEN_WORDS_PER_ROW); // Set a new start position to this new line
+						start_p += row_size; // Set a new start position to this new line
 						p += start_p;
 						current_rows++;			
 						
 						if (i != 0x20){
 							// Find the bitmap for this character in the font table
-							draw_FontSymbol(i, fontdata, fill, p);
+							draw_FontSymbol(i, fontdata, fill, p, mode);
 							p = (unsigned short*) screen->buf;
 							current_chars = 1;
 							p += start_p + current_chars;
@@ -761,7 +840,7 @@ unsigned short draw_String(Screen_t *screen, unsigned char col, unsigned char y,
 	return 0;	
 }
 
-void draw_FontSymbol(unsigned char ascii_num, fontdata_t *fontdata, unsigned short fill, unsigned short *pos){
+void draw_FontSymbol(unsigned char ascii_num, fontdata_t *fontdata, unsigned short fill, unsigned short *pos, unsigned char mode){
 	// Draws a single character in a given colour, at screen position pointed at by p.
 	
 	unsigned char font_row;
@@ -786,9 +865,27 @@ void draw_FontSymbol(unsigned char ascii_num, fontdata_t *fontdata, unsigned sho
 				break;
 			case PIXEL_GREEN:
 				mask = (unsigned short) (fontdata->symbol[font_symbol][font_row] << 8);
+				break;	
+		}
+		
+		// All other font get or-ed against background
+		switch(mode){
+			case MODE_PIXEL_SET:
+				*pos = mask;
+				break;
+			case MODE_PIXEL_OR:
+				*pos = *pos | mask;
+				break;
+			case MODE_PIXEL_XOR:
+				*pos = *pos ^ mask;
+				break;
+			case MODE_PIXEL_AND:
+				*pos = *pos & mask;
+				break;
+			default:
+				*pos = *pos | mask;
 				break;
 		}
-		*pos = *pos | mask;
 		pos += SCREEN_WORDS_PER_ROW;
 	}
 }

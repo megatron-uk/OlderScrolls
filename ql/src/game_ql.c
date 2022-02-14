@@ -63,7 +63,7 @@ void game_Init(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstat
 	gamestate->level_previous = 1;
 	gamestate->gold = 0;
 	gamestate->counter = 0;
-	gamestate->npcs = NULL;
+	gamestate->npcs = (struct NPCList *) calloc(sizeof(struct NPCList), 1);
 	gamestate->players = (PartyState_t *) calloc(sizeof(PlayerState_t), 1);
 	for (i = 0; i < MAX_PLAYERS; i++){
 		gamestate->players->player[i] = (PlayerState_t *) calloc(sizeof(PlayerState_t), 1);
@@ -94,7 +94,10 @@ void game_Init(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstat
 
 void game_Exit(Screen_t *screen){
 	// Close any open data files
+	// Clear screen
+	// Return to previous screen mode
 	
+	draw_Clear(screen);
 }
 
 void game_Splash(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
@@ -219,6 +222,12 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 			input_Set(INPUT_MOVE);
 			input_Set(INPUT_MOVE_);
 		}
+		
+		// Are any items available to take?
+		if (game_CheckLoot(screen, gamestate, levelstate, 0, 1)){
+			input_Set(INPUT_LOOT);
+			input_Set(INPUT_LOOT_);
+		}
 	}
 	
 	// Draw the main window text now
@@ -269,40 +278,7 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 				// Allow player to move to another location
 				// ======================================
 				game_CheckMovement(screen, gamestate, levelstate, 1, 0);
-				while(!e){
-					c = input_Get(screen);
-					switch(c){
-						case INPUT_N:
-						case INPUT_N_:
-							gamestate->level_previous = gamestate->level;
-							gamestate->level = levelstate->north;
-							e = 1;
-							break;
-						case INPUT_S:
-						case INPUT_S_:
-							gamestate->level_previous = gamestate->level;
-							gamestate->level = levelstate->south;
-							e = 1;
-							break;
-						case INPUT_E:
-						case INPUT_E_:
-							gamestate->level_previous = gamestate->level;
-							gamestate->level = levelstate->east;
-							e = 1;
-							break;
-						case INPUT_W:
-						case INPUT_W_:
-							gamestate->level_previous = gamestate->level;
-							gamestate->level = levelstate->west;
-							e = 1;
-							break;
-						case INPUT_CANCEL:
-							e = 1;
-							break;
-						default:
-							break;
-					}
-				}
+				e = 1;
 				break;
 			case INPUT_FIGHT:
 			case INPUT_FIGHT_:
@@ -321,24 +297,7 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 				// Set talk game mode
 				// ======================================
 				game_CheckTalk(screen, gamestate, levelstate, 1, 0);
-				while(!e){
-					c = input_Get(screen);
-					switch(c){
-						case INPUT_1:
-							// Do dialogue with npc 1
-							e = 1;
-							break;
-						case INPUT_2:
-							// Do dialogue with npc 2
-							e = 1;
-							break;
-						case INPUT_CANCEL:
-							e = 1;
-							break;
-						default:
-							break;
-					}
-				}
+				e = 1;
 				break;	
 			//case INPUT_BARTER:
 			//case INPUT_BARTER_:
@@ -384,37 +343,11 @@ void game_Quit(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstat
 	// wait for user input
 	
 	unsigned char c;
-	unsigned char e = 0;
-	
-	// Set all the inputs we allow
-	input_Clear();
-	input_Set(INPUT_Y);
-	input_Set(INPUT_Y_);
-	input_Set(INPUT_N);
-	input_Set(INPUT_N_);
-	input_Set(INPUT_CANCEL);
 	
 	// Draw a yes/no dialogue box
-	ui_DrawYesNo(screen, (char *) "Really Quit?");
-	draw_Flip(screen);
-	
-	// Wait for user input
-	while(!e){
-		c = input_Get(screen);
-		switch(c){
-			case INPUT_Y:
-			case INPUT_Y_:
-				gamestate->gamemode = GAME_MODE_EXIT;
-				e = 1;
-				break;
-			case INPUT_N:
-			case INPUT_N_:
-			case INPUT_CANCEL:
-				e = 1;
-				break;
-			default:
-				break;
-		}
+	c = ui_DrawYesNo(screen, gamestate, levelstate, (char *) "Really Quit?");
+	if (c){
+		gamestate->gamemode = GAME_MODE_EXIT;
 	}
 	return;
 }
@@ -453,61 +386,72 @@ unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelStat
 	unsigned char first = 0x0A;
 	unsigned char added_1 = 0;
 	unsigned char added_2 = 0;
+	unsigned char added_3 = 0;
 	
 	if (add_inputs){
 		input_Clear();
 	}
+	levelstate->has_npc1 = 0;
+	levelstate->has_npc2 = 0;
 	
 	if (levelstate->npc1 || levelstate->npc2){
-		if (levelstate->npc1){
-			add_it = 1;
-			// Check conditions
-			if (levelstate->npc1 > 0){
-				levelstate->has_npc1 = 0;
-				add_it = 0;
-				if (check_Cond(gamestate, levelstate, levelstate->npc1_require, levelstate->npc1_require_number, levelstate->npc1_eval_type)){
-					// Add option
-					add_it = 1;
-					levelstate->has_npc1 = 1;
-					// Load NPC into enemy slot 0
-					data_CreateCharacter(screen, gamestate->enemies->enemy[0], screen->enemies[0], NULL, CHARACTER_TYPE_NPC, levelstate->npc1);
-				}
-				if (add_it){
-					can_talk = 1;
-					if (add_inputs){
-						input_Set(INPUT_1);
-						added_1 = 1;
-					}
+		// Check conditions
+		if (levelstate->npc1 > 0){
+			add_it = 0;
+			if (check_Cond(gamestate, levelstate, levelstate->npc1_require, levelstate->npc1_require_number, levelstate->npc1_eval_type)){
+				// Add option
+				add_it = 1;
+				levelstate->has_npc1 = 1;
+				// Load NPC into enemy slot 1
+				data_CreateCharacter(screen, gamestate->enemies->enemy[1], screen->enemies[1], NULL, CHARACTER_TYPE_NPC, levelstate->npc1);
+			}
+			if (add_it){
+				can_talk = 1;
+				if (add_inputs){
+					input_Set(INPUT_1);
+					added_1 = 1;
 				}
 			}
 		}
-		if (levelstate->npc2){
-			add_it = 1;
-			// Check conditions
-			if (levelstate->npc2 > 0){
-				levelstate->has_npc2 = 0;
-				add_it = 0;
-				if (check_Cond(gamestate, levelstate, levelstate->npc2_require, levelstate->npc2_require_number, levelstate->npc2_eval_type)){
-					// Add option
-					add_it = 1;
-					levelstate->has_npc2 = 1;
-					// Load NPC into enemy slot 1
-					data_CreateCharacter(screen, gamestate->enemies->enemy[1], screen->enemies[1], NULL, CHARACTER_TYPE_NPC, levelstate->npc2);
-				}
-				if (add_it){
-					can_talk = 1;
-					if (add_inputs){
-						if (added_1){
-							input_Set(INPUT_2);
-							added_2 = 1;
-						} else {
-							input_Set(INPUT_1);
-							added_1 = 1;
-						}						
-					}
+
+		// Check conditions
+		if (levelstate->npc2 > 0){
+			add_it = 0;
+			if (check_Cond(gamestate, levelstate, levelstate->npc2_require, levelstate->npc2_require_number, levelstate->npc2_eval_type)){
+				// Add option
+				add_it = 1;
+				levelstate->has_npc2 = 1;
+				// Load NPC into enemy slot 2
+				data_CreateCharacter(screen, gamestate->enemies->enemy[2], screen->enemies[2], NULL, CHARACTER_TYPE_NPC, levelstate->npc2);
+			}
+			if (add_it){
+				can_talk = 1;
+				if (add_inputs){
+					input_Set(INPUT_2);
+					added_2 = 1;
 				}
 			}
 		}
+		
+		// Check conditions
+		if (levelstate->npc3 > 0){
+			add_it = 0;
+			if (check_Cond(gamestate, levelstate, levelstate->npc3_require, levelstate->npc3_require_number, levelstate->npc3_eval_type)){
+				// Add option
+				add_it = 1;
+				levelstate->has_npc3 = 1;
+				// Load NPC into enemy slot 3
+				data_CreateCharacter(screen, gamestate->enemies->enemy[3], screen->enemies[3], NULL, CHARACTER_TYPE_NPC, levelstate->npc3);
+			}
+			if (add_it){
+				can_talk = 1;
+				if (add_inputs){
+					input_Set(INPUT_3);
+					added_1 = 1;						
+				}
+			}
+		}
+		
 	}
 	if (add_inputs){
 		input_Set(INPUT_CANCEL);
@@ -517,6 +461,40 @@ unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelStat
 		}
 	}
 	return can_talk;
+}
+
+unsigned char game_CheckLoot(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text){
+	// Returns a flag indicating if items/loot are available.
+	// Adds items to input options 
+	// Adds loot text to main ui if set
+	
+	unsigned char add_it = 0;
+	unsigned char can_loot = 0;
+	
+	if ((levelstate->items_number > 0) || (levelstate->weapons_number > 0)){
+		if (check_Cond(gamestate, levelstate, levelstate->items_require, levelstate->items_require_number, levelstate->items_eval_type)){
+			add_it = 1;
+		}
+		if (add_it){
+			can_loot = 1;
+			if (add_inputs){
+				input_Set(INPUT_LOOT);
+				input_Set(INPUT_LOOT_);
+			}
+		}
+	}
+	
+	//sprintf(gamestate->buf, "can loot: %d\nitems_number: %d\nweapons_number: %d\n", can_loot, levelstate->items_number, levelstate->weapons_number);
+	//ui_DrawError(screen, "Debug: CheckLoot", gamestate->buf, 0);
+	
+	if (add_inputs){
+		input_Set(INPUT_CANCEL);
+		//if (can_loot){
+			//ui_DrawLootChoice(screen, gamestate, levelstate);
+			//draw_Flip(screen);	
+		//}
+	}
+	return can_loot;
 }
 
 unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text){
@@ -647,7 +625,6 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 		input_Set(INPUT_CANCEL);
 		if (can_move){
 			ui_DrawNavigationChoice(screen, gamestate, levelstate);
-			draw_Flip(screen);	
 		}
 	}
 	return can_move;

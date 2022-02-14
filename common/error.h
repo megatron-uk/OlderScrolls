@@ -58,6 +58,7 @@
 #define DATA_LOAD_NPCFILE				-44		// Unable to open npc datafile
 #define DATA_LOAD_MONSTERFILE_SEEK		-45		// Unable to seek in monster/npc datafile
 #define DATA_LOAD_MONSTER_MISMATCH		-46		// The found monster id does not match the search id
+#define DATA_LOAD_NO_NPC				-47		// NPC not found in list
 #define DRAW_OPEN_BMPFILE				-50		// Unable to open bitmap file for async display
 
 
@@ -82,6 +83,9 @@
 #define DATA_LOAD_MONSTER_DAT_READ		"Unable to read sufficient bytes from MONSTER/NPC .dat file."
 #define DATA_LOAD_MONSTER_DAT_SEEK		"Unable to seek to correct location in MONSTER/NPC .dat file."
 #define DATA_LOAD_MONSTER_MISMATCH_MSG	"The loaded MONSTER does not match. Datafile consistency error!"
+#define DATA_LOAD_NPC_MISSING			"NPC List Error!"
+#define DATA_LOAD_NPC_MISSING_DEATH	"Unable to find NPC in linked list to set death state."
+#define DATA_LOAD_NPC_MISSING_TALK		"Unable to find NPC in linked list to set dialogue state."
 
 // Out of memory error messages
 #define GENERIC_MEMORY_MSG 				"Memory Error!"																// Used as a title

@@ -616,7 +616,7 @@ int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t
 	return DATA_LOAD_OK;
 }
 
-int data_AddNPC(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char id){
+char data_AddNPC(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char id){
 	// Adds a record of an NPC to the game list, if it does not already exist
 	
 	struct NPCList *npc;
@@ -624,6 +624,7 @@ int data_AddNPC(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelsta
 	npc = data_FindNPC(gamestate->npcs, id);
 	if (npc){
 		// Found, no need to create
+		ui_DrawError(screen, "NPC Found", "Found npc matching id", npc->id);
 		return DATA_LOAD_OK;
 	}
 	
@@ -631,21 +632,70 @@ int data_AddNPC(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelsta
 	// Find last record
 	if (npc->id != 0){
 		npc = data_LastNPC(gamestate->npcs);
-	}
-	// Add another record for this NPC
-	npc->next = (struct NPCList *) calloc(sizeof(struct NPCList), 1);
-	if (npc->next == NULL){
-		// Error allocating memory
-		ui_DrawError(screen, GENERIC_MEMORY_MSG, DATA_LOAD_NPCMEMORY_MSG, 0);
-		return DATA_LOAD_NPCMEMORY;
-	}
+	
+		// Add another record for this NPC
+		npc->next = (struct NPCList *) calloc(sizeof(struct NPCList), 1);
+		if (npc->next == NULL){
+			// Error allocating memory
+			ui_DrawError(screen, GENERIC_MEMORY_MSG, DATA_LOAD_NPCMEMORY_MSG, 0);
+			return DATA_LOAD_NPCMEMORY;
+		}
+	
+		// Add this npc into the next slot
+		npc->next->id = id;
+		npc->next->talked_count = 0;
+		npc->next->talked_time = 0;
+		npc->next->death_time = 0;
+		npc->next->next = NULL;	
+	} else {
 		
-	npc->next->id = id;
-	npc->next->talked_count = 0;
-	npc->next->talked_time = 0;
-	npc->next->death_time = 0;
-	npc->next->next = NULL;
+		// This is the first npc
+		npc->id = id;
+		npc->talked_count = 0;
+		npc->talked_time = 0;
+		npc->death_time = 0;
+		npc->next = NULL;	
+	}
 	return DATA_LOAD_OK;
+}
+
+char data_SetNPCDead(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char id, unsigned char dead){
+	// Set the death time for this NPC to the current turn number
+	
+	struct NPCList *npc;
+	
+	npc = data_FindNPC(gamestate->npcs, id);
+	if (npc == NULL){
+		// Not found
+		ui_DrawError(screen, DATA_LOAD_NPC_MISSING, DATA_LOAD_NPC_MISSING_DEATH, 0);
+		return DATA_LOAD_NO_NPC;
+	}
+	
+	if (dead){
+		npc->death_time = gamestate->counter;
+	} else {
+		npc->death_time = 0;	
+	}
+	return OK;
+}
+
+char data_IncrementNPCTalk(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char id, unsigned char unique_dialogue_id){
+	// Increment the NPC talked_count figure and update the talked_time to current turn number
+	
+	struct NPCList *npc;
+	
+	npc = data_FindNPC(gamestate->npcs, id);
+	if (npc == NULL){
+		// Not found
+		ui_DrawError(screen, DATA_LOAD_NPC_MISSING, DATA_LOAD_NPC_MISSING_TALK, 0);
+		return DATA_LOAD_NO_NPC;
+	}
+	
+	if (npc->talked_count < 255){
+		npc->talked_count++;	
+	}
+	npc->talked_time = gamestate->counter;
+	return OK;
 }
 
 struct NPCList * data_FindNPC(struct NPCList *npclist, unsigned char id){

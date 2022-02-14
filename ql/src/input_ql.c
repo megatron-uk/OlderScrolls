@@ -57,6 +57,13 @@ void input_Set(unsigned char key){
 	unsigned char i;
 	
 	for (i = 0; i < MAX_ALLOWED_INPUTS; i++){
+		
+		// Don't allow duplicate inputs
+		if (input_allowed[i] == key){
+			return;
+		}
+		
+		// Set the new input
 		if (input_allowed[i] == 0){
 			input_allowed[i] = key;
 			return;
@@ -82,4 +89,12 @@ void input_Wait(Screen_t *screen, unsigned char key){
 	while (input_Get(screen) == 0){
 	}
 	input_Clear();
+}
+
+void input_WaitAndReturn(Screen_t *screen){
+	// Wait for any current key (or escape) to be pressed
+	
+	input_Set(INPUT_CANCEL);
+	while (input_Get(screen) == 0){
+	}
 }

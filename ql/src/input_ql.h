@@ -36,6 +36,9 @@
 #define INPUT_FIGHT		0x44		// uppercase 'F'
 #define INPUT_FIGHT_	0x66		// lowercase 'f'
 
+#define INPUT_LOOT		0x4c		// uppercase 'L'
+#define INPUT_LOOT_		0x6c		// lowercase 'l'
+
 #define INPUT_WITHDRAW		0x57		// uppercase 'W'
 #define INPUT_WITHDRAW_		0x77		// lowercase 'w'
 
@@ -85,5 +88,6 @@ unsigned char input_Get(Screen_t *screen);
 void input_Set(unsigned char key);
 void input_Clear(void);
 void input_Wait(Screen_t *screen, unsigned char key);
+void input_WaitAndReturn(Screen_t *screen);
 
 #endif

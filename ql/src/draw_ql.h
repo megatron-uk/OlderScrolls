@@ -47,9 +47,10 @@
 #define PIXEL_RED_STIPPLED 		0x00AA
 #define PIXEL_YELLOW			0xAA55  // Stipples a 8x1 set of pixels in alternativing 
 										// green/red to simulate yellow
-#define MODE_PIXEL_OR			1
 #define MODE_PIXEL_SET			0
-		
+#define MODE_PIXEL_OR			1
+#define MODE_PIXEL_XOR			2
+#define MODE_PIXEL_AND			3
 
 // Bitmaps, backgrounds and monster sprites
 // SPRITE_CLASS_NORMAL
@@ -81,6 +82,8 @@
 #define DRAW_BG_X				8		// Draw background images at these x,y coords
 #define DRAW_BG_Y				16
 
+#define POPUP_STEPS				5
+
 // Small/monster/player sprite data
 typedef struct sspritedata {
 	unsigned char	width;			// X resolution in pixels - always 32
@@ -109,6 +112,8 @@ typedef struct screendata {
 	unsigned int screen;		// Memory address of real video memory
 	unsigned char indirect;		// Flag to indicate use of off-screen or direct video memory writes
 	unsigned char dirty;		// Flag to indicate buffer has been changed
+	unsigned int vblank_timer;	// Variable used in poll routine to wait for 'x' amount of vblank interrupts
+	unsigned char popup_steps;	//
 	
 	// Main on-screen bitmap font in platforms 
 	// that support it.
@@ -139,6 +144,8 @@ typedef struct screendata {
 
 int screen_Init(Screen_t *screen);
 void screen_Exit(Screen_t *screen);
+void screen_Vsync(Screen_t *screen, unsigned char wait);
+
 void draw_Clear(Screen_t *screen);
 void draw_Flip(Screen_t *screen);
 void draw_GetXY(unsigned short x, unsigned short y, unsigned short *addr, unsigned char *bits);
@@ -146,11 +153,13 @@ void draw_GetStringXY(unsigned short x, unsigned short y, unsigned short *addr);
 void draw_HLine(Screen_t *screen, unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char pad, unsigned char mode);
 void draw_VLine(Screen_t *screen, unsigned short x, unsigned short y, unsigned short length, unsigned short fill, unsigned char mode);
 void draw_Box(Screen_t *screen, unsigned short x, unsigned short y, 	unsigned short length, unsigned short height, unsigned short borderpx, unsigned short borderfill, unsigned short centrefill, unsigned char mode);
-unsigned short draw_String(Screen_t *screen, unsigned char x, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c);
-void draw_FontSymbol(unsigned char i, fontdata_t *fontdata, unsigned short fill, unsigned short *p);
+unsigned short draw_String(Screen_t *screen, unsigned char x, unsigned char y, unsigned char max_chars, unsigned char max_rows, unsigned short offset_chars, fontdata_t *fontdata, unsigned short fill, char *c, unsigned char mode);
+void draw_FontSymbol(unsigned char i, fontdata_t *fontdata, unsigned short fill, unsigned short *p, unsigned char mode);
+void draw_StringInvert(Screen_t *screen, unsigned char x, unsigned char y, unsigned char max_chars, fontdata_t *fontdata);
 
 int draw_BitmapAsync(Screen_t *screen, int bmpfile);
 int draw_BitmapAsyncFull(Screen_t *screen, unsigned short x, unsigned short y, char *filename);
 int draw_Sprite(Screen_t *screen, unsigned short x, unsigned short y, ssprite_t *sprite, unsigned char portrait);
+void draw_SelectedString(Screen_t *screen, unsigned char col, unsigned char y, unsigned char max_chars, unsigned short fill, char *c);
 
 #endif

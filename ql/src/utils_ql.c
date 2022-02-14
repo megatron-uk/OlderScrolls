@@ -103,7 +103,7 @@ unsigned char check_Files(void){
 	return errors;
 }
 
-unsigned char word_length(char *c, unsigned short pos){
+unsigned char word_length(char *c, unsigned short pos, unsigned short string_size){
 	// Count from the current position to the next space/newline/carriage return.
 	//
 	// Returns the number of characters so that a text printing routine
@@ -113,7 +113,7 @@ unsigned char word_length(char *c, unsigned short pos){
 	unsigned short count;
 	
 	count = 0;
-	for (i = pos; i <strlen(c); i++){
+	for (i = pos; i < string_size; i++){
 		if ((c[i] == 0x20) || (c[i] == 0x0A) || (c[i] == 0x0D)){
 			// Newline/space found at this position
 			// Return the number of characters that are needed to print

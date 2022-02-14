@@ -30,7 +30,7 @@
 #define clearbit(x,bit) ((x) &= ~(1<<(bit)))
 
 unsigned char check_Files(void);
-unsigned char word_length(char *c, unsigned short pos);
+unsigned char word_length(char *c, unsigned short pos, unsigned short string_size);
 void * get_FreeBlock(unsigned int *size, unsigned int base, unsigned short increment);
 
 #define _UTILS_QL_H
