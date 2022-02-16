@@ -46,6 +46,7 @@ MAX_LOCATIONS = 256			# as per game.h
 MAX_PLAYER_NAME = 18		# as per game.h
 MAX_SHORT_NAME = 6			# as per game.h
 MAX_CHARACTERS = 256		# as per game.h
+MAX_NPC_DIALOGUES = 64		# Tracking of dialogue uses a 64bit int, limited to 64 unique dialogue trees
 MAX_BMP_FILENAME = 8		# Limit filenames to 8 characters and no '.' to be valid on all targets
 MAX_SPELLS = 5
 ALLOWED_FILENAME_CHARS = string.ascii_lowercase + string.digits + "_"
@@ -134,6 +135,7 @@ NPC_TEST_TYPE = {
 	"COND_NPC_DEAD"			: 0x03,	# An NPC is dead (if not met, assumed still alive) 
 	"COND_NPC_TIMER_LESS" 	: 0x04, # An NPC has been met/last talked less than or equal to 'x' turns ago
 	"COND_NPC_TIMER_MORE" 	: 0x05, # An NPC has been met/last talked more than or equal to 'x' turns ago
+	"COND_NPC_TALK_UNIQUE" 	: 0x06, # An NPC has been met and they have used their unique dialogue string 'x'
 }
 
 ITEM_TYPE_IDS = ["w", "i"]
@@ -200,7 +202,7 @@ CONDITIONS = {
 		'1_sz'			: 1,				
 		'2_type'		: "NPC_ID",			# NPC ID
 		'2_sz'			: 1,				# Param 1 is 1 byte
-		'2_type'		: "INTEGER",		# Times talked
+		'2_type'		: "INTEGER",		# Times talked/unique dialogue id encountered/turns ago
 		'2_sz'			: 2,				# Param 2 is 2 byte
 		'pad_sz'		: 0,				# Pad byte
 		'bytes'			: 5,				# Total size if 5 bytes		
@@ -243,6 +245,14 @@ CHARACTER_TYPES = {
 
 # These classes should match the definitions 
 # from the OlderScrolls engine 'monsters.h' header.
+# The upper 4 bits are the race, the lower 4 bits the class
+MONSTER_RACES = {
+	"UNKNOWN" 				: 0x00,
+	"HUMAN" 				: 0x10,
+	"BEAST"					: 0x20,
+	"ORC"					: 0x30,
+	"ELF"					: 0x40,
+}
 MONSTER_CLASSES = {
 	"HUMAN_UNTRAINED" 		: 0x10,	
 	"HUMAN_GENERIC_MELEE"	: 0x11,
@@ -259,7 +269,7 @@ MONSTER_CLASSES = {
 	"HUMAN_SORCERER"		: 0x1C,
 	"HUMAN_WARLOCK"			: 0x1D,
 	"HUMAN_WIZARD"			: 0x1E,
-	"BEAST_WILD"			: 0x20,
+	"BEAST_UNTRAINED"		: 0x20,
 	"BEAST_MELEE"			: 0x21,
 	"BEAST_RANGED"			: 0x22,
 	"BEAST_MAGIC"			: 0x23,

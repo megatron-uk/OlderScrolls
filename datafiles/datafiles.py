@@ -845,7 +845,7 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 		class_type_lookup = MONSTER_CLASSES[character['class']]
 	
 	if class_type_lookup is not False:
-		byte_list = sprite_type_lookup.to_bytes(1, byteorder='big')
+		byte_list = class_type_lookup.to_bytes(1, byteorder='big')
 		for b in byte_list:
 			record.append(b.to_bytes(1, byteorder='big'))
 		if DEBUG:
@@ -1267,15 +1267,26 @@ def generate_world(import_dir = None, target = None):
 	for i in location_ids:
 		#print(game_world.MAP[i]['name'])
 		for text_type in ["north_text", "south_text", "east_text", "west_text", "text_spawn", "text_after_spawn", "text_respawn", "text_after_respawn", "npc1_text", "npc2_text"]:
-			if game_world.MAP[i][text_type] > 0:
-				text_id = game_world.MAP[i][text_type]
-				if text_id in text_ids:
-					#print("- %s: Text ID %s ok" % (text_type, text_id))
-					pass
-				else:
-					print(game_world.MAP[i]['name'])
-					print("- %s: MISSING TEXT ID %s" % (text_type, text_id))
-					valid = False
+			if text_type in ["npc1_text", "npc2_text", "npc3_text"]:
+				if game_world.MAP[i][text_type][1] > 0:
+					text_id = game_world.MAP[i][text_type][1]
+					if text_id in text_ids:
+						#print("- %s: Text ID %s ok" % (text_type, text_id))
+						pass
+					else:
+						print(game_world.MAP[i]['name'])
+						print("- %s: MISSING TEXT ID %s" % (text_type, text_id))
+						valid = False
+			else:
+				if game_world.MAP[i][text_type] > 0:
+					text_id = game_world.MAP[i][text_type]
+					if text_id in text_ids:
+						#print("- %s: Text ID %s ok" % (text_type, text_id))
+						pass
+					else:
+						print(game_world.MAP[i]['name'])
+						print("- %s: MISSING TEXT ID %s" % (text_type, text_id))
+						valid = False
 	if valid:
 		print("GOOD: All locations have valid text IDs")
 	else:
@@ -1345,7 +1356,7 @@ def generate_world(import_dir = None, target = None):
 		#print(game_world.MAP[i]['name'])
 		
 		# Check compass points
-		for t in ["north", "south", "east", "west", "spawn", "respawn", "items", "npc1", "npc2"]:
+		for t in ["north", "south", "east", "west", "spawn", "respawn", "items", "npc1", "npc2", "npc3"]:
 			requires = t + "_require"
 			if (len(game_world.MAP[i][requires]) > 0):
 				n_params = len(game_world.MAP[i][requires]) 
@@ -1450,6 +1461,76 @@ def generate_world(import_dir = None, target = None):
 	print("###################################################################################")
 	print("#")
 	print("# Step 6.")
+	print("#")
+	print("# Check NPCs have unique dialogue entries.")
+	print("#")
+	print("###################################################################################")
+
+	print("")
+	print("Generating NPC dialogue sequences...")
+	valid = True
+	npcs = {}
+	for i in location_ids:
+		npc1 = game_world.MAP[i]['npc1']
+		npc2 = game_world.MAP[i]['npc2']
+		npc3 = game_world.MAP[i]['npc3']
+		if npc1 > 0:
+			if npc1 not in npcs.keys():
+				npcs[npc1] = {
+					'dialogues' : [],
+					'strings' : [],
+				}
+			npcs[npc1]['dialogues'].append(game_world.MAP[i]['npc1_text'][0])
+			npcs[npc1]['strings'].append(game_world.MAP[i]['npc1_text'][1])
+
+		if npc2 > 0:
+			if npc2 not in npcs.keys():
+				npcs[npc2] = {
+					'dialogues' : [],
+					'strings' : [],
+				}
+			npcs[npc2]['dialogues'].append(game_world.MAP[i]['npc2_text'][0])
+			npcs[npc2]['strings'].append(game_world.MAP[i]['npc2_text'][1])
+			
+		if npc3 > 0:
+			if npc3 not in npcs.keys():
+				npcs[npc3] = {
+					'dialogues' : [],
+					'strings' : [],
+				}
+			npcs[npc3]['dialogues'].append(game_world.MAP[i]['npc3_text'][0])
+			npcs[npc3]['strings'].append(game_world.MAP[i]['npc3_text'][1])
+			
+	for npc_id in npcs.keys():
+		if DEBUG:
+			print("NPC ID: %d" % (npc_id))
+		dialogue_list = list(npcs[npc_id]['dialogues'])
+		strings_list = list(npcs[npc_id]['strings'])
+		if DEBUG:
+			print(" [%2d] unique dialogues" % (len(dialogue_list)))
+			print(" [%2d] unique strings" % (len(strings_list)))
+		
+		if len(dialogue_list) > MAX_NPC_DIALOGUES:
+			print("ERROR: A maximum of %d dialogue sequence per NPC is allowed, with the identifiers 1 - %d." % MAX_NPC_DIALOGUES)
+			valid = False
+			
+		for i in dialogue_list:
+			if i > MAX_NPC_DIALOGUES:
+				print("ERROR: Dialogue identifiers must be in the range 1 - %d." % MAX_NPC_DIALOGUES)
+				valid = False
+		
+	print("")
+		
+	if valid:
+		print("GOOD: All NPC dialogue sequences appear valid")
+	else:
+		print("ERROR: At least one NPC dialogue sequence is invalid.")
+		return False
+
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 7.")
 	print("#")
 	print("# Write out datafile and header.")
 	print("#")
@@ -1564,7 +1645,7 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		byte_list.append(0x00.to_bytes(1, byteorder='big'))
 	for b in byte_list:
 		record.append(b)
-	print("-- +%2s bytes, name" % len(tmp))
+	print("-- +%2s bytes, name [padded to %d]" % (len(tmp), len(byte_list)))
 	
 	######################################################
 	# 3. exits	
@@ -1765,7 +1846,9 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		record.append(b)
 	print("-- +%2s bytes, item condition requirements" % (len(item_spawn_require_bytes)))
 	
+	#####################################################
 	# 6. (2 bytes) Text shown when primary monster spawning
+	#####################################################
 	if location['text_spawn'] > 0:
 		byte_list = location['text_spawn'].to_bytes(2, byteorder='big')
 	else:
@@ -1774,7 +1857,9 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		record.append(b.to_bytes(1, byteorder='big'))
 	print("-- +%2s bytes, primary monster spawn text" % len(byte_list))
 	
+	#####################################################
 	# 7. (2 bytes) Text shown when primary monsters spawn, and are then defeated
+	#####################################################
 	if location['text_after_spawn'] > 0:	
 		byte_list = location['text_after_spawn'].to_bytes(2, byteorder='big')
 	else:
@@ -1783,7 +1868,9 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		record.append(b.to_bytes(1, byteorder='big'))
 	print("-- +%2s bytes, primary monster after spawn text" % len(byte_list))
 	
+	#####################################################
 	# 8. (2 bytes) Text shown when secondary monster spawning
+	#####################################################
 	if location['text_respawn'] > 0:
 		byte_list = location['text_respawn'].to_bytes(2, byteorder='big')
 	else:
@@ -1792,7 +1879,9 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		record.append(b.to_bytes(1, byteorder='big'))
 	print("-- +%2s bytes, primary monster respawn text" % len(byte_list))
 	
+	#####################################################
 	# 9. (2 bytes) Text shown when secondary monsters spawn, and are then defeated
+	#####################################################
 	if location['text_after_respawn'] > 0:	
 		byte_list = location['text_after_respawn'].to_bytes(2, byteorder='big')
 	else:
@@ -1801,89 +1890,80 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		record.append(b.to_bytes(1, byteorder='big'))
 	print("-- +%2s bytes, primary monster after respawn text" % len(byte_list))
 	
-	# 10. (1 byte) NPC 1
-	if location['npc1'] > 0:	
-		record.append(location['npc1'].to_bytes(1, byteorder='big'))
-	else:
-		record.append((0).to_bytes(1, byteorder='big'))
-	print("-- + 1 byte, NPC 1 ID")
+	#####################################################
+	# 10. NPCs
+	#####################################################
+	for npc in ['npc1', 'npc2', 'npc3']:
 	
-	# 11. (2 bytes to variable) Evaluation rule and requirements for NPC 1
-	npc1_require_bytes = []
-	if len(location['npc1_require']) == 0:
-		# 1 byte - Empty
-		npc1_require_bytes.append(CONDITION_RULES["COND_EVAL_EMPTY"].to_bytes(1, byteorder='big'))
-		# 1 byte - 0 conditions are to follow
-		npc1_require_bytes.append((0).to_bytes(1, byteorder='big'))
-	else:
-		# 1 byte - Evaluation rule
-		npc1_require_bytes.append(CONDITION_RULES[location['npc1_require'][0]].to_bytes(1, byteorder='big'))
-		# 1 byte - Number of conditions to follow
-		npc1_require_bytes.append(location['npc1_require'][1].to_bytes(1, byteorder='big'))
-		# 5 bytes - Per condition
-		for cond in location['npc1_require'][2:]:
-			total_conditions += 1
-			cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, cond)
-			if len(cond_record) != 5:
-				print("ERROR! Condition record for 'npc1_require' did not convert to 5 bytes!!!")
-				print("ERROR! %s" % cond_record)
-				return False
-			for c in cond_record:
-				npc1_require_bytes.append(c.to_bytes(1, byteorder='big'))
-	for b in npc1_require_bytes:
-		record.append(b)
-	print("-- +%2s bytes, NPC 1 condition requirements" % (len(npc1_require_bytes)))
+		if npc == 'npc1':
+			npc_id = location['npc1']
+			npc_require = location['npc1_require']
+			npc_unique_text_id = location['npc1_text'][0]
+			npc_text = location['npc1_text'][1]
+			
+		if npc == 'npc2':
+			npc_id = location['npc2']
+			npc_require = location['npc2_require']
+			npc_unique_text_id = location['npc2_text'][0]
+			npc_text = location['npc2_text'][1]
+			
+		if npc == 'npc3':
+			npc_id = location['npc3']
+			npc_require = location['npc3_require']
+			npc_unique_text_id = location['npc3_text'][0]
+			npc_text = location['npc3_text'][1]
 	
-	# 12. (2 bytes) NPC 1 text
-	if location['npc1_text'] > 0:	
-		byte_list = location['npc1_text'].to_bytes(2, byteorder='big')
-	else:
-		byte_list = (0).to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	print("-- +%2s bytes, NPC 1 text" % len(byte_list))
-	
-	# 13. (1 byte) NPC 2
-	if location['npc2'] > 0:	
-		record.append(location['npc2'].to_bytes(1, byteorder='big'))
-	else:
-		record.append((0).to_bytes(1, byteorder='big'))
-	print("-- + 1 byte, NPC 2 ID")
-	
-	# 14. (2 bytes to variable) Evaluation rule and requirements for NPC 2
-	npc2_require_bytes = []
-	if len(location['npc2_require']) == 0:
-		# 1 byte - Empty
-		npc2_require_bytes.append(CONDITION_RULES["COND_EVAL_EMPTY"].to_bytes(1, byteorder='big'))
-		# 1 byte - 0 conditions are to follow
-		npc2_require_bytes.append((0).to_bytes(1, byteorder='big'))
-	else:
-		# 1 byte - Evaluation rule
-		npc2_require_bytes.append(CONDITION_RULES[location['npc2_require'][0]].to_bytes(1, byteorder='big'))
-		# 1 byte - Number of conditions to follow
-		npc2_require_bytes.append(location['npc2_require'][1].to_bytes(1, byteorder='big'))
-		# 5 bytes - Per condition
-		for cond in location['npc2_require'][2:]:
-			total_conditions += 1
-			cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, cond)
-			if len(cond_record) != 5:
-				print("ERROR! Condition record for 'npc1_require' did not convert to 5 bytes!!!")
-				print("ERROR! %s" % cond_record)
-				return False
-			for c in cond_record:
-				npc2_require_bytes.append(c.to_bytes(1, byteorder='big'))
-	for b in npc2_require_bytes:
-		record.append(b)
-	print("-- +%2s bytes, NPC 2 condition requirements" % (len(npc2_require_bytes)))
-	
-	# 15. (2 bytes) NPC 2 text
-	if location['npc2_text'] > 0:	
-		byte_list = location['npc2_text'].to_bytes(2, byteorder='big')
-	else:
-		byte_list = (0).to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	print("-- +%2s bytes, NPC 2 text" % len(byte_list))
+		# 10. (1 byte) NPC 1
+		if location[npc] > 0:	
+			record.append(location[npc].to_bytes(1, byteorder='big'))
+		else:
+			record.append((0).to_bytes(1, byteorder='big'))
+		print("-- + 1 byte, %s ID" % npc)
+		
+		# 11. (2 bytes to variable) Evaluation rule and requirements for NPC 1
+		npc_require_bytes = []
+		if len(npc_require) == 0:
+			# 1 byte - Empty
+			npc_require_bytes.append(CONDITION_RULES["COND_EVAL_EMPTY"].to_bytes(1, byteorder='big'))
+			# 1 byte - 0 conditions are to follow
+			npc_require_bytes.append((0).to_bytes(1, byteorder='big'))
+		else:
+			# 1 byte - Evaluation rule
+			npc_require_bytes.append(CONDITION_RULES[npc_require[0]].to_bytes(1, byteorder='big'))
+			# 1 byte - Number of conditions to follow
+			npc_require_bytes.append(npc_require[1].to_bytes(1, byteorder='big'))
+			# 5 bytes - Per condition
+			for cond in npc_require[2:]:
+				print(cond)
+				total_conditions += 1
+				cond_record = evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, cond)
+				if len(cond_record) != 5:
+					print("ERROR! Condition record for %s require did not convert to 5 bytes!!!" % npc)
+					print("ERROR! %s" % cond_record)
+					return False
+				for c in cond_record:
+					npc_require_bytes.append(c.to_bytes(1, byteorder='big'))
+		for b in npc_require_bytes:
+			record.append(b)
+		print("-- +%2s bytes, %s condition requirements" % (len(npc_require_bytes), npc))
+		
+		# 12. (1 byte) NPC unique text id
+		if npc_unique_text_id > 0:	
+			byte_list = npc_unique_text_id.to_bytes(1, byteorder='big')
+		else:
+			byte_list = (0).to_bytes(1, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		print("-- +%2s bytes, %s unique text id" % (len(byte_list), npc))
+		
+		# 13. (2 bytes) NPC text string id
+		if npc_text > 0:	
+			byte_list = npc_text.to_bytes(2, byteorder='big')
+		else:
+			byte_list = (0).to_bytes(2, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		print("-- +%2s bytes, %s string id" % (len(byte_list), npc))
 		
 	if total_conditions > 0:
 		print("-- Location record contained %s conditional requirements" % total_conditions)
