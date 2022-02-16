@@ -54,6 +54,18 @@
 #define INPUT_QUIT		0x51		// uppercase 'Q'
 #define INPUT_QUIT_		0x71		// lowercase 'q'
 
+// Character screen tabs
+#define INPUT_OVERVIEW		0x4F	// P
+#define INPUT_OVERVIEW_		0x6F	// p
+#define INPUT_ITEMS			0x49	// I
+#define INPUT_ITEMS_		0x69	// i
+#define INPUT_WEAPONS		0x47	// W
+#define INPUT_WEAPONS_		0x77	// w
+#define INPUT_MAGIC			0x4D	// M
+#define INPUT_MAGIC_		0x6D	// m
+#define INPUT_STATUS		0x53	// S
+#define INPUT_STATUS_		0x73	// s
+
 // General keys
 #define INPUT_E			0x45		// uppercase 'E'
 #define INPUT_E_		0x65		// lowercase 'e'

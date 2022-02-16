@@ -103,8 +103,8 @@
 
 void ui_Draw(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawCombat(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawImage(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
-void ui_DrawText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+char ui_DrawCharacterScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char tab_id);
+void ui_DrawCharacterScreen_Overview(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawStatusBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char buttons, unsigned char labels);
 void ui_DrawSplashText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);

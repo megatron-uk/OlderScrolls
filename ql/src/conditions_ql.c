@@ -38,6 +38,7 @@ unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsig
 	unsigned char total_true = 0;
 	unsigned char i;
 	unsigned char cond[COND_LENGTH];
+	unsigned char retval = 0;
 	
 	
 	// Empty condition lists always evaluate to true
@@ -52,7 +53,7 @@ unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsig
 		
 		// Get next condition 
 		memcpy(cond, requires + (i * COND_LENGTH), COND_LENGTH);
-		//printf("Checking condition: %d\n", cond[0]);
+		//printf("Checking condition: [%d] of [%d] eval [%d]\n", cond[0], number, eval_type);
 		// Call correct condition check function
 		switch(cond[0]){
 			case SIMPLE_COND_TYPE:
@@ -100,34 +101,40 @@ unsigned char check_Cond(GameState_t *gamestate, LevelState_t *levelstate, unsig
 		case COND_EVAL_AND:
 			// All conditions must be true
 			if (total_true == number){
-				return 1;
+				retval = 1;
 			} else {
-				return 0;
+				retval = 0;
 			}
+			break;
 		case COND_EVAL_OR:
 			// At least one condition must be true
 			if (total_true > 0){
-				return 1;
+				retval = 1;
 			} else {
-				return 0;	
+				retval = 0;	
 			}
+			break;
 		case COND_EVAL_NOR:
 			// All conditions must be false
 			if (total_false == number){
-				return 1;	
+				retval = 1;	
 			} else {
-				return 0;	
+				retval = 0;	
 			}
+			break;
 		case COND_EVAL_NAND:
 			// 0 or 1 conditions must be true, but no more than 1.
 			if ((total_true == 1) || (total_true == 0)){
-				return 1;
+				retval = 1;
 			} else {
-				return 0;	
+				retval = 0;	
 			}
+			break;
 		default:
-			return 0;
+			break;
 	}
+	//printf("condition check returns [%d] [true:%d false:%d number:%d]\n", retval, total_true, total_false, number);
+	return retval;
 }
 
 unsigned char check_NoCond(GameState_t *gamestate, LevelState_t *levelstate, char *cond){
@@ -287,6 +294,7 @@ unsigned char check_Monster(GameState_t *gamestate, LevelState_t *levelstate, ch
 	unsigned char defeat_type = 0;
 	unsigned short defeat_location_id = 0;
 	unsigned char defeat_count = 0;
+	unsigned char retval = 0;
 	
 	// 1 byte
 	defeat_type = cond[1];
@@ -297,28 +305,35 @@ unsigned char check_Monster(GameState_t *gamestate, LevelState_t *levelstate, ch
 	// 1 byte
 	defeat_count = cond[4];
 		
+	//printf("checking [type:%d location:%d count:%d]\n", defeat_type, defeat_location_id, defeat_count);
+	
 	if (gamestate->level_visits[defeat_location_id] > 0){
 		// We visited here at least once
 		
 		if (defeat_type == COND_MONSTER_PRI_DEFEATED){
 			// Primary spawned monster beaten at least N times
 			if (gamestate->level_defeated_primary[defeat_location_id] >= defeat_count){
-				return 1;
+				retval = 1;
 			} else {
-				return 0;	
+				retval = 0;	
 			}
 		}
 		if (defeat_type == COND_MONSTER_SEC_DEFEATED){
 			// Secondary spawned monster beaten at least N times
 			if (gamestate->level_defeated_secondary[defeat_location_id] >= defeat_count){
-				return 1;
+				retval = 1;
 			} else {
-				return 0;	
+				retval = 0;	
 			}
 		}
-	} 
-	// Never visited this location, or an invalid check type so all monster checks here are failed
-	return 0;
+	}
+	// Never visited this location, so we can only pass the test if the defeat count is 0
+	if (defeat_count == 0){
+		retval = 1;	
+	}
+		
+	//printf("monster check returned [%d]\n", retval);
+	return retval;
 }
 
 unsigned char check_NPC(GameState_t *gamestate, LevelState_t *levelstate, char *cond){

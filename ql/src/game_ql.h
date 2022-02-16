@@ -46,4 +46,6 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
 unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
 
+void game_CheckAvailableParty(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+
 #endif

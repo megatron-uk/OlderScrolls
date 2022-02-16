@@ -24,10 +24,6 @@
 #ifndef _GAME_H
 #define _GAME_H
 
-#ifndef _MONSTERS_H
-#include "../common/monsters.h"
-#endif
-
 #define GAME_MODE_MAP		1		// General mode, reading text, with movement and talk options
 #define GAME_MODE_COMBAT	2		// In combat
 #define GAME_MODE_SHOP		3		// In shop
@@ -48,51 +44,9 @@
 #define MAX_EFFECTS			5		// maximum number of effects a spell or item can have
 #define MAX_DAMAGE_TYPES	3
 #define REQUIREMENT_BYTES 	5		// 5 bytes per requirement
-
-// Combat stances
-
-#define FORMATION_FRONT		0x00
-#define FORMATION_MID		0x01
-#define FORMATION_REAR		0x02
-
-// We can have up to 32 simultaneous status effects
-#define STATUS_OK 						0x00000000
-
-// Negative effects from 0x00000001 - 0x00040000
-#define STATUS_BLINDED 					0x00000001
-#define STATUS_FRIGHTENED				0x00000002
-#define STATUS_INCAPACITATED			0x00000004
-#define STATUS_INVISIBLE				0x00000008
-#define STATUS_PARALYZED				0x00000010
-#define STATUS_POISONED					0x00000020
-#define STATUS_PRONE					0x00000040
-#define STATUS_STUNNED					0x00000080
-#define STATUS_UNCONSCIOUS				0x00000100
-#define STATUS_EXHAUSTED				0x00000200
-#define STATUS_BLEEDING					0x00000400
-#define STATUS_BURNING					0x00000800
-#define STATUS_SILENCED					0x00001000
-#define STATUS_WEAKENED					0x00002000
-#define STATUS_SLOWED					0x00004000
-#define STATUS_PRECISE					0x00008000
-#define STATUS_POWERFUL					0x00010000
-#define STATUS_BLESSED					0x00020000
-#define STATUS_CURSED					0x00040000
-
-// Positive effects from 0x00080000 - 0x80000000
-#define STATUS_FRENZY					0x00080000
-#define STATUS_UNSTOPPABLE				0x00100000
-#define STATUS_REGENERATION				0x00200000
-#define STATUS_ELEMENTAL_RESISTANCE	0x00400000
-#define STATUS_FIRE_RESISTANCE			0x00800000
-#define STATUS_STALWART					0x01000000
-#define STATUS_COLD_RESISTANCE			0x02000000
-#define STATUS_POISON_RESISTANCE	 	0x04000000
-#define STATUS_ACID_RESISTANCE			0x08000000
-#define STATUS_THORNS					0x10000000
-#define STATUS_LIGHTNING_RESISTANCE	0x20000000
-#define STATUS_MAGICAL_RESISTANCE		0x40000000
-#define STATUS_PHYSICAL_RESISTANCE		0x80000000
+#define MAX_PLAYER_CLASSES 16
+#define MAX_PROFICIENCIES	10
+#define MAX_PLAYER_RACES	5
 
 // Characters can be of 3 different types
 #define CHARACTER_TYPE_MONSTER 0
@@ -168,7 +122,8 @@ typedef struct {
 	unsigned short id;					// Character ID
 	unsigned char type;					// CHARACTER_TYPE_NPC, CHARACTER_TYPE_MONSTER, CHARACTER_TYPE_BOSS
 	unsigned char sprite_type;			// SPRITE_CLASS_NORMAL, SPRITE_CLASS_BOSS
-	unsigned char player_class;			// HUMAN_ROGUE, HUMAN_UNTRAINED, BEAST_MAGIC etc, see monsters.h
+	unsigned char player_class;			// ROGUE, DRUID, GENERIC_MELEE, UNTRAINED etc, see monsters.h
+	unsigned char player_race;			// HUMAN, ELF, ORC, BEAST etc
 	unsigned char level;				// 1-10
 	unsigned short profile;				// Melee, Ranged, Magic Attack, Magic Support behaviour
 										// 4 bits each for how aggressive the character is in that area.

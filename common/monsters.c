@@ -1,5 +1,4 @@
-/* monsters.h, Generic monster definitions and classes for the 
- OlderScrolls RPG game engine.
+/* monsters.c, Generic monster strings etc for all OlderScrolls engines.
  
  Copyright (C) 2021  John Snowdon
   
@@ -18,6 +17,5 @@
 */
 
 #ifndef _MONSTERS_H
-
-#define _MONSTERS_H
+#include "../common/monsters.h"
 #endif

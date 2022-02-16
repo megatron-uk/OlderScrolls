@@ -29,6 +29,9 @@
 #ifndef _GAME_H
 #include "../common/game.h"
 #endif
+#ifndef _ENGINE_H
+#include "../common/engine.h"
+#endif
 #ifndef _DRAW_H
 #include "../common/draw.h"
 #endif

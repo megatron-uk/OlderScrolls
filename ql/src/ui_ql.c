@@ -45,6 +45,12 @@
 #ifndef _ERROR_H
 #include "../common/error.h"
 #endif
+#ifndef _MONSTERS_H
+#include "../common/monsters.h"
+#endif
+#ifndef _ENGINE_H
+#include "../common/engine.h"
+#endif
 
 void ui_Draw(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
 	// Draws the main user interface - top bar with game name and turn counter
@@ -81,14 +87,212 @@ void ui_DrawCombat(Screen_t *screen, GameState_t *gamestate, LevelState_t *level
 	screen->dirty = 1;
 }
 
-void ui_DrawImage(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
+void ui_DrawCharacterScreen_Overview(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
+	// Draw the overview character screen
 	
-	screen->dirty = 1;
+	PlayerState_t *pc;
+	unsigned char i;
+	char pc_id = gamestate->players->current - 1;
+	unsigned char dice_quantity = 0;
+	unsigned char dice_type = 0;
+	unsigned char proficiency = 0;
+	char constitution_modifier = 0;
+	
+	// Load the player character
+	pc = gamestate->players->player[pc_id];
+	
+	// ==========================================
+	// Left hand column
+	// ==========================================
+	
+	// Character portrait
+	draw_Box(screen, 8, 16, DRAW_PORTRAIT_WIDTH + 1, DRAW_PORTRAIT_HEIGHT + 1, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_SET);
+	draw_Sprite(screen, 9, 17, screen->players[pc_id], 1);
+	
+	// Name, Class, Race
+	sprintf(gamestate->buf, "<r>Character<C>\nName : %s\nClass: %s\nRace : %s", pc->name, player_classes[pc->player_class], player_races[pc->player_race]);
+	draw_String(screen, 6, 18, 24, 4, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf, MODE_PIXEL_SET);
+	
+	// ==========================================
+	// Central divider
+	// ==========================================
+	draw_VLine(screen, 255, 20, 200, PIXEL_RED, MODE_PIXEL_SET);
+	
+	// ==========================================
+	// Right hand column
+	// ==========================================
+	
+	// Attribute values and their respective modifiers
+	sprintf(gamestate->buf, "<r>Attribute<C>\nStrength\nDexterity\nConstitution\nWisdom\nIntelligence\nCharisma");
+	draw_String(screen, 33, 18, 12, 13, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf, MODE_PIXEL_SET);
+	sprintf(gamestate->buf, "<r>Value<C>\n%d\n%d\n%d\n%d\n%d\n%d", pc->str, pc->dex, pc->con, pc->wis, pc->intl, pc->chr);
+	draw_String(screen, 47, 18, 12, 13, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf, MODE_PIXEL_SET);
+	sprintf(gamestate->buf, "<r>Modifier<C>\n%d\n%d\n%d\n%d\n%d\n%d", ability_Modifier(pc->str), ability_Modifier(pc->dex), ability_Modifier(pc->con), ability_Modifier(pc->wis), ability_Modifier(pc->intl), ability_Modifier(pc->chr));
+	draw_String(screen, 54, 18, 12, 13, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf, MODE_PIXEL_SET);
+	
+	// Print out the HP increase per level
+	constitution_modifier = ability_Modifier(pc->con);
+	hit_Dice(pc, &dice_quantity, &dice_type, &constitution_modifier);
+	sprintf(gamestate->buf, "HP per level: %dx D%d +%d", dice_quantity, dice_type, constitution_modifier);
+	draw_String(screen, 33, 100, 30, 1, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf, MODE_PIXEL_SET);
+	
+	// Print out skills we are proficient in
+	sprintf(gamestate->buf, "<r>Skills<C>\n");
+	for (i = 0; i < MAX_PROFICIENCIES; i++){
+		proficiency = player_class_proficiencies[pc->player_class][i];
+		if (proficiency != 0){
+			sprintf(gamestate->buf + strlen(gamestate->buf), "+%d %s\n", is_proficient(pc, proficiency), proficiencies[proficiency]);
+		}
+	}
+	draw_String(screen, 33, 120, 30, 11, 0, screen->font_8x8, PIXEL_WHITE, gamestate->buf, MODE_PIXEL_SET);
 }
 
-void ui_DrawText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
+void ui_DrawCharacterScreen_Status(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
+	// Draw the status screen of all active effects on the character
 	
-	screen->dirty = 1;
+	PlayerState_t *pc;
+	unsigned char i;
+	char pc_id = gamestate->players->current - 1;
+		
+	// Load the player character
+	pc = gamestate->players->player[pc_id];
+	
+	// Column 1 of effects
+	for (i = 0; i < 16; i++){
+		draw_Box(screen, 30, 18 + (i * 12), 8, 8, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_SET);	
+		draw_String(screen, 6, 19 + (i * 12), 16, 1, 0, screen->font_8x8, PIXEL_WHITE, status_effects[i], MODE_PIXEL_SET); 
+	}
+	
+	// Column 2 of effects
+	for (i = 0; i < 16; i++){
+		draw_Box(screen, 300, 18 + (i * 12), 8, 8, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_SET);	
+		draw_String(screen, 40, 19 + (i * 12), 16, 1, 0, screen->font_8x8, PIXEL_WHITE, status_effects[(16 + i)], MODE_PIXEL_SET);
+	}
+	
+	
+}
+
+char ui_DrawCharacterScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char tab_id){
+	// Draw the player character detail screen to check their status, inventory etc
+
+	char modestring[16];
+	char new_mode = 0;
+	unsigned char c;
+	unsigned char e = 0;
+	
+	input_Clear();
+	input_Set(INPUT_CANCEL);
+	input_Set(INPUT_OVERVIEW);
+	input_Set(INPUT_OVERVIEW_);
+	input_Set(INPUT_ITEMS);
+	input_Set(INPUT_ITEMS_);
+	input_Set(INPUT_WEAPONS);
+	input_Set(INPUT_WEAPONS_);
+	input_Set(INPUT_MAGIC);
+	input_Set(INPUT_MAGIC_);
+	input_Set(INPUT_STATUS);
+	input_Set(INPUT_STATUS_);
+	
+	// Basic screen clear and outline
+	draw_Clear(screen);
+	draw_Box(screen, 0, 10, SCREEN_WIDTH, SCREEN_HEIGHT - 11, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_SET);
+	
+	// Draw all tabs
+	// Overview
+	draw_Box(screen, 0, 0, 101, 10, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_OR);
+	draw_String(screen, 0 + 2, 2, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>O<C>verview", MODE_PIXEL_OR);
+	
+	// Inventory
+	draw_Box(screen, 102, 0, 101, 10, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_OR);
+	draw_String(screen, 102 / 8 + 2, 2, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>I<C>tems", MODE_PIXEL_OR);
+	
+	// Equipment
+	draw_Box(screen, 204, 0, 101, 10, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_OR);
+	draw_String(screen, 204 / 8 + 2, 2, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>W<C>eapons", MODE_PIXEL_OR);
+	
+	// Magic
+	draw_Box(screen, 306, 0, 101, 10, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_OR);
+	draw_String(screen, 306 / 8 + 2, 2, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>M<C>agic", MODE_PIXEL_OR);
+	
+	// Status
+	draw_Box(screen, 408, 0, 104, 10, 1, PIXEL_RED, PIXEL_CLEAR, MODE_PIXEL_OR);
+	draw_String(screen, 408 / 8 + 2, 2, 12, 1, 0, screen->font_8x8, PIXEL_WHITE, "<r>S<C>tatus", MODE_PIXEL_OR);
+	
+	// Draw the selected tab
+	switch(tab_id){
+		case 0:
+			strcpy(modestring, "Overview");
+			break;
+		case 1:
+			strcpy(modestring, "Items");
+			break;
+		case 2:
+			strcpy(modestring, "Weapons");
+			break;
+		case 3:
+			strcpy(modestring, "Magic");
+			break;
+		case 4:
+			strcpy(modestring, "Status");
+			break;
+	}
+	draw_Box(screen, tab_id * 102, 0, 101, 10, 1, PIXEL_RED, PIXEL_RED, MODE_PIXEL_OR);
+	draw_String(screen, (tab_id * 102) / 8 + 2, 2, strlen(modestring), 1, 0, screen->font_8x8, PIXEL_WHITE, modestring, MODE_PIXEL_OR);
+	
+	//=======================================
+	// Main character overview display 
+	//=======================================
+	switch(tab_id){
+		case 0:
+			ui_DrawCharacterScreen_Overview(screen, gamestate, levelstate);
+			break;
+		case 4:
+			ui_DrawCharacterScreen_Status(screen, gamestate, levelstate);
+			break;
+	}
+	
+	// Draw overview UI
+	// Draw 
+	
+	//draw_Flip(screen);
+	
+	while(!e){
+		c = input_Get(screen);
+		switch(c){
+			case INPUT_OVERVIEW:
+			case INPUT_OVERVIEW_:
+				new_mode = 0;
+				e = 1;
+				break;
+			case INPUT_ITEMS:
+			case INPUT_ITEMS_:
+				new_mode = 1;
+				e = 1;
+				break;
+			case INPUT_WEAPONS:
+			case INPUT_WEAPONS_:
+				new_mode = 2;
+				e = 1;
+				break;
+			case INPUT_MAGIC:
+			case INPUT_MAGIC_:
+				new_mode = 3;
+				e = 1;
+				break;
+			case INPUT_STATUS:
+			case INPUT_STATUS_:
+				new_mode = 4;
+				e = 1;
+				break;
+			case INPUT_CANCEL:
+				new_mode = -1;
+				e = 1;
+				break;
+			default:
+				break;
+		}
+	}	
+	return new_mode;
 }
 
 void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
@@ -639,6 +843,8 @@ void ui_DrawError(Screen_t *screen, char *title, char *text, short errorcode){
 
 void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
 
+	unsigned char c;
+	unsigned char e = 0;
 	unsigned short i;
 	unsigned short locations = 0;
 	unsigned short primary = 0;
@@ -732,4 +938,18 @@ void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 	draw_String(screen, 1, SCREEN_HEIGHT - 10, 32, 1, 0, screen->font_8x8, PIXEL_RED, "Press [ESC] to return to game", MODE_PIXEL_SET);
 	
 	screen->dirty = 1;
+	draw_Flip(screen);
+	
+	input_Clear();
+	input_Set(INPUT_CANCEL);
+	while(!e){
+		c = input_Get(screen);
+		switch(c){
+			case INPUT_CANCEL:
+				e = 1;
+				break;
+			default:
+				break;
+		}
+	}
 }

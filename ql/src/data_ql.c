@@ -291,6 +291,9 @@ int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 		read(f, &levelstate->npc1_require, (COND_LENGTH * levelstate->npc1_require_number));
 	}
 	
+	// (1 byte) NPC 1 unique dialogue ID
+	read(f, &levelstate->npc1_text_unique_id, 1);
+	
 	// (2 byte) NPC 1 text ID
 	read(f, &levelstate->npc1_text, 2);
 		
@@ -298,26 +301,44 @@ int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 	// NPC 2
 	// ==================================================
 	
-	// (1 byte) NPC 1 ID
+	// (1 byte) NPC 2 ID
 	read(f, &levelstate->npc2, 1);
 	
-	// NPC 1 spawn condition (min 2 bytes, possibly 7+)
+	// NPC 2 spawn condition (min 2 bytes, possibly 7+)
 	read(f, &levelstate->npc2_eval_type, 1);
 	read(f, &levelstate->npc2_require_number, 1);
 	if (levelstate->npc2_require_number != 0){
 		read(f, &levelstate->npc2_require, (COND_LENGTH * levelstate->npc2_require_number));
 	}
 	
-	// (2 byte) NPC 1 text ID
+	// (1 byte) NPC 2 unique dialogue ID
+	read(f, &levelstate->npc2_text_unique_id, 1);
+	// (2 byte) NPC 2 text ID
 	read(f, &levelstate->npc2_text, 2);
 	
-	// Monsters have not spawned yet
-	levelstate->spawned = 0;
+	// ==================================================
+	// NPC 3
+	// ==================================================
 	
-	//printf("n: exit id:%d text id:%d\n", levelstate->north, levelstate->north_text);
-	//printf("s: exit id:%d text id:%d\n", levelstate->south, levelstate->south_text);
-	//printf("e: exit id:%d text id:%d\n", levelstate->east, levelstate->east_text);
-	//printf("w: exit id:%d text id:%d\n", levelstate->west, levelstate->west_text);
+	// (1 byte) NPC 3 ID
+	read(f, &levelstate->npc3, 1);
+	
+	// NPC 3 spawn condition (min 2 bytes, possibly 7+)
+	read(f, &levelstate->npc3_eval_type, 1);
+	read(f, &levelstate->npc3_require_number, 1);
+	if (levelstate->npc3_require_number != 0){
+		read(f, &levelstate->npc3_require, (COND_LENGTH * levelstate->npc3_require_number));
+	}
+	
+	// (1 byte) NPC 3 unique dialogue ID
+	read(f, &levelstate->npc3_text_unique_id, 1);
+	// (2 byte) NPC 3 text ID
+	read(f, &levelstate->npc3_text, 2);
+	
+	levelstate->spawned = 0;	// Monsters have not spawned yet
+	levelstate->has_npc1 = 0;	// NPC 1 ise not available until their condition requirements are evaluated
+	levelstate->has_npc2 = 0;	// NPC 2
+	levelstate->has_npc3 = 0;	// NPC 3
 	
 	close(f);
 	return DATA_LOAD_OK;
@@ -479,6 +500,7 @@ int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t
 	unsigned short sprite_id, portrait_id;
 	unsigned char i;
 	unsigned char w = 0;
+	unsigned char b;
 	int seek_offset = MONSTER_ENTRY_SIZE * character_id;
 	
 	//printf("searching id: %d\n", character_id);
@@ -534,7 +556,9 @@ int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t
 	read(f, &portrait_id, 2);
 	
 	// 7. (1 byte) character class	
-	read(f, &playerstate->player_class, 1);
+	read(f, &b, 1);
+	playerstate->player_class = b << 4;	// Class is the lower 4 bits
+	playerstate->player_race = b >> 4;		// Race is the upper 4 bits
 	
 	// 8. (1 byte) character level
 	read(f, &playerstate->level, 1);
@@ -624,7 +648,6 @@ char data_AddNPC(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 	npc = data_FindNPC(gamestate->npcs, id);
 	if (npc){
 		// Found, no need to create
-		ui_DrawError(screen, "NPC Found", "Found npc matching id", npc->id);
 		return DATA_LOAD_OK;
 	}
 	

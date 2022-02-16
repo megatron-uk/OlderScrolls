@@ -20,9 +20,10 @@ AS = as68
 # Compiler flags
 #################################
 ASFLAGS = 
-LDFLAGS = -v
+LDFLAGS =
 INCLUDES = -I./src
-CFLAGS = ${INCLUDES} -O -seperate=yes -peep=all -DTARGET_QL
+CFLAGS_V = ${INCLUDES} -O -Qobsolete=yes -seperate=yes -stackopt=average -warn=5 -DTARGET_QL
+CFLAGS = ${INCLUDES} -O -Qobsolete=yes -seperate=yes -stackopt=average -warn=4 -extension=yes -DTARGET_QL
 LIBS = 
 
 #################################
@@ -39,6 +40,7 @@ FLOPPY_NAME = "GameFloppy"
 all: $(TARGET)
 full: clean $(TARGET) newdisk copydisk rundisk_128
 run: rundisk_128
+runslow: rundisk_slow
 run128: rundisk_128
 run192: rundisk_192
 run256: rundisk_256
@@ -48,18 +50,62 @@ run640: rundisk_640
 # Object files needed to build our 
 # main application
 #################################
-OBJFILES = src/bmp_ql.o src/input_ql.o src/main_ql.o src/conditions_ql.o src/data_ql.o src/draw_ql.o src/ui_ql.o src/utils_ql.o src/game_ql.o
 
+# Standard game engine code
+
+src/engine.o: common/engine.c common/engine.h
+	$(CC) $(CFLAGS) -c common/engine.c -o src/engine.o
+
+src/monsters.o: common/monsters.c common/monsters.h
+	$(CC) $(CFLAGS) -c common/monsters.c -o src/monsters.o
+	
+# Platform specific
+	
+src/bmp_ql.o: src/bmp_ql.c src/bmp_ql.h
+	$(CC) $(CFLAGS) -c src/bmp_ql.c -o src/bmp_ql.o
+
+src/input_ql.o: src/input_ql.c src/input_ql.h
+	$(CC) $(CFLAGS) -c src/input_ql.c -o src/input_ql.o
+	
+src/main_ql.o: src/main_ql.c src/main_ql.h
+	$(CC) $(CFLAGS) -c src/main_ql.c -o src/main_ql.o
+	
+src/conditions_ql.o: src/conditions_ql.c
+	$(CC) $(CFLAGS) -c src/conditions_ql.c -o src/conditions_ql.o
+	
+src/data_ql.o: src/data_ql.c src/data_ql.h
+	$(CC) $(CFLAGS) -c src/data_ql.c -o src/data_ql.o
+	
+src/draw_ql.o: src/draw_ql.c src/draw_ql.h
+	$(CC) $(CFLAGS) -c src/draw_ql.c -o src/draw_ql.o
+	
+src/ui_ql.o: src/ui_ql.c src/ui_ql.h
+	$(CC) $(CFLAGS) -c src/ui_ql.c -o src/ui_ql.o
+	
+src/utils_ql.o: src/utils_ql.c src/utils_ql.h
+	$(CC) $(CFLAGS) -c src/utils_ql.c -o src/utils_ql.o
+	
+src/game_ql.o: src/game_ql.c src/game_ql.h
+	$(CC) $(CFLAGS) -c src/game_ql.c -o src/game_ql.o
+
+src/poll.o: src/poll.s src/poll.h
+	$(AS) src/poll.s -o src/poll.o
+	
 #################################
 # Main application target build recipe
 #################################
-$(TARGET):  $(OBJFILES)
+$(TARGET): src/engine.o src/monsters.o src/bmp_ql.o src/input_ql.o src/main_ql.o src/conditions_ql.o src/data_ql.o src/draw_ql.o src/ui_ql.o src/utils_ql.o src/game_ql.o src/poll.o
 	@echo ""
 	@echo "=========================="
 	@echo " Linking binary"
 	@echo ""
 	@echo "- Calling C68 ld..."
-	$(LD) $(LDFLAGS) $(OBJFILES) $(LIBS) -o bin/$(TARGET)
+	$(LD) $(LDFLAGS) \
+		src/engine.o src/monsters.o \
+		src/bmp_ql.o src/input_ql.o src/main_ql.o src/conditions_ql.o \
+		src/data_ql.o src/draw_ql.o src/ui_ql.o src/utils_ql.o src/game_ql.o \
+		src/poll.o \
+	$(LIBS) -o bin/$(TARGET)
 	
 ###############################
 # Makes a new blank QL floppy
@@ -84,9 +130,9 @@ copydisk:
 	@echo " Copying data to QL disk"
 	@echo ""
 	@echo "- Copying data..."
-	qltools bin/${FLOPPY} -W assets/font8x8.bmp
 	qltools bin/${FLOPPY} -W assets/*.dat
 	qltools bin/${FLOPPY} -W assets/*.idx
+	qltools bin/${FLOPPY} -W assets/*.bmp
 	@echo ""
 	@echo "- Copying binary..."
 	qltools bin/${FLOPPY} -W bin/${TARGET}
@@ -100,6 +146,14 @@ copydisk:
 ###############################
 # Run a QL emulator
 ###############################
+rundisk_slow:
+	@echo ""
+	@echo "=========================="
+	@echo " Running QL emulator"
+	@echo ""
+	@echo "- Calling emulator..."
+	sqlux -f etc/sqlux_128kb_slow.ini -w 2x -b 'exec_w flp1_game'
+
 rundisk_128:
 	@echo ""
 	@echo "=========================="
@@ -155,31 +209,3 @@ clean:
 # an object file, to be linked
 # as a single binary, above.
 ################################
-DEPS = src/%.h
-
-bmp_ql.o: bmp_ql.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@
-
-input_ql.o: input_ql.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@
-	
-main_ql.o: main_ql.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@
-	
-conditions_ql.o: conditions_ql.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@
-	
-data_ql.o: data_ql.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@
-	
-draw_ql.o: draw_ql.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@
-
-game_ql.o: game_ql.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@
-	
-ui_ql.o: ui_ql.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@
-	
-utils_ql.o: utils_ql.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@
