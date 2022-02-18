@@ -31,9 +31,10 @@
 
 #define MAX_PLAYERS			4
 #define MAX_PLAYER_NAME 	18
+#define MAX_WEAPON_NAME		18
 #define MAX_SHORT_NAME 		8
 #define MAX_REWARD_ITEMS 	6		// Number of items that may be rewarded upon visiting a location, or upon defeat of primary monster(s)
-#define MAX_ITEMS 			32		// The size of player inventory
+#define MAX_ITEMS 			16		// The size of player inventory
 #define MAX_LEVEL_NAME_SIZE 32		// How long a level name can be
 #define MAX_STORY_TEXT_SIZE 1024 	// The buffer which holds the text to be shown on screen about a location
 #define MAX_LOCATIONS 		256		// The maximum number of levels we can track - stories should not have more than this!
@@ -60,13 +61,14 @@ typedef struct {
 	unsigned char item_id;
 	unsigned char weapon_type;		// 1H, 2H, etc
 	unsigned char weapon_class;		// Simple, martial, ranged, magical etc
-	unsigned char weapon_size;		// small, medium, large, huge, etc
+	unsigned char size;				// small, medium, large, huge, etc
 	unsigned char rarity;			// Common, uncommon, rare, legendary
-	unsigned char name[MAX_PLAYER_NAME];			// Name of weapon, e.g. "Longsword"
+	unsigned char name[MAX_WEAPON_NAME];			// Name of weapon, e.g. "Longsword"
+	unsigned char proficiency_1	;	//
+	unsigned char proficiency_2	;	//
 	unsigned char crit_min;			// Minimum roll for critical, e.g 19
 	unsigned char crit_max;			// Maximum roll for critical, e.g. 20
 	unsigned char crit_multi;		// Number of rolls if critical, e.g. 2x
-	unsigned char damage_types[MAX_DAMAGE_TYPES];	// Up to 3 damage types per weapon
 	unsigned char dmg1_type;		// e.g. PHYSICAL
 	unsigned char dmg1_min;			// minimum range of damage, e.g. 1
 	unsigned char dmg1_max;			// minimum range of damage, e.g. 6
@@ -79,6 +81,11 @@ typedef struct {
 	unsigned char dmg3_min;			// minimum range of damage, e.g. 1
 	unsigned char dmg3_max;			// minimum range of damage, e.g. 6
 	unsigned char dmg3_rolls;		// number of rolls of this damage type, e.g. 1
+	unsigned char versatile;
+	unsigned char finesse;
+	unsigned char silvered;
+	unsigned char bonus;
+	unsigned short value;
 } WeaponState_t;
 
 // Data for a single spell

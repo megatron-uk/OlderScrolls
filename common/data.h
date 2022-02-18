@@ -31,6 +31,13 @@
 #define DATA_HEADER_ENTRY_SIZE		6
 #define DATA_HEADER_RECORD_SIZE		2
 #define DATA_HEADER_OFFSET_SIZE		4
+#define WEAPON_DAT_SIZE				43
+//#define ITEM_DAT_SIZE				??
+
+// Not defined here, but on a target level
+// SPRITE_DAT_SIZE
+// PORTRAIT_DAT_SIZE
+// BOSS_DAT_SIZE
 
 // ============================================
 // These prototypes are standard for all targets

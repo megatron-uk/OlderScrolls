@@ -93,12 +93,15 @@
 #define PROFICIENCY_WEAPON_DAGGER		13
 #define PROFICIENCY_WEAPON_MACE			14
 #define PROFICIENCY_WEAPON_STAFF		15
-#define PROFICIENCY_SAVE_STRENGTH		16
-#define PROFICIENCY_SAVE_CONSTITUTION	17
-#define PROFICIENCY_SAVE_DEXTERITY		18
-#define PROFICIENCY_SAVE_CHARISMA		19
-#define PROFICIENCY_SAVE_WISDOM			20
-#define PROFICIENCY_SAVE_INTELLIGENCE	21
+#define PROFICIENCY_WEAPON_RANGED		16
+#define PROFICIENCY_WEAPON_MAGIC		17
+#define PROFICIENCY_SAVE_STRENGTH		18
+#define PROFICIENCY_SAVE_CONSTITUTION	19
+#define PROFICIENCY_SAVE_DEXTERITY		20
+#define PROFICIENCY_SAVE_CHARISMA		21
+#define PROFICIENCY_SAVE_WISDOM			22
+#define PROFICIENCY_SAVE_INTELLIGENCE	23
+
 
 // Player character and monster classes
 #define CLASS_UNTRAINED				0
@@ -123,6 +126,39 @@
 #define RACE_BEAST					2
 #define RACE_ORC					3
 #define RACE_ELF					4
+
+// Weapon damage types
+#define WEAPON_DMG_PHYSICAL			0
+#define WEAPON_DMG_SLASHING			1
+#define WEAPON_DMG_PIERCING			2
+#define WEAPON_DMG_BLUNT			3
+#define WEAPON_DMG_LIGHTNING		4
+#define WEAPON_DMG_ACID				5
+#define WEAPON_DMG_FIRE				6
+#define WEAPON_DMG_COLD				7
+#define WEAPON_DMG_POISON			8
+
+// Weapon sizes
+#define WEAPON_SIZE_SMALL			0
+#define WEAPON_SIZE_MEDIUM			1
+#define WEAPON_SIZE_LARGE			2
+#define WEAPON_SIZE_HUGE			3
+
+// Weapon rarity (e.g. availability from vendors)
+#define WEAPON_RARITY_COMMON		0
+#define WEAPON_RARITY_UNCOMMON		1
+#define WEAPON_RARITY_RARE			2
+#define WEAPON_RARITY_LEGENDARY		3
+
+// Weapon classes
+#define WEAPON_CLASS_SIMPLE			0
+#define WEAPON_CLASS_MARTIAL		1
+#define WEAPON_CLASS_RANGED			2
+#define WEAPON_CLASS_MAGICAL		3
+
+// Weapon grip
+#define WEAPON_1HANDED				0
+#define WEAPON_2HANDED				1
 
 extern const char *player_classes[];
 extern const char *player_races[];
