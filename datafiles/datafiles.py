@@ -28,7 +28,7 @@ from PIL import Image	# For verifying sprite bitmap dimensions and colour depth
 
 from datasettings import *
 
-DEBUG =0
+DEBUG =1
 
 ##################################################################################
 #
@@ -690,370 +690,210 @@ def generate_characters(import_dir = None, target = None):
 			return False
 		print("...done!")
 
-def character_to_record(character_id, character_type, character, item_ids, weapon_ids, bitmaps):
-	""" Generates the string of bytes that represents a character/npc/monster in a datafile """
-	
-	record = []
-	
-	print("-- Character ID: %3s [%18s]" % (character_id, character['name']))
-	
-	######################################################
-	# 0. (2 bytes) ID of character
-	######################################################
-	byte_list = character_id.to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, ID: %s" % (len(byte_list), character_id))
-	
-	######################################################
-	# 1. (18 bytes) character name (MAX_PLAYER_NAME)
-	######################################################
-	byte_list = []
-	if len(character['name']) > MAX_PLAYER_NAME:
-		print("ERROR! Character name [%s] is greater than %d bytes!!!" % (character['name'], MAX_PLAYER_NAME))
-		return False
-	for c in character['name']:
-		byte_list.append(ord(c).to_bytes(1, byteorder='big'))
-	for i in range(len(byte_list), MAX_PLAYER_NAME):
-		byte_list.append(0x00.to_bytes(1, byteorder='big'))
-	for b in byte_list:
-		record.append(b)
-	if DEBUG:
-		print("-- +%2s bytes, name: [%s]" % (len(byte_list), character['name']))
-	
-	######################################################
-	# 2. (1 bytes) TYPE of character (MONSTER/NPC)
-	######################################################
-	character_type_lookup = False
-	
-	if character['type'] in CHARACTER_TYPES.keys():
-		character_type_lookup = CHARACTER_TYPES[character['type']]
-		
-	if character_type_lookup is not False:
-		byte_list = character_type_lookup.to_bytes(1, byteorder='big')
-		for b in byte_list:
-			record.append(b.to_bytes(1, byteorder='big'))
-		
-		if DEBUG:
-			print("-- +%2s bytes, CHARACTER TYPE: %s" % (len(byte_list), character_type_lookup))
-	else:
-		print("ERROR - Unable to determine valid character type for character ID:%s %s" %(character_id, character['type']))
-		return False
-	
-	######################################################
-	# 3. (1 bytes) SPRITE TYPE (NORMAL/BOSS)
-	######################################################
-	sprite_type_lookup = False
-	
-	if character['sprite_type'] in SPRITE_CLASSES.keys():
-		sprite_type_lookup = SPRITE_CLASSES[character['sprite_type']]
-	
-	if sprite_type_lookup is not False:
-		byte_list = sprite_type_lookup.to_bytes(1, byteorder='big')
-		for b in byte_list:
-			record.append(b.to_bytes(1, byteorder='big'))
-		if DEBUG:
-			print("-- +%2s bytes, SPRITE TYPE: %s" % (len(byte_list), sprite_type_lookup))
-	else:
-		print("ERROR - Unable to determine valid sprite type for character ID:%s %s" %(character_id, character['sprite_type']))
-		return False
-	
-	######################################################
-	# 4. (2 bytes) per SPRITE filename(ID of the bitmaps processed earlier)
-	#    Up to SPRITE_ANIMATION_FRAMES per sprite class
-	######################################################
-	for sprite_file_class in ["resting_sprite", "attack_sprite", "magic_sprite", "wounded_sprite", "death_sprite"]:
-		
-		sprite_size = character['sprite_type']
-		
-		#SPRITE_ANIMATION_FRAMES
-		sprite_frames = 0
-		for sprite_filename in character[sprite_file_class]:
-			
-			sprite_id_lookup = False
-		
-			#sprite_filename = character[sprite]
-			
-			if sprite_filename == "":
-				sprite_id_lookup = 0
-			
-			else:
-				if sprite_filename in bitmaps[sprite_size].keys():
-					sprite_id_lookup = bitmaps[sprite_size][sprite_filename]['id']
-				else:
-					print("ERROR - Unable to find processed sprite for character ID:%s %s %s" %(character_id, sprite_file_class, sprite_filename))
-					return False
-					
-			if sprite_id_lookup is not False:
-				byte_list = sprite_id_lookup.to_bytes(2, byteorder='big')
-				for b in byte_list:
-					record.append(b.to_bytes(1, byteorder='big'))
-				if DEBUG:
-					print("-- +%2s bytes, %s SPRITE FRAME %s: %s" % (len(byte_list), sprite_file_class, sprite_frames, sprite_id_lookup))
-				
-			sprite_frames += 1
-		
-		# Add in null sprites if we don't have enough full frames
-		if sprite_frames < SPRITE_ANIMATION_FRAMES:
-			
-			for i in range(sprite_frames, SPRITE_ANIMATION_FRAMES):
-				byte_list = (0).to_bytes(2, byteorder='big')
-				for b in byte_list:
-					record.append(b.to_bytes(1, byteorder='big'))
-				if DEBUG:
-					print("-- +%2s bytes, %s NULL SPRITE FRAME %s" % (len(byte_list), sprite_file_class, i))
-				
-		if sprite_frames > SPRITE_ANIMATION_FRAMES:
-			print("ERROR - Too many animation frames [%s] are defined for ID:%s %s" %(sprite_frames, character_id, sprite_file_class))
-			print("ERROR - Maximum animation frames is %s" % SPRITE_ANIMATION_FRAMES)
-			return False
-	
-	######################################################
-	# 5. (2 bytes) PORTRAIT SPRITE (ID of the bitmaps processed earlier)
-	######################################################
-	
-	sprite_id_lookup = False
-	sprite_file_class = "portrait_name"
-	sprite_filename = character["portrait_name"][0]
-	
-	if sprite_filename == "":
-		sprite_id_lookup = 0
-	
-	else:
-		
-		if sprite_filename in bitmaps['SPRITE_CLASS_PORTRAIT'].keys():
-			sprite_id_lookup = bitmaps['SPRITE_CLASS_PORTRAIT'][sprite_filename]['id']
-		else:
-			print("ERROR - Unable to find processed portrait for character ID:%s %s %s" %(character_id, sprite_file_class, sprite_filename))
-			return False
-			
-	if sprite_id_lookup is not False:
-		byte_list = sprite_id_lookup.to_bytes(2, byteorder='big')
-		for b in byte_list:
-			record.append(b.to_bytes(1, byteorder='big'))
-		#if DEBUG:
-		print("-- +%2s bytes, %s 0: %s" % (len(byte_list), sprite_file_class, sprite_id_lookup))
-	
-	######################################################
-	# 6. (1 byte) Character CLASS (HUMAN_UNTRAINED, HUMAN_BARD, BEAST, etc)
-	######################################################
-	
-	class_type_lookup = False
-	
-	if character['class'] in MONSTER_CLASSES.keys():
-		class_type_lookup = MONSTER_CLASSES[character['class']]
-	
-	if class_type_lookup is not False:
-		byte_list = class_type_lookup.to_bytes(1, byteorder='big')
-		for b in byte_list:
-			record.append(b.to_bytes(1, byteorder='big'))
-		if DEBUG:
-			print("-- +%2s bytes, character class: %s" % (len(byte_list), class_type_lookup))
-	else:
-		print("ERROR - Unable to determine valid character class for character ID:%s %s" %(character_id, character['class']))
-		return False
-	
-	######################################################
-	# 7. (1 byte) Character LEVEL
-	######################################################
-	
-	byte_list = character['level'].to_bytes(1, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character level: %s" % (len(byte_list), character['level']))
-	
-	######################################################
-	# 8. (2 bytes) Character attack/defense/aggression profile
-	######################################################
-	
-	byte_list = character['profile'].to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character profile: %s" % (len(byte_list), character['profile']))
-	
-	######################################################
-	# 9. (1 bytes) Character str
-	######################################################
-	
-	byte_list = character['str'].to_bytes(1, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character str: %s" % (len(byte_list), character['str']))
-	
-	######################################################
-	# 10. (1 bytes) Character dex
-	######################################################
-	
-	byte_list = character['dex'].to_bytes(1, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character dex: %s" % (len(byte_list), character['dex']))
-	
-	######################################################
-	# 11. (1 bytes) Character con
-	######################################################
-	
-	byte_list = character['con'].to_bytes(1, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character con: %s" % (len(byte_list), character['con']))
-	
-	######################################################
-	# 12. (1 bytes) Character wis
-	######################################################
-	
-	byte_list = character['wis'].to_bytes(1, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character wis: %s" % (len(byte_list), character['wis']))
-	
-	######################################################
-	# 13. (1 bytes) Character intl
-	######################################################
-	
-	byte_list = character['intl'].to_bytes(1, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character intl: %s" % (len(byte_list), character['intl']))
-	
-	######################################################
-	# 14. (1 bytes) Character chr
-	######################################################
-	
-	byte_list = character['chr'].to_bytes(1, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character chr: %s" % (len(byte_list), character['chr']))
-	
-	######################################################
-	# 15. (2 bytes) Character hp
-	######################################################
-	
-	byte_list = character['hp'].to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character hp: %s" % (len(byte_list), character['hp']))
-	
-	######################################################
-	# 16. (4 bytes) Character status effects
-	######################################################
-	
-	byte_list = character['status'].to_bytes(4, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, character status: %s" % (len(byte_list), character['status']))
-	
-	######################################################
-	# 17. (2 bytes) item equipped to head
-	######################################################
-	
-	if character['head'] < 0:
-		character['head'] = 0
-	byte_list = character['head'].to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, head: %s" % (len(byte_list), character['head']))
-	
-	######################################################
-	# 18. (2 bytes) item equipped to body
-	######################################################
-	
-	if character['body'] < 0:
-		character['body'] = 0
-	byte_list = character['body'].to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, body: %s" % (len(byte_list), character['body']))
-	
-	######################################################
-	# 19. (2 bytes) item equipped to option slot
-	######################################################
-	
-	if character['option'] < 0:
-		character['option'] = 0
-	byte_list = character['option'].to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, option: %s" % (len(byte_list), character['option']))
-	
-	######################################################
-	# 20. (2 bytes) weapon equipped to right hand
-	######################################################
-	
-	if character['weapon_r'] < 0:
-		character['weapon_r'] = 0
-	byte_list = character['weapon_r'].to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, weapon_r: %s" % (len(byte_list), character['weapon_r']))
-	
-	######################################################
-	# 21. (2 bytes) weapon equipped to left hand
-	######################################################
-	
-	if character['weapon_l'] < 0:
-		character['weapon_l'] = 0
-	byte_list = character['weapon_l'].to_bytes(2, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, weapon_l: %s" % (len(byte_list), character['weapon_l']))
-	
-	######################################################
-	# 22. (1 bytes) formation in battle
-	######################################################
-	
-	byte_list = character['formation'].to_bytes(1, byteorder='big')
-	for b in byte_list:
-		record.append(b.to_bytes(1, byteorder='big'))
-	if DEBUG:
-		print("-- +%2s bytes, formation: %s" % (len(byte_list), character['formation']))
-	
-	######################################################
-	# 23. (5 bytes) spells equipped
-	######################################################
-	
-	spells_added = 0
-	byte_list = []
-	for spell in character['spells']:
-		byte_list.append(spell.to_bytes(1, byteorder='big'))
-		spells_added += 1
-		
-	if spells_added < MAX_SPELLS:
-		for i in range(spells_added, MAX_SPELLS):
-			byte_list.append((0).to_bytes(1, byteorder='big'))
-		
-	if spells_added > MAX_SPELLS:
-		print("ERROR - Too many spells are defined for character ID:%s" %(character_id))
-		return False
-	if DEBUG:
-		print("-- +%2s bytes, spells: %s" % (len(byte_list), character['spells']))
-	
-	
-	
-	#################
-	# End of record
-	#################
-	
-	print("[%3d] bytes total" % len(record))
-	#print(record)
-	return record
+def generate_weapons(import_dir = None, target = None):
+	""" Generates a weapon datafile from a weapons.py file """
 
+	print("")
+	print("*** Parsing Weapon data ***")
+	
+	try:
+		game_weapons = module = __import__(import_dir + ".weapons", globals(), locals(), ["WEAPONS"])
+	except Exception as e:
+		print("Error: %s" % e)
+		traceback.print_exc(file=sys.stdout)
+		return False
+
+	weapon_ids = list(game_weapons.WEAPONS.keys())
+	weapon_ids.sort()
+	
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 1.")
+	print("#")
+	print("# Verify that we don't have any weapon names that are non-ASCII or outside < 32, or > 126")
+	print("#")
+	print("###################################################################################")
+	print("")
+	print("Check 1: Checking ASCII...")
+
+	valid = True
+	for i in weapon_ids:
+		pos = 0
+		for c in game_weapons.WEAPONS[i]['name']:
+			pos += 1
+			if (ord(c) < 32) or (ord(c) > 126):
+				if ord(c) == 10:
+					# Line feed aka \n is OK
+					pass
+				else:
+					valid = False
+					print("Weapon ID: %3d" % i)
+					print("- ERROR: Character [%c] at pos %d is outside allowable ASCII range" % (c, pos))
+		if len(game_weapons.WEAPONS[i]['name']) > MAX_WEAPON_NAME:
+			valid = False
+			print("Weapon ID: %3d" % i)
+			print("- ERROR: Name of weapon [%s] is longer than allowed [%d]" % (game_weapons.WEAPONS[i]['name'], MAX_WEAPON_NAME))
+		else:
+			if DEBUG:
+				print("Weapon ID: %3d [%18s]" % (i, game_weapons.WEAPONS[i]['name']))
+				
+	if valid:
+		print("GOOD: All text appears valid")			
+	else:
+		return False
+		
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 2.")
+	print("#")
+	print("# Check all lookup values")
+	print("#")
+	print("###################################################################################")
+	print("")
+	print("Check 2: Checking all lookup labels resolve correctly...")
+
+	valid = True
+	for i in weapon_ids:
+		for label in ["type", "class", "rarity", "size", "proficiency_1", "proficiency_2"]:
+			
+			if label == "type":
+				lookup_table = WEAPON_TYPES
+				
+			if label == "class":
+				lookup_table = WEAPON_CLASSES
+				
+			if label == "rarity":
+				lookup_table = WEAPON_RARITY
+				
+			if label == "size":
+				lookup_table = WEAPON_SIZE
+				
+			if label in ["proficiency_1", "proficiency_2"]:
+				lookup_table = WEAPON_PROFICIENCY_TYPES
+				
+			my_label_value = game_weapons.WEAPONS[i][label]
+			if my_label_value != -1:
+				
+				if my_label_value in lookup_table.keys():
+					if DEBUG:
+						print("Weapon ID: %3d, %s \t: [%2d] %s" % (i, label, lookup_table[my_label_value], my_label_value))
+				else:
+					valid = False
+					print("Weapon ID: %d" % i)
+					print("- ERROR: Lookup entry [%s] for [%s]" % (my_label_value, label))
+		print("-")
+		
+	if valid:
+		print("GOOD: All lookup values appear valid")			
+	else:
+		return False
+
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 3.")
+	print("#")
+	print("# Check all damage attributes")
+	print("#")
+	print("###################################################################################")
+	print("")
+	print("Check 3: Checking all damage attributes exist and values are within range...")
+
+	valid = True
+	for i in weapon_ids:
+		
+		if len(game_weapons.WEAPONS[i]['dmgtype'].keys()) > 3:
+			valid = False
+			print("Weapon ID: %3d" % i)
+			print("- ERROR: Invalid damage attributes" % (damage_entry))
+			print("- ERROR: A maximum of 3 damage types are permitted")
+			
+		# Check all three damage types
+		for damage_entry in game_weapons.WEAPONS[i]['dmgtype'].keys():
+
+			if len(game_weapons.WEAPONS[i]['dmgtype'][damage_entry]) != 2:
+				valid = False
+				print("Weapon ID: %3d" % i)
+				print("- ERROR: Invalid damage type entry [%s], must always have two fields!" % (damage_entry))
+
+			else:
+
+				damage_dice_number = game_weapons.WEAPONS[i]['dmgtype'][damage_entry][0]
+				damage_dice_type = game_weapons.WEAPONS[i]['dmgtype'][damage_entry][1]
+	
+				if damage_entry not in WEAPON_DAMAGE:
+					valid = False
+					print("Weapon ID: %3d" % i)
+					print("- ERROR: Invalid damage type entry [%s], not a valid damage type" % (damage_entry))
+	
+				if damage_dice_number not in range(1, MAX_DAMAGE_DICE_QUANTITY):
+					valid = False
+					print("Weapon ID: %3d" % i)
+					print("- ERROR: Invalid damage type entry [%s], invalid dice number [%d]" % (damage_entry, damage_dice_number))
+	
+				if damage_dice_type not in range(MIN_DAMAGE_DICE_TYPE, MAX_DAMAGE_DICE_TYPE):
+					valid = False
+					print("Weapon ID: %3d" % i)
+					print("- ERROR: Invalid damage type entry [%s], invalid dice type [D%d]" % (damage_entry, damage_dice_number))
+					print("- ERROR: Dice type should be in the range [D%d - D%d]" % (MIN_DAMAGE_DICE_TYPE, MAX_DAMAGE_DICE_TYPE))
+	
+				if valid:
+					if DEBUG:
+						print("Weapon ID: %3d, Damage [%18s] [%d x D%d]" % (i, damage_entry, damage_dice_number, damage_dice_type))
+
+		print("-")
+		
+	if valid:
+		print("GOOD: All damage attributes appear valid")			
+	else:
+		return False
+		
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 4.")
+	print("#")
+	print("# Generating weapon data")
+	print("#")
+	print("###################################################################################")
+		
+	weapon_records = []
+		
+	for weapon_id in weapon_ids:
+		
+		weapon = game_weapons.WEAPONS[weapon_id]
+		data = weapon_to_record(weapon_id, weapon)
+		if data is False:
+			print("ERROR! Unable to generate a weapon data record")
+			return False
+		else:
+			record = {
+				'id' : weapon_id,
+				'offset' : 0,
+				'data' : data,
+				'weapon' : weapon,
+			}
+			weapon_records.append(record)
+			
+	print("")
+	print("Writing weapon data...")
+	try:
+		f = open(import_dir + OUT_DIR + target['suffix'] + "/weapon.dat", "wb")
+		offset = 0
+		for record in weapon_records:
+			record['offset'] = offset
+			print("- Weapon ID: %3d [%18s] at offset %5d" % (record['id'], record['weapon']['name'], offset))
+			for b in record['data']:
+				f.write(b)
+			offset += len(record['data'])
+		f.close()
+	except Exception as e:
+		print("ERROR! Unable to write datafile")
+		print("ERROR! %s" % e)
+		return False
+	print("...done!")
 
 def generate_story(import_dir = None, target = None):
 	""" Generates a story/game world location datafile from a map.py file """
@@ -1970,6 +1810,556 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 		
 	return record
 	
+def character_to_record(character_id, character_type, character, item_ids, weapon_ids, bitmaps):
+	""" Generates the string of bytes that represents a character/npc/monster in a datafile """
+	
+	record = []
+	
+	print("-- Character ID: %3s [%18s]" % (character_id, character['name']))
+	
+	######################################################
+	# 0. (2 bytes) ID of character
+	######################################################
+	byte_list = character_id.to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, ID: %s" % (len(byte_list), character_id))
+	
+	######################################################
+	# 1. (18 bytes) character name (MAX_PLAYER_NAME)
+	######################################################
+	byte_list = []
+	if len(character['name']) > MAX_PLAYER_NAME:
+		print("ERROR! Character name [%s] is greater than %d bytes!!!" % (character['name'], MAX_PLAYER_NAME))
+		return False
+	for c in character['name']:
+		byte_list.append(ord(c).to_bytes(1, byteorder='big'))
+	for i in range(len(byte_list), MAX_PLAYER_NAME):
+		byte_list.append(0x00.to_bytes(1, byteorder='big'))
+	for b in byte_list:
+		record.append(b)
+	if DEBUG:
+		print("-- +%2s bytes, name: [%s]" % (len(byte_list), character['name']))
+	
+	######################################################
+	# 2. (1 bytes) TYPE of character (MONSTER/NPC)
+	######################################################
+	character_type_lookup = False
+	
+	if character['type'] in CHARACTER_TYPES.keys():
+		character_type_lookup = CHARACTER_TYPES[character['type']]
+		
+	if character_type_lookup is not False:
+		byte_list = character_type_lookup.to_bytes(1, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		
+		if DEBUG:
+			print("-- +%2s bytes, CHARACTER TYPE: %s" % (len(byte_list), character_type_lookup))
+	else:
+		print("ERROR - Unable to determine valid character type for character ID:%s %s" %(character_id, character['type']))
+		return False
+	
+	######################################################
+	# 3. (1 bytes) SPRITE TYPE (NORMAL/BOSS)
+	######################################################
+	sprite_type_lookup = False
+	
+	if character['sprite_type'] in SPRITE_CLASSES.keys():
+		sprite_type_lookup = SPRITE_CLASSES[character['sprite_type']]
+	
+	if sprite_type_lookup is not False:
+		byte_list = sprite_type_lookup.to_bytes(1, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		if DEBUG:
+			print("-- +%2s bytes, SPRITE TYPE: %s" % (len(byte_list), sprite_type_lookup))
+	else:
+		print("ERROR - Unable to determine valid sprite type for character ID:%s %s" %(character_id, character['sprite_type']))
+		return False
+	
+	######################################################
+	# 4. (2 bytes) per SPRITE filename(ID of the bitmaps processed earlier)
+	#    Up to SPRITE_ANIMATION_FRAMES per sprite class
+	######################################################
+	for sprite_file_class in ["resting_sprite", "attack_sprite", "magic_sprite", "wounded_sprite", "death_sprite"]:
+		
+		sprite_size = character['sprite_type']
+		
+		#SPRITE_ANIMATION_FRAMES
+		sprite_frames = 0
+		for sprite_filename in character[sprite_file_class]:
+			
+			sprite_id_lookup = False
+		
+			#sprite_filename = character[sprite]
+			
+			if sprite_filename == "":
+				sprite_id_lookup = 0
+			
+			else:
+				if sprite_filename in bitmaps[sprite_size].keys():
+					sprite_id_lookup = bitmaps[sprite_size][sprite_filename]['id']
+				else:
+					print("ERROR - Unable to find processed sprite for character ID:%s %s %s" %(character_id, sprite_file_class, sprite_filename))
+					return False
+					
+			if sprite_id_lookup is not False:
+				byte_list = sprite_id_lookup.to_bytes(2, byteorder='big')
+				for b in byte_list:
+					record.append(b.to_bytes(1, byteorder='big'))
+				if DEBUG:
+					print("-- +%2s bytes, %s SPRITE FRAME %s: %s" % (len(byte_list), sprite_file_class, sprite_frames, sprite_id_lookup))
+				
+			sprite_frames += 1
+		
+		# Add in null sprites if we don't have enough full frames
+		if sprite_frames < SPRITE_ANIMATION_FRAMES:
+			
+			for i in range(sprite_frames, SPRITE_ANIMATION_FRAMES):
+				byte_list = (0).to_bytes(2, byteorder='big')
+				for b in byte_list:
+					record.append(b.to_bytes(1, byteorder='big'))
+				if DEBUG:
+					print("-- +%2s bytes, %s NULL SPRITE FRAME %s" % (len(byte_list), sprite_file_class, i))
+				
+		if sprite_frames > SPRITE_ANIMATION_FRAMES:
+			print("ERROR - Too many animation frames [%s] are defined for ID:%s %s" %(sprite_frames, character_id, sprite_file_class))
+			print("ERROR - Maximum animation frames is %s" % SPRITE_ANIMATION_FRAMES)
+			return False
+	
+	######################################################
+	# 5. (2 bytes) PORTRAIT SPRITE (ID of the bitmaps processed earlier)
+	######################################################
+	
+	sprite_id_lookup = False
+	sprite_file_class = "portrait_name"
+	sprite_filename = character["portrait_name"][0]
+	
+	if sprite_filename == "":
+		sprite_id_lookup = 0
+	
+	else:
+		
+		if sprite_filename in bitmaps['SPRITE_CLASS_PORTRAIT'].keys():
+			sprite_id_lookup = bitmaps['SPRITE_CLASS_PORTRAIT'][sprite_filename]['id']
+		else:
+			print("ERROR - Unable to find processed portrait for character ID:%s %s %s" %(character_id, sprite_file_class, sprite_filename))
+			return False
+			
+	if sprite_id_lookup is not False:
+		byte_list = sprite_id_lookup.to_bytes(2, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		#if DEBUG:
+		print("-- +%2s bytes, %s 0: %s" % (len(byte_list), sprite_file_class, sprite_id_lookup))
+	
+	######################################################
+	# 6. (1 byte) Character CLASS (HUMAN_UNTRAINED, HUMAN_BARD, BEAST, etc)
+	######################################################
+	
+	class_type_lookup = False
+	
+	if character['class'] in MONSTER_CLASSES.keys():
+		class_type_lookup = MONSTER_CLASSES[character['class']]
+	
+	if class_type_lookup is not False:
+		byte_list = class_type_lookup.to_bytes(1, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		if DEBUG:
+			print("-- +%2s bytes, character class: %s" % (len(byte_list), class_type_lookup))
+	else:
+		print("ERROR - Unable to determine valid character class for character ID:%s %s" %(character_id, character['class']))
+		return False
+	
+	######################################################
+	# 7. (1 byte) Character LEVEL
+	######################################################
+	
+	byte_list = character['level'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character level: %s" % (len(byte_list), character['level']))
+	
+	######################################################
+	# 8. (2 bytes) Character attack/defense/aggression profile
+	######################################################
+	
+	byte_list = character['profile'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character profile: %s" % (len(byte_list), character['profile']))
+	
+	######################################################
+	# 9. (1 bytes) Character str
+	######################################################
+	
+	byte_list = character['str'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character str: %s" % (len(byte_list), character['str']))
+	
+	######################################################
+	# 10. (1 bytes) Character dex
+	######################################################
+	
+	byte_list = character['dex'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character dex: %s" % (len(byte_list), character['dex']))
+	
+	######################################################
+	# 11. (1 bytes) Character con
+	######################################################
+	
+	byte_list = character['con'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character con: %s" % (len(byte_list), character['con']))
+	
+	######################################################
+	# 12. (1 bytes) Character wis
+	######################################################
+	
+	byte_list = character['wis'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character wis: %s" % (len(byte_list), character['wis']))
+	
+	######################################################
+	# 13. (1 bytes) Character intl
+	######################################################
+	
+	byte_list = character['intl'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character intl: %s" % (len(byte_list), character['intl']))
+	
+	######################################################
+	# 14. (1 bytes) Character chr
+	######################################################
+	
+	byte_list = character['chr'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character chr: %s" % (len(byte_list), character['chr']))
+	
+	######################################################
+	# 15. (2 bytes) Character hp
+	######################################################
+	
+	byte_list = character['hp'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character hp: %s" % (len(byte_list), character['hp']))
+	
+	######################################################
+	# 16. (4 bytes) Character status effects
+	######################################################
+	
+	byte_list = character['status'].to_bytes(4, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, character status: %s" % (len(byte_list), character['status']))
+	
+	######################################################
+	# 17. (2 bytes) item equipped to head
+	######################################################
+	
+	if character['head'] < 0:
+		character['head'] = 0
+	byte_list = character['head'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, head: %s" % (len(byte_list), character['head']))
+	
+	######################################################
+	# 18. (2 bytes) item equipped to body
+	######################################################
+	
+	if character['body'] < 0:
+		character['body'] = 0
+	byte_list = character['body'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, body: %s" % (len(byte_list), character['body']))
+	
+	######################################################
+	# 19. (2 bytes) item equipped to option slot
+	######################################################
+	
+	if character['option'] < 0:
+		character['option'] = 0
+	byte_list = character['option'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, option: %s" % (len(byte_list), character['option']))
+	
+	######################################################
+	# 20. (2 bytes) weapon equipped to right hand
+	######################################################
+	
+	if character['weapon_r'] < 0:
+		character['weapon_r'] = 0
+	byte_list = character['weapon_r'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, weapon_r: %s" % (len(byte_list), character['weapon_r']))
+	
+	######################################################
+	# 21. (2 bytes) weapon equipped to left hand
+	######################################################
+	
+	if character['weapon_l'] < 0:
+		character['weapon_l'] = 0
+	byte_list = character['weapon_l'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, weapon_l: %s" % (len(byte_list), character['weapon_l']))
+	
+	######################################################
+	# 22. (1 bytes) formation in battle
+	######################################################
+	
+	byte_list = character['formation'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, formation: %s" % (len(byte_list), character['formation']))
+	
+	######################################################
+	# 23. (5 bytes) spells equipped
+	######################################################
+	
+	spells_added = 0
+	byte_list = []
+	for spell in character['spells']:
+		byte_list.append(spell.to_bytes(1, byteorder='big'))
+		spells_added += 1
+		
+	if spells_added < MAX_SPELLS:
+		for i in range(spells_added, MAX_SPELLS):
+			byte_list.append((0).to_bytes(1, byteorder='big'))
+		
+	if spells_added > MAX_SPELLS:
+		print("ERROR - Too many spells are defined for character ID:%s" %(character_id))
+		return False
+	if DEBUG:
+		print("-- +%2s bytes, spells: %s" % (len(byte_list), character['spells']))
+	
+	
+	
+	#################
+	# End of record
+	#################
+	
+	print("[%3d] bytes total" % len(record))
+	#print(record)
+	return record	
+
+def weapon_to_record(weapon_id, weapon):
+	""" Generate the binary weapon record data """
+	
+	record = []
+	
+	print("-- Weapon ID: %3s [%18s]" % (weapon_id, weapon['name']))
+	
+	######################################################
+	# 0. (1 bytes) ID of weapon
+	######################################################
+	byte_list = weapon_id.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, ID: %s" % (len(byte_list), weapon_id))
+		
+	######################################################
+	# 1. (1 bytes) 1H or 2H
+	######################################################
+	handedness = WEAPON_TYPES[weapon['type']]
+	byte_list = handedness.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, handedness: %s" % (len(byte_list), weapon['type']))
+		
+	######################################################
+	# 2. (1 bytes) Class; SIMPLE, MARTIAL, RANGED, etc
+	######################################################
+	weapon_class = WEAPON_CLASSES[weapon['class']]
+	byte_list = weapon_class.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, class: %s" % (len(byte_list), weapon['class']))
+		
+	######################################################
+	# 3. (1 bytes) Rarity; COMMON, UNCOMMON, RARE, etc
+	######################################################
+	weapon_rarity = WEAPON_RARITY[weapon['rarity']]
+	byte_list = weapon_rarity.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, rarity: %s" % (len(byte_list), weapon['rarity']))
+	
+	######################################################
+	# 4. (1 bytes) Size; SMALL, MEDIUM, LARGE, etc
+	######################################################
+	weapon_size = WEAPON_SIZE[weapon['size']]
+	byte_list = weapon_size.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, size: %s" % (len(byte_list), weapon['size']))
+	
+	######################################################
+	# 5. (1 bytes) Proficiency class 1
+	######################################################
+	if weapon['proficiency_1'] != -1:
+		weapon_proficiency = WEAPON_PROFICIENCY_TYPES[weapon['proficiency_1']]
+	else:
+		weapon_proficiency = 0
+	
+	byte_list = weapon_proficiency.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, proficiency class 1: %s" % (len(byte_list), weapon['proficiency_1']))
+	
+	######################################################
+	# 6. (1 bytes) Proficiency class 2
+	######################################################
+	if weapon['proficiency_2'] != -1:
+		weapon_proficiency = WEAPON_PROFICIENCY_TYPES[weapon['proficiency_2']]
+	else:
+		weapon_proficiency = 0
+	
+	byte_list = weapon_proficiency.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, proficiency class 2: %s" % (len(byte_list), weapon['proficiency_2']))
+	
+	######################################################
+	# 7. (18 bytes) Weapon name
+	######################################################	
+	byte_list = []
+	tmp = "%s" % (weapon['name'])
+	for c in tmp:
+		byte_list.append(ord(c).to_bytes(1, byteorder='big'))
+	for i in range(len(byte_list), MAX_WEAPON_NAME):
+		byte_list.append(0x00.to_bytes(1, byteorder='big'))
+	for b in byte_list:
+		record.append(b)
+	print("-- +%2s bytes, name [padded to %d]" % (len(tmp), len(byte_list)))
+	
+	######################################################
+	# 8. (3 bytes) Critical damage range and dice
+	######################################################
+	byte_list = weapon['crit']
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, criticals: [%dx, on %d-%d]" % (len(byte_list), weapon['crit'][2], weapon['crit'][0], weapon['crit'][1]))
+	
+	#######################################################
+	# 9. (1 byte) Versatile
+	#######################################################
+	if weapon['versatile']:
+		byte_list = (1).to_bytes(1, byteorder='big')
+	else:
+		byte_list = (0).to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, versatile: %s" % (len(byte_list), weapon['versatile']))
+	
+	#######################################################
+	# 9. (1 byte) Finesse
+	#######################################################
+	if weapon['finesse']:
+		byte_list = (1).to_bytes(1, byteorder='big')
+	else:
+		byte_list = (0).to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, finesse: %s" % (len(byte_list), weapon['finesse']))
+	
+	#######################################################
+	# 10. (1 byte) Silvered
+	#######################################################
+	if weapon['silvered']:
+		byte_list = (1).to_bytes(1, byteorder='big')
+	else:
+		byte_list = (0).to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, silvered: %s" % (len(byte_list), weapon['silvered']))
+	
+	#######################################################
+	# 11. (1 byte) Bonus
+	#######################################################
+	byte_list = weapon['bonus'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, bonus: %s" % (len(byte_list), weapon['bonus']))
+	
+	#######################################################
+	# 12. (2 bytes) Value
+	#######################################################
+	byte_list = weapon['value'].to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, value: %s" % (len(byte_list), weapon['value']))
+	
+	#######################################################
+	# 13. (9 bytes total) 3x damage types
+	#######################################################
+	byte_list = []
+	for dmgtype in weapon['dmgtype'].keys():
+		damage_type = WEAPON_DAMAGE[dmgtype]
+		damage_dice_qty = weapon['dmgtype'][dmgtype][0]
+		damage_dice_type = weapon['dmgtype'][dmgtype][1]
+		byte_list.append(damage_type)
+		byte_list.append(damage_dice_qty)
+		byte_list.append(damage_dice_type)
+		print("--- +%2s bytes, damage type: %s, %d x D%d" % (len(byte_list), dmgtype, damage_dice_qty, damage_dice_type))
+	for i in range(len(byte_list), 9):
+		byte_list.append(0)
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes total for all damage types" % (len(byte_list)))
+	
+	#################
+	# End of record
+	#################
+	
+	print("[%3d] bytes total" % len(record))
+	#print(record)
+	return record	
 	
 
 def evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, weapon_ids, player_ids, condition_list_entry):
@@ -2293,27 +2683,27 @@ if __name__ == "__main__":
 	target = choose_target(adventure = adventure)
 	if target:
 	
-		status = generate_world(import_dir = adventure, target = target)
-		if status is False:
-			print("Not continuing. Please fix errors in world map file.")
-			sys.exit(1)
+		#status = generate_world(import_dir = adventure, target = target)
+		#if status is False:
+		#	print("Not continuing. Please fix errors in world map file.")
+		#	sys.exit(1)
 			
-		status = generate_story(import_dir = adventure, target = target)
-		if status is False:
-			print("Not continuing. Please fix errors in story file.")
-			sys.exit(1)
+		#status = generate_story(import_dir = adventure, target = target)
+		#if status is False:
+		#	print("Not continuing. Please fix errors in story file.")
+		#	sys.exit(1)
 			
-		status = generate_characters(import_dir = adventure, target = target)
-		if status is False:
-			print("Not continuing. Please fix errors in monster file.")
-			sys.exit(1)	
+		#status = generate_characters(import_dir = adventure, target = target)
+		#if status is False:
+		#	print("Not continuing. Please fix errors in monster file.")
+		#	sys.exit(1)	
 			
 		#status = generate_items(import_dir = adventure, target = target)
 		#if status is False:
 		#	print("Not continuing. Please fix errors in item file.")
 		#	sys.exit(1)
 		
-		#status = generate_weapons(import_dir = adventure, target = target)
-		#if status is False:
-		#	print("Not continuing. Please fix errors in weapon file.")
-		#	sys.exit(1)
+		status = generate_weapons(import_dir = adventure, target = target)
+		if status is False:
+			print("Not continuing. Please fix errors in weapon file.")
+			sys.exit(1)

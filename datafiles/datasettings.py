@@ -44,6 +44,7 @@ MAX_LEVEL_NAME_SIZE = 32	# as per game.h
 MAX_STORY_TEXT_SIZE = 1024	# as per game.h
 MAX_LOCATIONS = 256			# as per game.h
 MAX_PLAYER_NAME = 18		# as per game.h
+MAX_WEAPON_NAME = 18
 MAX_SHORT_NAME = 6			# as per game.h
 MAX_CHARACTERS = 256		# as per game.h
 MAX_NPC_DIALOGUES = 64		# Tracking of dialogue uses a 64bit int, limited to 64 unique dialogue trees
@@ -331,3 +332,60 @@ WEAPON_SLOTS = ["weapon_r", "weapon_l"]
 EFFECT_TYPES = {
 	'EFFECT_TYPE_NONE'		: 0,	
 }
+
+
+WEAPON_CLASSES = {
+	'SIMPLE' 	: 0,
+	'MARTIAL'	: 1,
+	'RANGED' 	: 2,
+	'MAGICAL'	: 3,
+}
+
+WEAPON_TYPES = {
+	'1H' 		: 0,
+	'2H' 		: 1,
+}
+
+WEAPON_RARITY = {
+	'COMMON'	: 0,
+	'UNCOMMON'	: 1,
+	'RARE'		: 2,
+	'LEGENDARY'	: 3,
+}
+
+WEAPON_DAMAGE = {
+	'PHYSICAL' 	: 0,
+	'SLASHING' 	: 1,
+	'PIERCING' 	: 2,
+	'BLUNT'	   	: 3,
+	'LIGHTNING'	: 4,
+	'ACID'		: 5,
+	'FIRE'		: 6,
+	'COLD'		: 7,
+	'POISON'	: 8,
+}
+
+WEAPON_SIZE = {
+	'SMALL'		: 0,
+	'MEDIUM'	: 1,
+	'LARGE'		: 2,
+	'HUGE'		: 3,
+}
+
+WEAPON_PROFICIENCY_TYPES = {
+	'PROFICIENCY_WEAPON_SIMPLE'			: 5,
+	'PROFICIENCY_WEAPON_MARTIAL'		: 6,
+	'PROFICIENCY_WEAPON_CROSSBOW_L'		: 7,
+	'PROFICIENCY_WEAPON_CROSSBOW_H'		: 8,
+	'PROFICIENCY_WEAPON_SWORD_S'		: 9,
+	'PROFICIENCY_WEAPON_SWORD_L'		: 10,
+	'PROFICIENCY_WEAPON_SCIMITAR'		: 11,
+	'PROFICIENCY_WEAPON_RAPIER'			: 12,
+	'PROFICIENCY_WEAPON_DAGGER'			: 13,
+	'PROFICIENCY_WEAPON_MACE'			: 14,
+	'PROFICIENCY_WEAPON_STAFF'			: 15,
+}	
+
+MIN_DAMAGE_DICE_TYPE = 2
+MAX_DAMAGE_DICE_TYPE = 12
+MAX_DAMAGE_DICE_QUANTITY = 4
