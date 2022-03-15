@@ -94,6 +94,11 @@
 #define UI_ERROR_START_X			140
 #define UI_ERROR_START_Y			20
 
+// Loot popup boxes
+#define UI_LOOT_START_X				14
+#define UI_LOOT_START_Y				40
+#define UI_LOOT_WIDTH				180
+
 #endif
 
 // Protos
@@ -104,17 +109,23 @@
 void ui_Draw(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawCombat(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 char ui_DrawCharacterScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char tab_id);
-void ui_DrawCharacterScreen_Overview(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
+char ui_DrawCharacterScreen_Overview(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawSideBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawStatusBar(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char buttons, unsigned char labels);
 void ui_DrawSplashText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawLocationName(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawNavigationChoice(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawTalkChoice(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
-unsigned char ui_DrawYesNo(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, char *title);
 void ui_DrawError(Screen_t *screen, char *title, char *text, short errorcode);
 void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void ui_DrawPopup(Screen_t *screen, unsigned short x, unsigned short y, unsigned short w, unsigned short h, char *title, unsigned char animate);
+void ui_DrawCharacterScreen_WeaponsToString(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, WeaponState_t *weapon);
+void ui_DrawCharacterScreen_WeaponDamageToString(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, WeaponState_t *weapon, unsigned char dmg_type, unsigned char dice_qty, unsigned char dice_type);
+char ui_DrawLootDestination(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, WeaponState_t *weapon, ItemState_t *item);
+char ui_DrawLootChoice(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char location_loot, unsigned char enemy_loot);
+void ui_DrawLootChoiceRedraw(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char location_loot, unsigned char enemy_loot, char selected_id, unsigned char selected);
+void ui_DrawEquipError(Screen_t *screen, char *error);
+char ui_DrawBooleanChoice(Screen_t *screen, char *title, char *choice1, char *choice2);
 
 // Area-specific text display routines
 unsigned short ui_DrawMainWindowText(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned short remain, char *c);

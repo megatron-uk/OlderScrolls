@@ -18,6 +18,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string.h>
+
 #include "../common/engine.h"
 
 #ifndef _MONSTER_H
@@ -192,7 +194,332 @@ extern const char *status_effects[32] = {
 	"Physical Res.",
 };
 
+// ==================================================
+//
+// Functions to do with transferring items to/from
+// player characters.
+//
+// ==================================================
 
+void pc_GiveItem(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item){
+	// Send an item to a player
+	char slot;
+	
+	// Check character is present
+	if (pc->level){
+		slot = pc_HasSlots(pc, weapon, item);
+		if (slot >= 0){
+			if (weapon->item_id){
+				if ((pc->items[slot].item_type == ITEM_TYPE_WEAPON) && (pc->items[slot].item_id == weapon->item_id)){
+					pc->items[slot].qty++;
+				} else {
+					pc->items[slot].qty = 1;
+					pc->items[slot].item_type = ITEM_TYPE_WEAPON;
+					pc->items[slot].item_id = weapon->item_id;
+				}
+			}
+			if (item->item_id){
+				if ((pc->items[slot].item_type == ITEM_TYPE_ITEM) && (pc->items[slot].item_id == item->item_id)){
+					pc->items[slot].qty++;
+				} else {
+					pc->items[slot].qty = 1;
+					pc->items[slot].item_type = ITEM_TYPE_ITEM;
+					pc->items[slot].item_id = item->item_id;
+				}
+			}
+		}
+	}
+	
+}
+
+void pc_TakeItem(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item){
+	// Remove one copy of an item from a player
+	unsigned char i;
+	
+	// Find the item slot
+	for (i = 0; i < MAX_ITEMS; i++){
+		
+		if (weapon->item_id){
+			if (pc->items[i].item_id == weapon->item_id){
+				// Remove one item
+				if (pc->items[i].qty > 0){
+					pc->items[i].qty--;
+				}
+			}
+		}
+		if (item->item_id){
+			if (pc->items[i].item_id == item->item_id){
+				// Remove one item
+				if (pc->items[i].qty > 0){
+					pc->items[i].qty--;
+				}
+			}
+		}
+		
+		// If no items left, blank out the item slot
+		if (pc->items[i].qty == 0){
+			pc->items[i].item_id = 0;
+			pc->items[i].item_type = ITEM_TYPE_NONE;
+		}
+	}
+}
+
+char pc_HasSlots(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item){
+	// CHeck if the player has a free slot.
+	// If no free slots, also check if the player has an existing stock of an item/weapon
+	// and it currently holds less than 255 of that item, then it can instead just be increased.
+	//
+	// Returns player inventory slot number, or -1 if no slots free
+	
+	unsigned char i;
+	
+	if (pc->level){
+		// CHeck for an existing item of this type
+		for (i = 0; i < MAX_ITEMS; i++){
+			// If the slot is already taken up by the same item (and qty < 255) 
+			// just send back the slot number
+			if (weapon->item_id != 0){
+				if ((pc->items[i].item_type == ITEM_TYPE_WEAPON) && (pc->items[i].item_id == weapon->item_id)){
+					if (pc->items[i].qty < 255){
+						// Already have this item, and not at maximum capacity
+						return i;
+					} else {
+						// Quantity of this item already at max
+						return -1;	
+					}
+				}	
+			}
+			if (item->item_id != 0){
+				if ((pc->items[i].item_type == ITEM_TYPE_ITEM) && (pc->items[i].item_id == item->item_id)){
+					if (pc->items[i].qty < 255){
+						// Already have this item, and not at maximum capacity
+						return i;
+					} else {
+						// Quantity of this item already at max
+						return -1;	
+					}
+				}	
+			}
+		}
+		
+		// Check for a free/empty slot
+		for (i = 0; i < MAX_ITEMS; i++){
+			// If the slot is empty, just send back the slot number
+			if ((pc->items[i].item_type) == ITEM_TYPE_NONE){
+				return i;
+			}
+		}
+	}
+	
+	// No slots free, or pc not present
+	return -1;
+}
+
+// ==================================================
+//
+// Functions associated with equipping or unequipping
+// weapons and items.
+//
+// ==================================================
+
+char pc_CanEquip(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item){
+	// Check if the race and class of the player character allows them to equip
+	// the given weapon or item.
+	unsigned char can_equip = 1;
+	
+	// Items can go on head, body or option slots
+	if (item->item_id != 0){
+		
+		// If the item has a race limitation of anything other than UNKNOWN/ALL
+		// check if we satisfy it.
+		if (item->race_limit != RACE_UNKNOWN){
+			if (pc->player_race != item->race_limit){
+				can_equip = 0;
+			}
+		}
+		
+		// If the item has a class limitation of anything other than UNKNOWN/ALL/UNTRAINED
+		// check if we satisfy it.
+		if (item->class_limit != CLASS_UNTRAINED){
+			if (pc->player_class != item->class_limit){
+				can_equip = 0;
+			}
+		}
+		
+		// All other armour is fair game, but will be less effective if the character
+		// is not proficient in them... doesn't stop their use however.
+		return can_equip;
+	}
+	
+	// Weapons can go on weapon_r and weapon_l slots
+	if (weapon->item_id != 0){
+		
+		// Regardless of proficiency class, about the only type of weapon that is limited
+		// to who can use it are MAGIC weapons
+		if ((weapon->weapon_class == WEAPON_CLASS_MAGICAL) || (weapon->proficiency_1 == PROFICIENCY_WEAPON_MAGIC) || (weapon->proficiency_2 == PROFICIENCY_WEAPON_MAGIC)){
+			if (is_proficient(pc, PROFICIENCY_WEAPON_MAGIC) == 0){
+				can_equip = 0;
+			}
+		}
+		
+		// All other weapons are fair-game, but will be less effective if the character
+		// if not proficient in them... doesn't stop their use however.
+		
+		return can_equip;
+	}
+	
+	return 0;
+}
+
+char pc_IsEquipped(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item){
+	// Return 0 or 1 if a given item or weapon is currently equipped
+	
+	if (item->item_id != 0){
+		if (item->slot == ITEM_SLOT_HEAD){
+			if (pc->head->item_id == item->item_id){
+				return 1;
+			}
+		}
+		if (item->slot == ITEM_SLOT_BODY){
+			if (pc->body->item_id == item->item_id){
+				return 1;
+			}
+		}
+		if (item->slot == ITEM_SLOT_OPTION){
+			if (pc->option->item_id == item->item_id){
+				return 1;
+			}
+		}
+	}
+	
+	if (weapon->item_id != 0){
+		if ((pc->weapon_r->item_id == weapon->item_id) || (pc->weapon_l->item_id == weapon->item_id)){
+			return 1;
+		}
+	}
+	
+	return 0;
+}
+
+char pc_IsLastItem(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item){
+	// Return 0 or 1 if the given item is the last instance of that item
+	unsigned char i;
+	
+	for (i = 0; i < MAX_ITEMS; i++){
+		if (weapon->item_id != 0){
+			if ((pc->items[i].item_type == ITEM_TYPE_WEAPON) && (pc->items[i].item_id == weapon->item_id)){
+				if (pc->items[i].qty == 1){
+					return 1;
+				}
+			}
+		}
+		if (item->item_id != 0){
+			if ((pc->items[i].item_type == ITEM_TYPE_ITEM) && (pc->items[i].item_id == item->item_id)){
+				if (pc->items[i].qty == 1){
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+void pc_Equip(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item, unsigned char hand){
+	// Equip an item on a player character.
+	// Automatically unequips any existing item on the same slot.
+	// 2 handed weapons automatically unequip any weapon held in the left hand.
+	 
+	if (item->item_id != 0){
+		// Assign item to head slot
+		if (item->slot == ITEM_SLOT_HEAD){
+			memcpy(pc->head, item, sizeof(ItemState_t));
+		}
+		// Assign item to body slot
+		if (item->slot == ITEM_SLOT_BODY){
+			memcpy(pc->body, item, sizeof(ItemState_t));
+		}
+		// Assign item to option slot
+		if (item->slot == ITEM_SLOT_OPTION){
+			memcpy(pc->option, item, sizeof(ItemState_t));
+		}
+	}
+	
+	if (weapon->item_id != 0){
+		
+		if (weapon->weapon_type == WEAPON_2HANDED){
+			// Un-equip any other item held in the left hand
+			pc->weapon_l->item_id = 0;
+			// Equip the 2-handed weapon
+			memcpy(pc->weapon_r, weapon, sizeof(WeaponState_t));
+		} else {
+			if (hand == RIGHT_HAND){
+				// Equip to right hand
+				memcpy(pc->weapon_r, weapon, sizeof(WeaponState_t));
+			}
+			if (hand == LEFT_HAND){
+				// Equip to left hand
+				memcpy(pc->weapon_l, weapon, sizeof(WeaponState_t));
+			}
+		}
+	}	
+}
+
+void pc_Unequip(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item, unsigned char hand){
+	// Unequip an item on a player character.
+	
+	if (item->item_id != 0){
+		// Clear item from head slot
+		if (item->slot == ITEM_SLOT_HEAD){
+			pc->head->item_id = 0;
+		}
+		// Clear item from body slot
+		if (item->slot == ITEM_SLOT_BODY){
+			pc->body->item_id = 0;
+		}
+		// Clear item from option slot
+		if (item->slot == ITEM_SLOT_OPTION){
+			pc->option->item_id = 0;
+		}
+	}
+	
+	if (weapon->item_id != 0){
+		// Clear weapon from right hand
+		if ((hand == RIGHT_HAND) && (pc->weapon_r->item_id == weapon->item_id)){
+			pc->weapon_r->item_id = 0;
+		}
+		// Clear weapon from left hand
+		if ((hand == LEFT_HAND) && (pc->weapon_l->item_id == weapon->item_id)){
+			pc->weapon_l->item_id = 0;
+		}
+	}
+}
+
+// ==================================================
+//
+// Functions associated with detecting number of players 
+// in the current party
+//
+// ==================================================
+
+unsigned char party_Count(GameState_t *gamestate, unsigned char include_dead){
+	// Returns a count of how many players are currently in the party
+	unsigned char i;
+	unsigned char total = 0;
+	
+	for (i = 0; i < MAX_PLAYERS; i++){
+		// All player characters are above level 0
+		if (gamestate->players->player[i]->level != 0){
+			if (include_dead){
+				total++;	
+			} else {
+				if (gamestate->players->player[i]->hp != 0){
+					total++;
+				}
+			}		
+		}
+	}
+	return total;
+}
 
 // ==================================================
 //
@@ -202,13 +529,163 @@ extern const char *status_effects[32] = {
 //
 // ==================================================
 
+unsigned char player_weapon_DamageModifier(PlayerState_t *pc, WeaponState_t *weapon, unsigned char dmg_type, unsigned char *dmg_dice_type, unsigned char *dmg_dice_qty, unsigned char weapon_bonus, unsigned char versatile_bonus, unsigned char silvered_bonus, unsigned char status_bonus, unsigned char status_penalty){
+	// Return the active damage modifier for a players weapon
+	unsigned char bonus = 0;
+	unsigned char b = 0;
+	
+	// STR modifier
+	if ((weapon->weapon_class == WEAPON_CLASS_SIMPLE) || (weapon->weapon_class == WEAPON_CLASS_MARTIAL)){
+		
+		if (weapon->weapon_type == WEAPON_2HANDED){
+			// 2H get 1.5x STR bonus
+			bonus = bonus + ((ability_Modifier(pc->str) * 150) / 100);
+		} else {
+			// 1H get 1x STR bonus
+			bonus = bonus + ability_Modifier(pc->str);
+		}
+	}
+	
+	if (weapon_bonus){
+		bonus = bonus + weapon->bonus;	
+	}
+	
+	// If versatile and no other weapon equipped, then a (fixed) bonus to damage dice type is applied
+	if (versatile_bonus){
+		if (weapon->versatile){
+			if ((pc->weapon_l->item_id == 0) || (pc->weapon_r->item_id == 0)){
+				*dmg_dice_type = *dmg_dice_type + 2;
+			}
+		}
+	}
+	
+	if (silvered_bonus){
+		// If silvered
+		if (weapon->silvered){
+			bonus++;
+		}
+	}
+	
+	if (status_penalty){
+		b = 0;
+		
+		bonus = bonus - b;
+	}
+	
+	if (status_bonus){
+		b = 0;
+		
+		if (pc->status && STATUS_POWERFUL){
+			b++;
+		}
+		
+		bonus = bonus + b;
+	}
+	
+	return bonus;
+}
+
+unsigned char player_weapon_AttackModifier(PlayerState_t *pc, WeaponState_t *weapon, unsigned char proficiency_bonus, unsigned char weapon_bonus, unsigned char ability_bonus, unsigned char status_bonus, unsigned char status_penalty){
+	// Return the active attack-roll modifier for a players weapon
+	unsigned char bonus = 0;
+	unsigned char b1, b2, bmax;
+	
+	b1 = is_proficient(pc, weapon->proficiency_1);
+	b2 = is_proficient(pc, weapon->proficiency_2);
+	
+	if (proficiency_bonus){
+		// Add on skill/proficiency bonus
+		if (b1 || b2){
+			if (b1){
+				bonus = bonus + b1;
+			} else if (b2){
+				bonus = bonus + b2;
+			}
+		}
+	}
+	
+	if (weapon_bonus){
+		// Add on inherent weapon bonus
+		bonus = bonus + weapon->bonus;
+	}
+	
+	if (ability_bonus){
+		// Add on proficiency bonus
+		b1 = ability_Modifier(pc->str);
+		b2 = ability_Modifier(pc->dex);
+		if (b1 > b2){
+			bmax = b1;
+		} else {
+			bmax = b2;	
+		}
+		if (weapon->weapon_class == WEAPON_CLASS_RANGED){
+			// DEX modifier
+			if (weapon->finesse){
+				bonus = bonus + bmax;
+			} else {
+				bonus = bonus + b2;
+			}		
+		} else if ((weapon->weapon_class == WEAPON_CLASS_SIMPLE) || (weapon->weapon_class == WEAPON_CLASS_MARTIAL)){
+			// STR modifier
+			if (weapon->finesse){
+				bonus = bonus + bmax;
+			} else {
+				bonus = bonus + b1;
+			}
+		} else {
+			// Magical weapons do not use either STR or DEX
+		}
+	}
+	
+	if (status_penalty){
+		// Apply status penalties
+		b1 = 0;
+		
+		if (pc->status && STATUS_BLINDED){
+			b1++;
+		}
+		if (pc->status && STATUS_FRIGHTENED){
+			b1++;
+		}
+		if (pc->status && STATUS_POISONED){
+			b1++;
+		}
+		if (pc->status && STATUS_PRONE){
+			b1++;
+		}
+		if (pc->status && STATUS_EXHAUSTED){
+			b1++;
+		}
+		bonus = bonus - b1;
+	}
+	
+	if (status_bonus){
+		// Apply status bonuses
+		b2 = 0;
+		
+		if (pc->status && STATUS_BLESSED){
+			b2 = b2++;
+		}
+		bonus = bonus + b2;
+	}
+	
+	return bonus;
+}
+
 char ability_Modifier(unsigned char ability){
 	// Calculate the modifier for a given ability score
 	// Cap modifier to a defined max and min value
 	
+	unsigned char new_ability = ability;
 	char v;
 	
-	v = (ability - 10) / 2;
+	// Check for positive/negative status effects here
+	//
+	//
+	// TO DO
+	//
+	
+	v = (new_ability - 10) / 2;
 	
 	if (v > ABILITY_MODIFIER_MAX){
 		return ABILITY_MODIFIER_MAX;

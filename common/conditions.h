@@ -97,6 +97,8 @@
 #define COND_MAP_VISIT_TYPE 	0x04
 #define COND_MAP_VISIT_MAX		0x01 // A map location requires to have visited a maximum number of times
 #define COND_MAP_VISIT_MIN		0x02 // A map location requires to have visited a minimum number of times
+#define COND_MAP_LOOTED_MAX		0x03 // A map location requires to have been looted a minimum number of times
+#define COND_MAP_LOOTED_MIN		0x04 // A map location requires to have been looted a maximum number of times
 
 // ==========================================
 // Monster spawning tests

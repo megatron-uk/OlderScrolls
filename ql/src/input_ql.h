@@ -67,12 +67,22 @@
 #define INPUT_STATUS_		0x73	// s
 
 // General keys
+#define INPUT_D			0x44
+#define INPUT_D_		0x64
+#define INPUT_I			0x49		// uppercase 'I'			
+#define INPUT_I_		0x69		// lowercase 'i'
 #define INPUT_E			0x45		// uppercase 'E'
 #define INPUT_E_		0x65		// lowercase 'e'
 #define INPUT_N			0x4E		// uppercase 'N'
 #define INPUT_N_		0x6E		// lowercase 'n'
+#define INPUT_R			0x52
+#define INPUT_R_		0x72
 #define INPUT_S			0x53		// uppercase 'S'
 #define INPUT_S_		0x73		// lowercase 's'
+#define INPUT_T			0x54		// uppercase 'T'
+#define INPUT_T_		0x74		// lowercase 't'
+#define INPUT_U			0x55
+#define INPUT_U_		0x75
 #define INPUT_W			0x57		// uppercase 'W'
 #define INPUT_W_		0x77		// lowercase 'w'
 #define INPUT_Y			0x59		// uppercase 'Y'
@@ -87,6 +97,9 @@
 #define INPUT_8			0x38		// 8
 #define INPUT_9			0x39		// 9
 #define INPUT_0			0x30		// 0
+
+#define INPUT_UP		0xD0		// Cursor up
+#define INPUT_DOWN		0xD8		// Cursor down
 
 
 #endif

@@ -285,6 +285,21 @@ unsigned char check_Map(GameState_t *gamestate, LevelState_t *levelstate, char *
 			return 1;
 		}
 	}
+	
+	// Check a location has been looted a manimum number of times
+	if (check_type == COND_MAP_LOOTED_MIN){
+		if (gamestate->level_looted[check_attribute] >= check_value){
+			return 1;
+		}
+	}
+	
+	// Check a location has been looted no more than a maximum number of times
+	if (check_type == COND_MAP_LOOTED_MAX){
+		if (gamestate->level_looted[check_attribute] <= check_value){
+			return 1;
+		}
+	}
+	
 	return 0;
 }
 
@@ -432,12 +447,12 @@ unsigned char check_ItemWeapon(GameState_t *gamestate, LevelState_t *levelstate,
 		if ((pc != NULL) && (pc->level != 0)){
 			//printf("check itemweapon pc %s\n", pc->name);
 			for (i = 0; i < MAX_ITEMS; i++){
-				pc_item_type = (pc->items[i] & 0xff00) >> 2;
-				pc_item_id = (unsigned char) (pc->items[i] & 0x00ff);
+				pc_item_type = pc->items[i].item_type;
+				pc_item_id = pc->items[i].item_id;
 				
 				if ((pc_item_id == check_item_id) && (pc_item_type == item_weapon)){
 					if (check_type == COND_ITEM_OWN){
-						//printf("check not own - return 1");
+						//printf("check own - return 1");
 						return 1;
 					}
 					if (check_type == COND_ITEM_NOTOWN){

@@ -21,9 +21,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifndef _INPUT_H
-#include "../common/input.h"
-#endif
 #ifndef _GAME_H
 #include "../common/game.h"
 #endif
@@ -35,12 +32,6 @@
 #endif
 #ifndef _UI_H
 #include "../common/ui.h"
-#endif
-//#ifndef _BMP_H
-//#include "bmp_ql.h"
-//#endif
-#ifndef _DRAW_H
-#include "../common/draw.h"
 #endif
 #ifndef _ERROR_H
 #include "../common/error.h"
@@ -58,8 +49,6 @@ int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 	unsigned char total_items = 0;
 	unsigned char item_type;
 	unsigned char item_id;
-	unsigned char w_count = 0;
-	unsigned char i_count = 0;	
 	int f;
 	
 	f = open(MAP_IDX, O_RDONLY);
@@ -89,6 +78,7 @@ int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 	read(f, &levelstate->id, 2);
 	if (levelstate->id != id){
 		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_MAP_MISMATCH_MSG, 0);
+		close(f);
 		return DATA_LOAD_MAP_MISMATCH;	
 	}
 	
@@ -222,29 +212,28 @@ int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 	
 	// If we set a number of items, proceed to read each pair of 
 	// bytes (item type + item id)
+	for (i = 0; i < MAX_REWARD_ITEMS; i++){
+		levelstate->weapons_list[0] = 0;
+		levelstate->items_list[0] = 0;
+	}
+	levelstate->weapons_number = 0;
+	levelstate->items_number = 0;
+	
 	if (total_items > 0){
 		// Extract items and weapons and put them in the correct array
-		i_count = 0;
-		w_count = 0;
 		
 		for (i = 0; i < total_items; i++){
 			read(f, &item_type, 1);
 			read(f, &item_id, 1);
 			
 			// Check for 'w' or 'i'
-			switch(item_type){
-				case 119:
-					levelstate->weapons_list[w_count] = item_id;
-					levelstate->weapons_number++;
-					w_count++;
-					break;
-				case 105:
-					levelstate->items_list[i_count] = item_id;
-					levelstate->items_number++;
-					i_count++;
-					break;
-				default:
-					break;
+			if (item_type == ITEM_TYPE_WEAPON){
+				levelstate->weapons_list[levelstate->weapons_number] = item_id;
+				levelstate->weapons_number++;
+			}
+			if (item_type == ITEM_TYPE_ITEM){
+				levelstate->items_list[levelstate->items_number] = item_id;
+				levelstate->items_number++;
 			}
 		}			
 	}
@@ -370,6 +359,7 @@ int data_LoadStory(Screen_t *screen, GameState_t *gamestate, LevelState_t *level
 	f = open(STORY_DAT, O_RDONLY);
 	if (f < 0){
 		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_STORY_DAT_MSG, f);
+		close(f);
 		return DATA_LOAD_STORY_DATFILE;	
 	}
 	// Seek to the data record itself
@@ -383,21 +373,155 @@ int data_LoadStory(Screen_t *screen, GameState_t *gamestate, LevelState_t *level
 	return DATA_LOAD_OK;
 }
 
-/*
+
 int data_LoadItem(Screen_t *screen, ItemState_t *itemstate, unsigned char id){
 	// Load a single item definition from disk
+	// Items start at id 1, so set id = id - 1;
 	
-	// Check for item in cache
-	// 		return cached entry
-	// Else
-	// 		Open file and load record
+	int status;
+	int f;
+	char t[8];
+		
+	f = open(ITEM_DAT, O_RDONLY);
+	if (f < 0){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_ITEM_DAT_MSG, f);
+		return DATA_LOAD_ITEM_DATFILE;	
+	}
 	
+	// The position in the file is the storage size of a item record * item id
+	status = lseek(f, ITEM_DAT_SIZE * (id - 1), SEEK_SET);
+	if (status < (ITEM_DAT_SIZE * (id - 1))){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_ITEM_DAT_SEEK, status);
+		close(f);
+		return DATA_LOAD_ITEM_DATFILE;
+	}
+	
+	// 1 byte for item id
+	read(f, &itemstate->item_id, 1);
+	
+	// 18 bytes for name
+	read(f, &itemstate->name, MAX_WEAPON_NAME);
+	
+	// 1 byte for class limit
+	read(f, &itemstate->class_limit, 1);
+	
+	// 1 byte for race limit
+	read(f, &itemstate->race_limit, 1);
+	
+	// 1 byte for item type
+	read(f, &itemstate->type, 1);
+
+	// 1 byte for item slot
+	read(f, &itemstate->slot, 1);
+	
+	// 2 byte for item value
+	read(f, &itemstate->value, 2);
+	
+	// 1 byte for AC value
+	read(f, &itemstate->ac, 1);
+	
+	// 1 byte for AC type
+	read(f, &itemstate->ac_type, 1);
+	
+	// 5 bytes for effect list
+	read(f, &itemstate->effectlist, 5);
+	
+	// 2 bytes for text ID
+	read(f, &itemstate->text_id, 2);
+	
+	close(f);
+			
 	return DATA_LOAD_OK;
 }
-*/
 
 int data_LoadWeapon(Screen_t *screen, WeaponState_t *weaponstate, unsigned char id){
 	// Load a single weapon definition from disk
+	// Weapons start at id 1, so set id = id - 1;
+	
+	int status;
+	int f;
+	
+	f = open(WEAPON_DAT, O_RDONLY);
+	if (f < 0){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_WEAPON_DAT_MSG, f);
+		return DATA_LOAD_WEAPONFILE;	
+	}
+	
+	// The position in the file is the storage size of a weapon record * weapon id
+	status = lseek(f, WEAPON_DAT_SIZE * (id - 1), SEEK_SET);
+	if (status < (WEAPON_DAT_SIZE * (id - 1))){
+		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_WEAPON_DAT_SEEK, status);
+		close(f);
+		return DATA_LOAD_WEAPONFILE;
+	}
+	
+	// 1 byte for weapon id
+	read(f, &weaponstate->item_id, 1);
+	
+	// 1 byte for handedness
+	read(f, &weaponstate->weapon_type, 1);
+	
+	// 1 byte for class
+	read(f, &weaponstate->weapon_class, 1);
+	
+	// 1 byte for rarity
+	read(f, &weaponstate->rarity, 1);
+	
+	// 1 byte for size
+	read(f, &weaponstate->size, 1);
+	
+	// 1 byte for proficiency #1
+	read(f, &weaponstate->proficiency_1, 1);
+	
+	// 1 byte for proficiency #2
+	read(f, &weaponstate->proficiency_2, 1);
+	
+	// 18 bytes for name
+	read(f, &weaponstate->name, MAX_WEAPON_NAME);
+	
+	// 3 bytes total
+	// 1 byte critical range min
+	read(f, &weaponstate->crit_min, 1);
+	// 1 byte critical range max
+	read(f, &weaponstate->crit_max, 1);
+	// 1 byte critical additional dice number
+	read(f, &weaponstate->crit_dice_qty, 1);
+	
+	// 1 byte for versatile
+	read(f, &weaponstate->versatile, 1);
+	
+	// 1 byte for finesse
+	read(f, &weaponstate->finesse, 1);
+	
+	// 1 byte for silvered
+	read(f, &weaponstate->silvered, 1);
+	
+	// 1 byte for bonus (+1, +2 weapon etc)
+	read(f, &weaponstate->bonus, 1);
+	
+	// 2 byte for cost/base value
+	read(f, &weaponstate->value, 2);
+	
+	// 9 bytes total
+	// damage type 1
+	read(f, &weaponstate->dmg1_type, 1);
+	read(f, &weaponstate->dmg1_dice_qty, 1);
+	read(f, &weaponstate->dmg1_dice_type, 1);
+	
+	// damage type 2
+	read(f, &weaponstate->dmg2_type, 1);
+	read(f, &weaponstate->dmg2_dice_qty, 1);
+	read(f, &weaponstate->dmg2_dice_type, 1);
+	
+	// damage type 3
+	read(f, &weaponstate->dmg3_type, 1);
+	read(f, &weaponstate->dmg3_dice_qty, 1);
+	read(f, &weaponstate->dmg3_dice_type, 1);
+	
+	// 2 bytes for text ID
+	read(f, &weaponstate->text_id, 2);
+	
+	close(f);
 	
 	return DATA_LOAD_OK;
 }
@@ -450,7 +574,7 @@ int data_LoadPortrait(Screen_t *screen, ssprite_t *sprite, unsigned short id){
 	close(f);
 	if (status < PORTRAIT_DAT_SIZE){
 		ui_DrawError(screen, DATA_LOAD_ERROR_MSG, DATA_LOAD_PORTRAIT_DAT_READ, status);
-		return DATA_LOAD_BOSSFILE;
+		return DATA_LOAD_PORTRAITFILE;
 	}
 	
 	// Sprites are always a fixed size
@@ -502,9 +626,7 @@ int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t
 	unsigned char w = 0;
 	unsigned char b;
 	int seek_offset = MONSTER_ENTRY_SIZE * character_id;
-	
-	//printf("searching id: %d\n", character_id);
-	
+		
 	// character_type NPC
 	// Load from the NPC.DAT file
 	if (character_type == CHARACTER_TYPE_NPC){
@@ -549,6 +671,7 @@ int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t
 	
 	// 5a. (2 bytes) initial sprite ID 
 	read(f, &sprite_id, 2);
+	
 	// 5b. (38 bytes) all other sprite IDs (not supported yet on QL)
 	lseek(f, 38, SEEK_CUR);
 	
@@ -556,9 +679,10 @@ int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t
 	read(f, &portrait_id, 2);
 	
 	// 7. (1 byte) character class	
-	read(f, &b, 1);
-	playerstate->player_class = b << 4;	// Class is the lower 4 bits
-	playerstate->player_race = b >> 4;		// Race is the upper 4 bits
+	read(f, &playerstate->player_class, 1);
+	//playerstate->player_class = b << 4;	// Class is the lower 4 bits
+	//playerstate->player_race = b >> 4;		// Race is the upper 4 bits
+	read(f, &playerstate->player_race, 1);
 	
 	// 8. (1 byte) character level
 	read(f, &playerstate->level, 1);
@@ -592,13 +716,47 @@ int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t
 	read(f, &playerstate->status, 4);
 		
 	// Equipped items
+	read(f, &w, 1);	// Head
+	if (w){
+		data_LoadItem(screen, playerstate->head, w);
+	} else {
+		playerstate->head->item_id = 0;	
+	}
+	w = 0;
 	
-	playerstate->head = 0;
-	playerstate->body = 0;
-	playerstate->option = 0;
+	read(f, &w, 1);	// Body
+	if (w){
+		data_LoadItem(screen, playerstate->body, w);
+	} else {
+		playerstate->body->item_id = 0;	
+	}
+	w = 0;
 	
-	playerstate->formation = FORMATION_FRONT;
+	read(f, &w, 1);	// Option item
+	if (w){
+		data_LoadItem(screen, playerstate->option, w);
+	} else {
+		playerstate->option->item_id = 0;	
+	}
+	w = 0;
 	
+	read(f, &w, 1);	// Weapon_r
+	if (w){
+		data_LoadWeapon(screen, playerstate->weapon_r, w);	
+	} else {
+		playerstate->weapon_r->item_id = 0;	
+	}
+	w = 0;
+	
+	read(f, &w, 1);	// Weapon_l
+	if (w){
+		data_LoadWeapon(screen, playerstate->weapon_l, w);	
+	} else {
+		playerstate->weapon_l->item_id = 0;	
+	}
+	
+	read(f, &playerstate->formation, 1);
+		
 	playerstate->kills = 0;
 	playerstate->spells_cast = 0;
 	playerstate->hits_taken = 0;
@@ -606,21 +764,53 @@ int data_CreateCharacter(Screen_t *screen, PlayerState_t *playerstate, ssprite_t
 	
 	close(f);
 	
-	// Load weapon one
-	w = 0;
-	if (w){
-		data_LoadWeapon(screen, playerstate->weapon_r, w);	
-	}
-	
-	// Load weapon two
-	w = 0;
-	if (w){
-		data_LoadWeapon(screen, playerstate->weapon_l, w);
-	}
 	
 	// Set initial items to empty
 	for (i = 0; i < MAX_ITEMS; i++){
-		playerstate->items[i] = 0;	
+		playerstate->items[i].item_type = ITEM_TYPE_NONE;
+		playerstate->items[i].item_id = 0;
+		playerstate->items[i].qty = 0;
+	}
+	
+	// Add weapon_l as an item to inventory
+	i = 0;
+	if (playerstate->weapon_l->item_id != 0){
+		playerstate->items[i].item_type = ITEM_TYPE_WEAPON;
+		playerstate->items[i].item_id = playerstate->weapon_l->item_id;
+		playerstate->items[i].qty = 1;
+		i++;
+	}
+	
+	// Add weapon_r as an item to inventory
+	if (playerstate->weapon_r->item_id != 0){
+		playerstate->items[i].item_type = ITEM_TYPE_WEAPON;
+		playerstate->items[i].item_id = playerstate->weapon_r->item_id;
+		playerstate->items[i].qty = 1;
+		i++;
+	}
+	
+	// Add head item to inventory
+	if (playerstate->head->item_id != 0){
+		playerstate->items[i].item_type = ITEM_TYPE_ITEM;
+		playerstate->items[i].item_id = playerstate->head->item_id;
+		playerstate->items[i].qty = 1;
+		i++;
+	}
+	
+	// Add body item to inventory
+	if (playerstate->body->item_id != 0){
+		playerstate->items[i].item_type = ITEM_TYPE_ITEM;
+		playerstate->items[i].item_id = playerstate->body->item_id;
+		playerstate->items[i].qty = 1;
+		i++;
+	}
+	
+	// Add option item to inventory
+	if (playerstate->option->item_id != 0){
+		playerstate->items[i].item_type = ITEM_TYPE_ITEM;
+		playerstate->items[i].item_id = playerstate->option->item_id;
+		playerstate->items[i].qty = 1;
+		i++;
 	}
 	
 	if (playerstate->type == CHARACTER_TYPE_BOSS){

@@ -54,6 +54,10 @@
 #define CHARACTER_TYPE_NPC		1
 #define CHARACTER_TYPE_BOSS		2
 
+#define ITEM_TYPE_NONE			0x00
+#define ITEM_TYPE_ITEM			0x69
+#define ITEM_TYPE_WEAPON		0x77
+
 // Structure representing the data associated with a single weapon
 // This is everything we need to know in order to carry out combat with this weapon
 // critical range, damage type
@@ -68,24 +72,22 @@ typedef struct {
 	unsigned char proficiency_2	;	//
 	unsigned char crit_min;			// Minimum roll for critical, e.g 19
 	unsigned char crit_max;			// Maximum roll for critical, e.g. 20
-	unsigned char crit_multi;		// Number of rolls if critical, e.g. 2x
-	unsigned char dmg1_type;		// e.g. PHYSICAL
-	unsigned char dmg1_min;			// minimum range of damage, e.g. 1
-	unsigned char dmg1_max;			// minimum range of damage, e.g. 6
-	unsigned char dmg1_rolls;		// number of rolls of this damage type, e.g. 1
-	unsigned char dmg2_type;		// e.g. SLASHING
-	unsigned char dmg2_min;			// minimum range of damage, e.g. 1
-	unsigned char dmg2_max;			// minimum range of damage, e.g. 6
-	unsigned char dmg2_rolls;		// number of rolls of this damage type, e.g. 1
-	unsigned char dmg3_type;		// e.g. PIERCING
-	unsigned char dmg3_min;			// minimum range of damage, e.g. 1
-	unsigned char dmg3_max;			// minimum range of damage, e.g. 6
-	unsigned char dmg3_rolls;		// number of rolls of this damage type, e.g. 1
+	unsigned char crit_dice_qty;	// Number of rolls if critical, e.g. 2x
 	unsigned char versatile;
 	unsigned char finesse;
 	unsigned char silvered;
 	unsigned char bonus;
 	unsigned short value;
+	unsigned char dmg1_type;		// e.g. PHYSICAL
+	unsigned char dmg1_dice_qty;	
+	unsigned char dmg1_dice_type;	
+	unsigned char dmg2_type;		// e.g. SLASHING
+	unsigned char dmg2_dice_qty;	
+	unsigned char dmg2_dice_type;
+	unsigned char dmg3_type;		// e.g. PIERCING
+	unsigned char dmg3_dice_qty;	
+	unsigned char dmg3_dice_type;
+	unsigned short text_id;			// ID of the text which describes this item
 } WeaponState_t;
 
 // Data for a single spell
@@ -111,14 +113,22 @@ typedef struct {
 typedef struct {
 	unsigned char item_id;			// 1-255
 	unsigned char name[MAX_PLAYER_NAME];			// Name of Item:1 "Potion"
-	unsigned char class_limit;		// HUMAN_UNTRAINED, HUMAN_PALADIN, BEAST_MAGIC, etc
+	unsigned char class_limit;		// UNTRAINED, PALADIN, etc
+	unsigned char race_limit;		// HUMAN, ORC, ELF, etc
 	unsigned char type;				// ITEM_TYPE_ARMOUR, ITEM_TYPE_CONSUMEABLE, etc
 	unsigned char slot;				// SLOT_TYPE_BODY, SLOT_TYPE_NONE, etc
 	unsigned short value;			// How much it costs, base value
 	unsigned char ac;				// Armour class for armour items
 	unsigned char ac_type;			// ARMOUR_TYPE_LIGHT, etc
 	unsigned char effectlist[MAX_EFFECTS];	// List of effect ID's. Effects are what the item does on use/equip.
+	unsigned short text_id;			// ID of the text which describes this item
 } ItemState_t;
+
+struct Item_t {
+	unsigned char item_type;		// item_type == ascii 'w' (weapon)
+	unsigned char item_id;			// item_id == 22 (weapon id 22)
+	unsigned char qty;				// qty == 7x (7 of these items)
+};
 
 // Structure representing the status of a single NPC or PC
 typedef struct {
@@ -149,9 +159,9 @@ typedef struct {
 	unsigned long status;				// 32bit bitfield of status effects - see status.h
 	
 	// Equipped items
-	unsigned char head;					// head
-	unsigned char body;					// body
-	unsigned char option;				// ring/pendant etc
+	ItemState_t *head;					// head
+	ItemState_t *body;					// body
+	ItemState_t *option;				// ring/pendant etc
 	
 	// Location in party when combat begins
 	unsigned char formation;			// front/middle/rear
@@ -160,7 +170,7 @@ typedef struct {
 										// rear gets bonus to defence, but penalty to non-ranged attacks
 	
 	// Item store for this player
-	unsigned short items[MAX_ITEMS];	// items
+	struct Item_t items[MAX_ITEMS];		// items
 	
 	// Individual player stats
 	unsigned short kills;				// Record of how many kills this player has made so far
@@ -207,6 +217,7 @@ typedef struct {
 	unsigned char name[MAX_LEVEL_NAME_SIZE];					// Name of the current adventure
 	unsigned char level;										// ID of the current location
 	unsigned char level_previous;								// ID of the immediately previous location
+	unsigned char level_looted[MAX_LOCATIONS];					// Each level has a count of how many times it has been looted
 	unsigned char level_visits[MAX_LOCATIONS];					// Each level has a count of how many times it has been visited
 	unsigned char level_defeated_primary[MAX_LOCATIONS];		// Each level has a flag to indicate whether the primary monster(s) has been defeated
 	unsigned char level_defeated_secondary[MAX_LOCATIONS];		// Each level has a flag to indicate whether the secondary monster(s) has been defeated

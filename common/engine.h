@@ -29,6 +29,9 @@
 // Defaults that are common to all game mechanics on all platforms
 // ===================================================================
 
+#define ATTACK_DICE_TYPE		20
+#define ATTACK_DICE_QTY			1
+
 #define ABILITY_MODIFIER_MIN -5		// 5th edition maximum negative ability modifier 
 #define ABILITY_MODIFIER_MAX 10		// 5th edition maximum positive ability modifier
 #define PROFICIENCY_BONUS_MIN 2		// Minimum amount that a skill you are proficienct in can modify a roll
@@ -128,15 +131,16 @@
 #define RACE_ELF					4
 
 // Weapon damage types
-#define WEAPON_DMG_PHYSICAL			0
-#define WEAPON_DMG_SLASHING			1
-#define WEAPON_DMG_PIERCING			2
-#define WEAPON_DMG_BLUNT			3
-#define WEAPON_DMG_LIGHTNING		4
-#define WEAPON_DMG_ACID				5
-#define WEAPON_DMG_FIRE				6
-#define WEAPON_DMG_COLD				7
-#define WEAPON_DMG_POISON			8
+#define WEAPON_DMG_NONE				0
+#define WEAPON_DMG_PHYSICAL			1
+#define WEAPON_DMG_SLASHING			2
+#define WEAPON_DMG_PIERCING			3
+#define WEAPON_DMG_BLUNT			4
+#define WEAPON_DMG_LIGHTNING		5
+#define WEAPON_DMG_ACID				6
+#define WEAPON_DMG_FIRE				7
+#define WEAPON_DMG_COLD				8
+#define WEAPON_DMG_POISON			9
 
 // Weapon sizes
 #define WEAPON_SIZE_SMALL			0
@@ -159,6 +163,46 @@
 // Weapon grip
 #define WEAPON_1HANDED				0
 #define WEAPON_2HANDED				1
+#define RIGHT_HAND					2
+#define LEFT_HAND					3
+
+// Item types
+#define ITEM_TYPE_CONSUMEABLE		0
+#define ITEM_TYPE_ARMOUR			1
+#define ITEM_TYPE_SPELL				2
+#define ITEM_TYPE_GENERIC			3
+#define ITEM_TYPE_QUEST				4
+
+// Armour types
+#define ARMOUR_TYPE_NONE			0
+#define ARMOUR_TYPE_LIGHT			1
+#define ARMOUR_TYPE_MEDIUM			2
+#define ARMOUR_TYPE_HEAVY			3
+
+#define ITEM_SLOT_NONE				0
+#define ITEM_SLOT_HEAD				1
+#define ITEM_SLOT_BODY				2
+#define ITEM_SLOT_OPTION			3
+
+/*
+	An effect can be caused by an item, spell or action
+	
+	- Has a name "Fireball"
+	- Has one or more destinations
+		- enum ( self, self party, enemy, enemy party)
+	- Has (one or more) type(s) of effect
+		- hp +20
+		- apply bleeding
+		- apply poisoned
+		- bless
+		- smite
+		- cause fire damage
+		- cause acid damage
+		- etc.
+	- Has an animation
+		- fireball
+
+*/
 
 extern const char *player_classes[];
 extern const char *player_races[];
@@ -171,6 +215,12 @@ extern const char *status_effects[];
 // Prototypes that are core to all game mechanics on all platforms
 // ===================================================================
 
+// Calculate the damage roll of a player equipped weapon
+unsigned char player_weapon_DamageModifier(PlayerState_t *pc, WeaponState_t *weapon, unsigned char dmg_type, unsigned char *dmg_dice_type, unsigned char *dmg_dice_qty, unsigned char weapon_bonus, unsigned char versatile_bonus, unsigned char silvered_bonus, unsigned char status_bonus, unsigned char status_penalty);
+
+// Calculate the attack roll of a player equipped weapon
+unsigned char player_weapon_AttackModifier(PlayerState_t *pc, WeaponState_t *weapon, unsigned char proficiency_bonus, unsigned char weapon_bonus, unsigned char ability_bonus, unsigned char status_bonus, unsigned char status_penalty);
+
 // Calculate the modifier for an ability
 char ability_Modifier(unsigned char ability);
 
@@ -179,5 +229,29 @@ unsigned char is_proficient(PlayerState_t *pc, unsigned char proficiency_type);
 
 // Set the hit dice type and quantity for a given player character
 void hit_Dice(PlayerState_t *pc, unsigned char *dice_quantity, unsigned char *dice_type, char *constitution_modifier);
+
+// Give x1 of an item to a player character
+void pc_GiveItem(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item);
+
+// Take x1 of an item from a player character
+void pc_TakeItem(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item);
+
+// Check if a player character has any free slots
+char pc_HasSlots(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item);
+
+// Check if a player character can equip a given item/weapon
+char pc_CanEquip(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item);
+
+// Equip an item/weapon
+void pc_Equip(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item, unsigned char hand);
+
+// Is an item equipped
+char pc_IsEquipped(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item);
+
+// Is it the last instance of an item in the inventory?
+char pc_IsLastItem(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item);
+
+// How many characters are in the party at present
+unsigned char party_Count(GameState_t *gamestate, unsigned char include_dead);
 
 #endif

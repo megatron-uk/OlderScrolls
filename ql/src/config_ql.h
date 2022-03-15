@@ -45,6 +45,6 @@
 #define SPRITE_DAT_SIZE		256		// Size of graphics elements are specific to QL bitmap modes only
 #define PORTRAIT_DAT_SIZE	256		// Size of graphics elements are specific to QL bitmap modes only
 #define BOSS_DAT_SIZE		2304	// Size of graphics elements are specific to QL bitmap modes only
-#define MONSTER_ENTRY_SIZE	91		// Size of a single monster/npc datafile entry
+#define MONSTER_ENTRY_SIZE	87		// Size of a single monster/npc datafile entry
 
 #endif

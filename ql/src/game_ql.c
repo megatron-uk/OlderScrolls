@@ -68,10 +68,20 @@ void game_Init(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstat
 	gamestate->players = (PartyState_t *) calloc(sizeof(PlayerState_t), 1);
 	for (i = 0; i < MAX_PLAYERS; i++){
 		gamestate->players->player[i] = (PlayerState_t *) calloc(sizeof(PlayerState_t), 1);
+		gamestate->players->player[i]->weapon_r = (WeaponState_t *) calloc(sizeof(WeaponState_t), 1);
+		gamestate->players->player[i]->weapon_l = (WeaponState_t *) calloc(sizeof(WeaponState_t), 1);
+		gamestate->players->player[i]->head = (ItemState_t *) calloc(sizeof(ItemState_t), 1);
+		gamestate->players->player[i]->body = (ItemState_t *) calloc(sizeof(ItemState_t), 1);
+		gamestate->players->player[i]->option = (ItemState_t *) calloc(sizeof(ItemState_t), 1);
 	}
 	gamestate->enemies = (EnemyState_t *) calloc(sizeof(EnemyState_t), 1);
 	for (i = 0; i < MAX_MONSTER_TYPES; i++){
 		gamestate->enemies->enemy[i] = (PlayerState_t *) calloc(sizeof(PlayerState_t), 1);
+		gamestate->enemies->enemy[i]->weapon_r = (WeaponState_t *) calloc(sizeof(WeaponState_t), 1);
+		gamestate->enemies->enemy[i]->weapon_l = (WeaponState_t *) calloc(sizeof(WeaponState_t), 1);
+		gamestate->players->player[i]->head = (ItemState_t *) calloc(sizeof(ItemState_t), 1);
+		gamestate->players->player[i]->body = (ItemState_t *) calloc(sizeof(ItemState_t), 1);
+		gamestate->players->player[i]->option = (ItemState_t *) calloc(sizeof(ItemState_t), 1);
 	}
 	
 	// Open the story data file and load entry 0 - this has the adventure name
@@ -88,7 +98,8 @@ void game_Init(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstat
 	
 	// Initialise a new player character and their sprites
 	data_CreateCharacter(screen, gamestate->players->player[0], screen->players[0], NULL, CHARACTER_TYPE_MONSTER, 1);
-	for (i = 1; i < MAX_PLAYERS; i++){
+	data_CreateCharacter(screen, gamestate->players->player[1], screen->players[1], NULL, CHARACTER_TYPE_NPC, 1);
+	for (i = 2; i < MAX_PLAYERS; i++){
 		data_CreateCharacter(screen, gamestate->players->player[i], screen->players[i], NULL, CHARACTER_TYPE_MONSTER, 0);
 	}
 }
@@ -330,15 +341,15 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 				character_screen = 1;
 				break;
 			case INPUT_2:
-				gamestate->players->current = 1;
+				gamestate->players->current = 2;
 				character_screen = 1;
 				break;
 			case INPUT_3:
-				gamestate->players->current = 1;
+				gamestate->players->current = 3;
 				character_screen = 1;
 				break;
 			case INPUT_4:
-				gamestate->players->current = 1;
+				gamestate->players->current = 4;
 				character_screen = 1;
 				break;
 			default:
@@ -373,7 +384,7 @@ void game_Quit(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstat
 	unsigned char c;
 	
 	// Draw a yes/no dialogue box
-	c = ui_DrawYesNo(screen, gamestate, levelstate, (char *) "Really Quit?");
+	c = ui_DrawBooleanChoice(screen, "Really Quit?", "No", "Yes");
 	if (c){
 		gamestate->gamemode = GAME_MODE_EXIT;
 	}
@@ -428,11 +439,16 @@ unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelStat
 			levelstate->has_npc1 = 1;
 			// Load NPC into enemy slot 1
 			data_CreateCharacter(screen, gamestate->enemies->enemy[1], screen->enemies[1], NULL, CHARACTER_TYPE_NPC, levelstate->npc1);
+			
 		}
 		if (add_it){
 			can_talk = 1;
 			if (add_inputs){
 				input_Set(INPUT_1);
+			}
+			if (add_text){
+				sprintf(gamestate->buf, "You can <r>T<C>alk to <g>%s<C>.", gamestate->enemies->enemy[1]->name);
+				sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "\n%s", gamestate->buf);
 			}
 		}
 	}
@@ -452,6 +468,10 @@ unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelStat
 			if (add_inputs){
 				input_Set(INPUT_2);
 			}
+			if (add_text){
+				sprintf(gamestate->buf, "You can <r>T<C>alk to <g>%s<C>.", gamestate->enemies->enemy[2]->name);
+				sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "\n%s", gamestate->buf);
+			}
 		}
 	}
 	
@@ -469,6 +489,10 @@ unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelStat
 			can_talk = 1;
 			if (add_inputs){
 				input_Set(INPUT_3);
+			}
+			if (add_text){
+				sprintf(gamestate->buf, "You can <r>T<C>alk to <g>%s<C>.", gamestate->enemies->enemy[3]->name);
+				sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "\n%s", gamestate->buf);
 			}
 		}
 	}
@@ -503,15 +527,12 @@ unsigned char game_CheckLoot(Screen_t *screen, GameState_t *gamestate, LevelStat
 		}
 	}
 	
-	//sprintf(gamestate->buf, "can loot: %d\nitems_number: %d\nweapons_number: %d\n", can_loot, levelstate->items_number, levelstate->weapons_number);
-	//ui_DrawError(screen, "Debug: CheckLoot", gamestate->buf, 0);
-	
 	if (add_inputs){
 		input_Set(INPUT_CANCEL);
-		//if (can_loot){
-			//ui_DrawLootChoice(screen, gamestate, levelstate);
-			//draw_Flip(screen);	
-		//}
+		if (can_loot){
+			ui_DrawLootChoice(screen, gamestate, levelstate, 1, 0);
+			draw_Flip(screen);	
+		}
 	}
 	return can_loot;
 }
@@ -553,7 +574,7 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 					} else {
 						sprintf(gamestate->buf, "You can <r>M<C>ove <g>north<C>.");
 					}
-					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
+					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "\n%s", gamestate->buf);
 					first = 0x20;
 				}
 			}
@@ -580,7 +601,7 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 					} else {
 						sprintf(gamestate->buf, "You can <r>M<C>ove <g>south<C>.");
 					}
-					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
+					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "\n%s", gamestate->buf);
 					first = 0x20;
 				}
 			}
@@ -607,7 +628,7 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 					} else {
 						sprintf(gamestate->buf, "You can <r>M<C>ove <g>east<C>.");
 					}
-					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
+					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "\n%s", gamestate->buf);
 					first = 0x20;
 				}
 			}
@@ -634,7 +655,7 @@ unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, Level
 					} else {
 						sprintf(gamestate->buf, "You can <r>M<C>ove <g>west<C>.");
 					}
-					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "%c\n%s\n", first, gamestate->buf);
+					sprintf(gamestate->text_buffer + strlen(gamestate->text_buffer), "\n%s", gamestate->buf);
 					first = 0x20;
 				}
 			}

@@ -38,8 +38,8 @@ FLOPPY_NAME = "GameFloppy"
 # Targets to build/run
 #################################
 all: $(TARGET)
-full: clean $(TARGET) newdisk copydisk rundisk_128
-run: rundisk_128
+full: clean $(TARGET) newdisk copydisk rundisk_192
+run: rundisk_192
 runslow: rundisk_slow
 run128: rundisk_128
 run192: rundisk_192
@@ -51,7 +51,10 @@ run640: rundisk_640
 # main application
 #################################
 
-# Standard game engine code
+# Standard game engine code which is the same for all targets
+
+src/conditions.o: common/conditions.c common/conditions.h
+	$(CC) $(CFLAGS) -c common/conditions.c -o src/conditions.o
 
 src/engine.o: common/engine.c common/engine.h
 	$(CC) $(CFLAGS) -c common/engine.c -o src/engine.o
@@ -69,9 +72,6 @@ src/input_ql.o: src/input_ql.c src/input_ql.h
 	
 src/main_ql.o: src/main_ql.c src/main_ql.h
 	$(CC) $(CFLAGS) -c src/main_ql.c -o src/main_ql.o
-	
-src/conditions_ql.o: src/conditions_ql.c
-	$(CC) $(CFLAGS) -c src/conditions_ql.c -o src/conditions_ql.o
 	
 src/data_ql.o: src/data_ql.c src/data_ql.h
 	$(CC) $(CFLAGS) -c src/data_ql.c -o src/data_ql.o
@@ -94,7 +94,7 @@ src/poll.o: src/poll.s src/poll.h
 #################################
 # Main application target build recipe
 #################################
-$(TARGET): src/engine.o src/monsters.o src/bmp_ql.o src/input_ql.o src/main_ql.o src/conditions_ql.o src/data_ql.o src/draw_ql.o src/ui_ql.o src/utils_ql.o src/game_ql.o src/poll.o
+$(TARGET): src/engine.o src/monsters.o src/bmp_ql.o src/input_ql.o src/main_ql.o src/conditions.o src/data_ql.o src/draw_ql.o src/ui_ql.o src/utils_ql.o src/game_ql.o src/poll.o
 	@echo ""
 	@echo "=========================="
 	@echo " Linking binary"
@@ -102,7 +102,7 @@ $(TARGET): src/engine.o src/monsters.o src/bmp_ql.o src/input_ql.o src/main_ql.o
 	@echo "- Calling C68 ld..."
 	$(LD) $(LDFLAGS) \
 		src/engine.o src/monsters.o \
-		src/bmp_ql.o src/input_ql.o src/main_ql.o src/conditions_ql.o \
+		src/bmp_ql.o src/input_ql.o src/main_ql.o src/conditions.o \
 		src/data_ql.o src/draw_ql.o src/ui_ql.o src/utils_ql.o src/game_ql.o \
 		src/poll.o \
 	$(LIBS) -o bin/$(TARGET)

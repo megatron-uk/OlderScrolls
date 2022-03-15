@@ -89,6 +89,8 @@
 #define DATA_LOAD_NPC_MISSING_TALK		"Unable to find NPC in linked list to set dialogue state."
 #define DATA_LOAD_WEAPON_DAT_MSG		"Unable to open WEAPON .dat file."
 #define DATA_LOAD_WEAPON_DAT_SEEK		"Unable to seek to correct location in WEAPON .dat file."
+#define DATA_LOAD_ITEM_DAT_MSG			"Unable to open ITEM .dat file."
+#define DATA_LOAD_ITEM_DAT_SEEK			"Unable to seek to correct location in ITEM .dat file."
 
 // Out of memory error messages
 #define GENERIC_MEMORY_MSG 				"Memory Error!"																// Used as a title

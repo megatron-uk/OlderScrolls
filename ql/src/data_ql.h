@@ -41,6 +41,8 @@ int data_LoadMap(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 int data_LoadSprite(Screen_t *screen, ssprite_t *sprite, unsigned short id);
 int data_LoadPortrait(Screen_t *screen, ssprite_t *sprite, unsigned short id);
 int data_LoadBoss(Screen_t *screen, lsprite_t *lsprite, unsigned short id);
+int data_LoadWeapon(Screen_t *screen, WeaponState_t *weaponstate, unsigned char id);
+int data_LoadItem(Screen_t *screen, ItemState_t *itemstate, unsigned char id);
 char data_AddNPC(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char id);
 char data_SetNPCDead(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char id, unsigned char dead);
 char data_IncrementNPCTalk(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char id, unsigned char unique_dialogue_id);
