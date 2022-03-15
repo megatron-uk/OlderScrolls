@@ -23,7 +23,7 @@ WEAPONS = {
 	
 	1 : {
 		"item_id" 	: 1,		# 1 byte. Unique weapon item id 
-		"type"		: '2H', 	# 1 byte. 1H or 2H
+		"type"		: '1H', 	# 1 byte. 1H or 2H
 		"class"		: 'SIMPLE',	# 1 byte. SIMPLE, MARTIAL, RANGED, MAGICAL
 		"rarity"	: 'COMMON',	# 1 byte. COMMON, UNCOMMON, RARE, LEGENDARY
 		'size' 		: 'MEDIUM',	# 1 byte. SMALL, MEDIUM, LARGE, HUGE	
@@ -37,11 +37,12 @@ WEAPONS = {
 										# 3 bytes. Second damage type.
 										# 3 bytes. Third damage type.
 		},
-		"versatile"	: 0,		# 1 byte. Not a versatile weapon (1H or 2H)
+		"versatile"	: 1,		# 1 byte. Not a versatile weapon (1H or 2H)
 		"finesse"	: 0,		# 1 byte. Not a finesse weapon (STRENGTH or DEXTERITY bonus to attack)
 		"silvered" 	: 0,		# 1 byte. Not a silvered weapon (bonus damage to undead/monsters with physical resistance)
 		"bonus"		: 0,		# 1 byte. 0, +1, +2, +3 bonus to attack and damage rolls.
 		"value"		: 1,		# 2 bytes. Base value of the weapon.
+		"text"		: 14,
 	},
 	2 : {
 		"item_id" 	: 2,		# 1 byte. Unique weapon item id 
@@ -64,6 +65,7 @@ WEAPONS = {
 		"silvered" 	: 0,		# 1 byte. Not a silvered weapon (bonus damage to undead/monsters with physical resistance)
 		"bonus"		: 0,		# 1 byte. 0, +1, +2, +3 bonus to attack and damage rolls.
 		"value"		: 5,		# 2 bytes. Base value of the weapon.
+		"text"		: 15,
 	},
 }
 

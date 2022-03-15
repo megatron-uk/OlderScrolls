@@ -52,4 +52,10 @@ One of the markers points <g>north<C>, heading <g>south<C> would take you back t
 	7 : "The motionless body of a thief lays close to the entrance of the clearing.",
 	8 : "'You, yes you!'\nThe well dressed figure motions you closer.\n'I have a job for you. Take this stick and go and beat some sense into that thief who has been robbing visitors to our village. Unless we can stop this ongoing theft, no-one will want to stay at our village.'\n\nHe offers a sturdy wooden stick to you.",
 	9 : "'Thank you for taking care of our little problem.'\n'You are always welcome to stay in Leafy Glade.'",
+	10 : "Nothing",
+	11 : "Clothing which is reinforced with multiple layers of padded material. Offers minimal protection over normal clothing.",
+	12 : "An outfit covered with many metal studs. Whilst not providing protection equivalent to armour, defence is improved over other types of clothing.",
+	13 : "A happy little hat which sits at a jaunty angle.",
+	14 : "A sturdy wooden branch. It is long-and-heavy enough to require two hands to hold it effectively. Swung with enough force, it could easily maim someone.",
+	15 : "A knife. The type of tool a butcher or leather worker may use. Whilst not especially well balanced or finely crafted, it can cause just as lethal a wound as an expensive knife from a weaponsmith can."
 }

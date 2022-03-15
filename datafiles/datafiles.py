@@ -698,6 +698,7 @@ def generate_weapons(import_dir = None, target = None):
 	
 	try:
 		game_weapons = module = __import__(import_dir + ".weapons", globals(), locals(), ["WEAPONS"])
+		game_story = module = __import__(import_dir + ".story", globals(), locals(), ["STORY"])
 	except Exception as e:
 		print("Error: %s" % e)
 		traceback.print_exc(file=sys.stdout)
@@ -864,7 +865,7 @@ def generate_weapons(import_dir = None, target = None):
 	for weapon_id in weapon_ids:
 		
 		weapon = game_weapons.WEAPONS[weapon_id]
-		data = weapon_to_record(weapon_id, weapon)
+		data = weapon_to_record(weapon_id, weapon, game_story)
 		if data is False:
 			print("ERROR! Unable to generate a weapon data record")
 			return False
@@ -894,6 +895,165 @@ def generate_weapons(import_dir = None, target = None):
 		print("ERROR! %s" % e)
 		return False
 	print("...done!")
+
+def generate_items(import_dir = None, target = None):
+	""" Generates an items datafile from an items.py file """
+
+	print("")
+	print("*** Parsing Item data ***")
+	
+	try:
+		game_items = module = __import__(import_dir + ".items", globals(), locals(), ["ITEMS"])
+		game_story = module = __import__(import_dir + ".story", globals(), locals(), ["STORY"])
+	except Exception as e:
+		print("Error: %s" % e)
+		traceback.print_exc(file=sys.stdout)
+		return False
+
+	item_ids = list(game_items.ITEMS.keys())
+	item_ids.sort()
+	
+	text_ids = list(game_story.STORY.keys())
+	text_ids.sort()
+	
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 1.")
+	print("#")
+	print("# Verify that we don't have any item names that are non-ASCII or outside < 32, or > 126")
+	print("#")
+	print("###################################################################################")
+	print("")
+	print("Check 1: Checking ASCII...")
+
+	valid = True
+	for i in item_ids:
+		pos = 0
+		for c in game_items.ITEMS[i]['name']:
+			pos += 1
+			if (ord(c) < 32) or (ord(c) > 126):
+				if ord(c) == 10:
+					# Line feed aka \n is OK
+					pass
+				else:
+					valid = False
+					print("Item ID: %3d" % i)
+					print("- ERROR: Character [%c] at pos %d is outside allowable ASCII range" % (c, pos))
+		if len(game_items.ITEMS[i]['name']) > MAX_WEAPON_NAME:
+			valid = False
+			print("Item ID: %3d" % i)
+			print("- ERROR: Name of Item [%s] is longer than allowed [%d]" % (game_items.ITEMS[i]['name'], MAX_WEAPON_NAME))
+		else:
+			if DEBUG:
+				print("Item ID: %3d [%18s]" % (i, game_items.ITEMS[i]['name']))
+				
+	if valid:
+		print("GOOD: All text appears valid")			
+	else:
+		return False
+		
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 2.")
+	print("#")
+	print("# Check all lookup values")
+	print("#")
+	print("###################################################################################")
+	print("")
+	print("Check 2: Checking all lookup labels resolve correctly...")
+
+	valid = True
+	for i in item_ids:
+		for label in ["class_limit", "race_limit", "type", "slot", "ac_type"]:
+			
+			if label == "class_limit":
+				lookup_table = MONSTER_CLASSES
+				
+			if label == "race_limit":
+				lookup_table = MONSTER_RACES
+				
+			if label == "type":
+				lookup_table = ITEM_TYPES
+				
+			if label == "slot":
+				lookup_table = ITEM_SLOT_TYPES
+				
+			if label == "ac_type":
+				lookup_table = ITEM_ARMOUR_TYPES
+				
+			my_label_value = game_items.ITEMS[i][label]
+			if my_label_value != -1:
+				
+				if my_label_value in lookup_table.keys():
+					if DEBUG:
+						print("Item ID: %3d, %s \t: [%s] %s" % (i, label, lookup_table[my_label_value], my_label_value))
+				else:
+					valid = False
+					print("Item ID: %3d" % i)
+					print("- ERROR: Lookup entry [%s] for [%s]" % (my_label_value, label))
+		print("-")
+		
+	if valid:
+		print("GOOD: All lookup values appear valid")			
+	else:
+		return False
+	
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 3.")
+	print("#")
+	print("# Check all effect attributes")
+	print("#")
+	print("###################################################################################")
+	
+	print("")
+	print("###################################################################################")
+	print("#")
+	print("# Step 4.")
+	print("#")
+	print("# Generating weapon data")
+	print("#")
+	print("###################################################################################")
+		
+	item_records = []
+		
+	for item_id in item_ids:
+		
+		item = game_items.ITEMS[item_id]
+		data = item_to_record(item_id, item, game_story)
+		if data is False:
+			print("ERROR! Unable to generate an item data record")
+			return False
+		else:
+			record = {
+				'id' : item_id,
+				'offset' : 0,
+				'data' : data,
+				'item' : item,
+			}
+			item_records.append(record)
+		
+	print("")
+	print("Writing item data...")
+	try:
+		f = open(import_dir + OUT_DIR + target['suffix'] + "/item.dat", "wb")
+		offset = 0
+		for record in item_records:
+			record['offset'] = offset
+			print("- Item ID: %3d [%18s] at offset %5d" % (record['id'], record['item']['name'], offset))
+			for b in record['data']:
+				f.write(b)
+			offset += len(record['data'])
+		f.close()
+	except Exception as e:
+		print("ERROR! Unable to write datafile")
+		print("ERROR! %s" % e)
+		return False
+	print("...done!")
+
 
 def generate_story(import_dir = None, target = None):
 	""" Generates a story/game world location datafile from a map.py file """
@@ -1258,13 +1418,13 @@ def generate_world(import_dir = None, target = None):
 		#print(game_world.MAP[i]['name'])
 		for i_types in game_world.MAP[i]['items_list']:
 			
-			if len(i_types) != 2:
+			if len(i_types) != 3:
 				print(game_world.MAP[i]['name'])
 				print("- %s: INVALID ITEM TYPE LENGTH" % (i_types))
 				valid = False
 			else:
-				i_type = i_types[0]
-				i_id = int(i_types[1:])
+				i_type = i_types.split(',')[0]
+				i_id = int(i_types.split(',')[1])
 				if i_type not in ITEM_TYPE_IDS:
 					print(game_world.MAP[i]['name'])
 					print("- %s: INVALID ITEM TYPE ID [%s]" % (i_types, i_type))
@@ -1651,8 +1811,10 @@ def location_to_record(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 			return False
 		byte_list.append(total_items.to_bytes(1, byteorder='big'))
 		for m in location['items_list']:
-			for c in m:
-				byte_list.append(ord(c).to_bytes(1, byteorder='big'))
+			item_type = m.split(',')[0]
+			byte_list.append(ord(item_type).to_bytes(1, byteorder='big'))
+			item_value = int(m.split(',')[1])
+			byte_list.append(item_value.to_bytes(1, byteorder='big'))
 	for b in byte_list:
 		record.append(b)
 	print("-- +%2s byte, item list" % (len(byte_list)))
@@ -1956,7 +2118,7 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 		print("-- +%2s bytes, %s 0: %s" % (len(byte_list), sprite_file_class, sprite_id_lookup))
 	
 	######################################################
-	# 6. (1 byte) Character CLASS (HUMAN_UNTRAINED, HUMAN_BARD, BEAST, etc)
+	# 6. (1 byte) Character CLASS (UNTRAINED, BARD, etc)
 	######################################################
 	
 	class_type_lookup = False
@@ -1972,6 +2134,25 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 			print("-- +%2s bytes, character class: %s" % (len(byte_list), class_type_lookup))
 	else:
 		print("ERROR - Unable to determine valid character class for character ID:%s %s" %(character_id, character['class']))
+		return False
+	
+	######################################################
+	# 6. (1 byte) Character RACE (HUMAN, BEAST, etc)
+	######################################################
+	
+	class_race_lookup = False
+	
+	if character['race'] in MONSTER_RACES.keys():
+		class_race_lookup = MONSTER_RACES[character['race']]
+	
+	if class_race_lookup is not False:
+		byte_list = class_race_lookup.to_bytes(1, byteorder='big')
+		for b in byte_list:
+			record.append(b.to_bytes(1, byteorder='big'))
+		if DEBUG:
+			print("-- +%2s bytes, character race: %s" % (len(byte_list), class_race_lookup))
+	else:
+		print("ERROR - Unable to determine valid character race for character ID:%s %s" %(character_id, character['race']))
 		return False
 	
 	######################################################
@@ -2080,7 +2261,7 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 	
 	if character['head'] < 0:
 		character['head'] = 0
-	byte_list = character['head'].to_bytes(2, byteorder='big')
+	byte_list = character['head'].to_bytes(1, byteorder='big')
 	for b in byte_list:
 		record.append(b.to_bytes(1, byteorder='big'))
 	if DEBUG:
@@ -2092,7 +2273,7 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 	
 	if character['body'] < 0:
 		character['body'] = 0
-	byte_list = character['body'].to_bytes(2, byteorder='big')
+	byte_list = character['body'].to_bytes(1, byteorder='big')
 	for b in byte_list:
 		record.append(b.to_bytes(1, byteorder='big'))
 	if DEBUG:
@@ -2104,7 +2285,7 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 	
 	if character['option'] < 0:
 		character['option'] = 0
-	byte_list = character['option'].to_bytes(2, byteorder='big')
+	byte_list = character['option'].to_bytes(1, byteorder='big')
 	for b in byte_list:
 		record.append(b.to_bytes(1, byteorder='big'))
 	if DEBUG:
@@ -2116,7 +2297,7 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 	
 	if character['weapon_r'] < 0:
 		character['weapon_r'] = 0
-	byte_list = character['weapon_r'].to_bytes(2, byteorder='big')
+	byte_list = character['weapon_r'].to_bytes(1, byteorder='big')
 	for b in byte_list:
 		record.append(b.to_bytes(1, byteorder='big'))
 	if DEBUG:
@@ -2128,7 +2309,7 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 	
 	if character['weapon_l'] < 0:
 		character['weapon_l'] = 0
-	byte_list = character['weapon_l'].to_bytes(2, byteorder='big')
+	byte_list = character['weapon_l'].to_bytes(1, byteorder='big')
 	for b in byte_list:
 		record.append(b.to_bytes(1, byteorder='big'))
 	if DEBUG:
@@ -2171,10 +2352,146 @@ def character_to_record(character_id, character_type, character, item_ids, weapo
 	#################
 	
 	print("[%3d] bytes total" % len(record))
+	print("")
 	#print(record)
 	return record	
 
-def weapon_to_record(weapon_id, weapon):
+def item_to_record(item_id, item, game_story):
+	""" Generate the binary item record data """
+	
+	record = []
+	
+	print("-- Item ID: %3s [%18s]" % (item_id, item['name']))
+	
+	######################################################
+	# 0. (1 bytes) ID of item
+	######################################################
+	byte_list = item_id.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, ID: %s" % (len(byte_list), item_id))
+		
+	######################################################
+	# 1. (18 bytes) Item name
+	######################################################	
+	byte_list = []
+	tmp = "%s" % (item['name'])
+	for c in tmp:
+		byte_list.append(ord(c).to_bytes(1, byteorder='big'))
+	for i in range(len(byte_list), MAX_WEAPON_NAME):
+		byte_list.append(0x00.to_bytes(1, byteorder='big'))
+	for b in byte_list:
+		record.append(b)
+	print("-- +%2s bytes, name [padded to %d]" % (len(tmp), len(byte_list)))
+		
+	######################################################
+	# 2. (1 bytes) class limit
+	######################################################
+	class_limit = MONSTER_CLASSES[item['class_limit']]
+	byte_list = class_limit.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, class_limit: %s" % (len(byte_list), item['class_limit']))
+		
+	######################################################
+	# 3. (1 bytes) race limit
+	######################################################
+	race_limit = MONSTER_RACES[item['race_limit']]
+	byte_list = race_limit.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, race_limit: %s" % (len(byte_list), item['race_limit']))
+		
+	######################################################
+	# 4. (1 bytes) item type
+	######################################################
+	item_type = ITEM_TYPES[item['type']]
+	byte_list = item_type.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, item type: %s" % (len(byte_list), item['type']))
+	
+	######################################################
+	# 5. (1 bytes) item slot
+	######################################################
+	item_slot = ITEM_SLOT_TYPES[item['slot']]
+	byte_list = item_slot['val'].to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, item slot: %s" % (len(byte_list), item['slot']))
+	
+	######################################################
+	# 6. (2 bytes) item value
+	######################################################
+	item_value = item['value']
+	byte_list = item_value.to_bytes(2, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, item value: %s" % (len(byte_list), item['value']))
+	
+	######################################################
+	# 7. (1 bytes) item AC value
+	######################################################
+	ac = item['ac']
+	byte_list = ac.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, AC value: %s" % (len(byte_list), item['ac']))
+	
+	######################################################
+	# 8. (1 bytes) AC type
+	######################################################
+	ac_type = ITEM_ARMOUR_TYPES[item['ac_type']]
+	byte_list = ac_type.to_bytes(1, byteorder='big')
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, AC type: %s" % (len(byte_list), item['ac_type']))
+	
+	######################################################
+	# 9. (5 bytes) effect list
+	######################################################
+	effect_list = item['effect']
+	byte_list = []
+	for e in effect_list:
+		effect_byte = EFFECT_TYPES[e]
+		byte_list.append(effect_byte.to_bytes(1, byteorder='big'))
+	for b in byte_list:
+		record.append(b)
+	if DEBUG:
+		print("-- +%2s bytes, effect list: %s" % (len(byte_list), item['effect']))
+	
+	######################################################
+	# 10. (2 bytes) text id
+	######################################################
+	text_id = item['text']
+	if text_id in game_story.STORY.keys():
+		byte_list = text_id.to_bytes(2, byteorder='big')
+	else:
+		print("Text ID not found!")
+		return False
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, Text ID: %s" % (len(byte_list), item['text']))	
+	
+	#################
+	# End of record
+	#################
+	
+	print("[%3d] bytes total" % len(record))
+	print("")
+	#print(record)
+	return record	
+
+def weapon_to_record(weapon_id, weapon, game_story):
 	""" Generate the binary weapon record data """
 	
 	record = []
@@ -2353,6 +2670,20 @@ def weapon_to_record(weapon_id, weapon):
 	if DEBUG:
 		print("-- +%2s bytes total for all damage types" % (len(byte_list)))
 	
+	######################################################
+	# 11. (2 bytes) text id
+	######################################################
+	text_id = weapon['text']
+	if text_id in game_story.STORY.keys():
+		byte_list = text_id.to_bytes(2, byteorder='big')
+	else:
+		print("Text ID not found!")
+		return False
+	for b in byte_list:
+		record.append(b.to_bytes(1, byteorder='big'))
+	if DEBUG:
+		print("-- +%2s bytes, Text ID: %s" % (len(byte_list), weapon['text']))	
+	
 	#################
 	# End of record
 	#################
@@ -2456,7 +2787,41 @@ def evaluate_condition(location_ids, text_ids, monster_ids, npc_ids, item_ids, w
 			# Should have 3 additional params
 			n_params = len(condition_list_entry)
 			if n_params == 4:
-				pass
+				param1 = condition_list_entry[1]	# Type of map location check
+				param2 = condition_list_entry[2]	# ID of map location
+				param3 = condition_list_entry[3]	# Value to test
+				if param1 in VISIT_TYPE.keys():
+					if param2 in location_ids:
+						if (param3 < 255) and (param3 >= 0):
+							bitfield = []
+							bitfield = copy.deepcopy(CONDITIONS[cond_type]['bitfield'])
+							bitfield += [VISIT_TYPE[param1]]
+							if param2 < 256:
+								bitfield += [0x00]
+								bitfield += [param2]
+							else:
+								bitfield += (param2 >> 8) & 0xff
+								bitfield += param2 & 0xff
+							bitfield += [param3]
+							if 'pad_sz' in CONDITIONS[cond_type].keys():
+								for i in range(0, CONDITIONS[cond_type]['pad_sz']):
+										bitfield.append(0x00)
+							if len(bitfield) == CONDITIONS[cond_type]['bytes']:
+								if DEBUG:
+									print("--- OK bytestream: %s" % bitfield)
+								return bitfield
+							else:
+								print("--- INVALID SIZE [%s != %s]" % (len(bitfield), CONDITIONS[cond_type]['bytes']))
+								return False
+						else:
+							print("--- INVALID MAP VISIT TEST NUMBER: [%s]" % param3)
+							valid = False
+					else:
+						print("--- INVALID MAP VISIT TEST LOCATION ID: [%s]" % param2)
+						valid = False
+				else:
+					print("--- INVALID MAP VISIT TEST TYPE: [%s]" % param1)
+					valid = False
 			else:
 				valid = False
 				print("--- INVALID NUMBER OF PARAMETERS [%s]" % n_params)
@@ -2683,25 +3048,25 @@ if __name__ == "__main__":
 	target = choose_target(adventure = adventure)
 	if target:
 	
-		#status = generate_world(import_dir = adventure, target = target)
-		#if status is False:
-		#	print("Not continuing. Please fix errors in world map file.")
-		#	sys.exit(1)
+		status = generate_world(import_dir = adventure, target = target)
+		if status is False:
+			print("Not continuing. Please fix errors in world map file.")
+			sys.exit(1)
 			
-		#status = generate_story(import_dir = adventure, target = target)
-		#if status is False:
-		#	print("Not continuing. Please fix errors in story file.")
-		#	sys.exit(1)
+		status = generate_story(import_dir = adventure, target = target)
+		if status is False:
+			print("Not continuing. Please fix errors in story file.")
+			sys.exit(1)
 			
-		#status = generate_characters(import_dir = adventure, target = target)
-		#if status is False:
-		#	print("Not continuing. Please fix errors in monster file.")
-		#	sys.exit(1)	
+		status = generate_characters(import_dir = adventure, target = target)
+		if status is False:
+			print("Not continuing. Please fix errors in monster file.")
+			sys.exit(1)	
 			
-		#status = generate_items(import_dir = adventure, target = target)
-		#if status is False:
-		#	print("Not continuing. Please fix errors in item file.")
-		#	sys.exit(1)
+		status = generate_items(import_dir = adventure, target = target)
+		if status is False:
+			print("Not continuing. Please fix errors in item file.")
+			sys.exit(1)
 		
 		status = generate_weapons(import_dir = adventure, target = target)
 		if status is False:

@@ -82,10 +82,10 @@ MAP = {
         'respawn_list' 		: [],        
         'respawn_require' 	: [],     
         'items_chance' 		: 100,					# Lootable item always spawns if requirements met
-        'items_list' 		: ["w1"],
+        'items_list' 		: ["w,1", "i,1"],
         'items_require' 	: 	["COND_EVAL_AND", 2, 									# Must satisfy both conditions
         							["COND_NPC_TYPE", "COND_NPC_TALK", 1, 0],			# Must have talked to NPC id 1
-        							["COND_WEAPON_TYPE", "COND_ITEM_NOTOWN", 1, 0]		# Must not already have the weapon id 1
+        							["COND_MAP_VISIT_TYPE", "COND_MAP_LOOTED_TYPE_MAX", 2, 1]		# Must not have already looted this location
         						],
         'text_spawn' 		: -1,           
         'text_after_spawn' : -1,    

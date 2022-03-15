@@ -113,6 +113,8 @@ VISIT_TYPE = {
 	"COND_MAP_VISIT_TYPE"		: 0x00,
 	"COND_MAP_VISIT_TYPE_MAX"	: 0x01, # The given location has been visited less than or equal to this number of times
 	"COND_MAP_VISIT_TYPE_MIN"	: 0x02, # The given location has been visited more than or equal to this number of times
+	"COND_MAP_LOOTED_TYPE_MAX"	: 0x03, # The location has been looted a less then or equal to this number of times
+	"COND_MAP_LOOTED_TYPE_MIN"	: 0x04, # The location has been looted a more than or equal to this number of times
 }
 
 MONSTER_LOCATION_TYPE = {
@@ -248,32 +250,29 @@ CHARACTER_TYPES = {
 # from the OlderScrolls engine 'monsters.h' header.
 # The upper 4 bits are the race, the lower 4 bits the class
 MONSTER_RACES = {
-	"UNKNOWN" 				: 0x00,
-	"HUMAN" 				: 0x10,
-	"BEAST"					: 0x20,
-	"ORC"					: 0x30,
-	"ELF"					: 0x40,
+	"UNKNOWN" 			: 0,
+	"HUMAN" 			: 1,
+	"BEAST"				: 2,
+	"ORC"				: 3,
+	"ELF"				: 4,
 }
 MONSTER_CLASSES = {
-	"HUMAN_UNTRAINED" 		: 0x10,	
-	"HUMAN_GENERIC_MELEE"	: 0x11,
-	"HUMAN_GENERIC_RANGED"	: 0x12,
-	"HUMAN_GENERIC_MAGIC"	: 0x13,
-	"HUMAN_BARBARIAN"		: 0x14,			
-	"HUMAN_BARD"			: 0x15,
-	"HUMAN_CLERIC"			: 0x16,
-	"HUMAN_DRUID"			: 0x17,
-	"HUMAN_FIGHTER"			: 0x18,
-	"HUMAN_PALADIN"			: 0x19,
-	"HUMAN_RANGER"			: 0x1A,
-	"HUMAN_ROGUE"			: 0x1B,
-	"HUMAN_SORCERER"		: 0x1C,
-	"HUMAN_WARLOCK"			: 0x1D,
-	"HUMAN_WIZARD"			: 0x1E,
-	"BEAST_UNTRAINED"		: 0x20,
-	"BEAST_MELEE"			: 0x21,
-	"BEAST_RANGED"			: 0x22,
-	"BEAST_MAGIC"			: 0x23,
+	"UNTRAINED"			: 0,
+	"GENERIC_MELEE"		: 1,
+	"GENERIC_RANGED"	: 2,
+	"GENERIC_MAGIC"		: 3,
+	"BARBARIAN"			: 4,			
+	"BARD"				: 5,
+	"CLERIC"			: 6,
+	"DRUID"				: 7,
+	"FIGHTER"			: 8,
+	"PALADIN"			: 9,
+	"RANGER"			: 10,
+	"ROGUE"				: 11,
+	"SORCERER"			: 12,
+	"WARLOCK"			: 13,
+	"WIZARD"			: 14,
+	"UNKNOWN"			: 15,
 }
 
 # These classes should match the definitions
@@ -306,24 +305,25 @@ MAX_STATS = {
 }
 
 ITEM_TYPES = {
-	'ITEM_TYPE_CONSUMEABLE' 	: 1,	# Something that can be used (potion, food, etc)
-	'ITEM_TYPE_ARMOUR'			: 2,	# Something that can be equipped to an armour slot
-	'ITEM_TYPE_SPELL'			: 4,	# Something that can be used to cast (one or more) spell(s)
-	'ITEM_TYPE_GENERIC'			: 8,	# Nothing specific, can be sold for gold at traders
-	'ITEM_TYPE_QUEST'			: 16,	# A quest item 
+	'ITEM_TYPE_CONSUMEABLE' 	: 0,	# Something that can be used (potion, food, etc)
+	'ITEM_TYPE_ARMOUR'			: 1,	# Something that can be equipped to an armour slot
+	'ITEM_TYPE_SPELL'			: 2,	# Something that can be used to cast (one or more) spell(s)
+	'ITEM_TYPE_GENERIC'			: 3,	# Nothing specific, can be sold for gold at traders
+	'ITEM_TYPE_QUEST'			: 4,	# A quest item 
 }
 
 ITEM_SLOT_TYPES = {
-	'SLOT_TYPE_NONE' : {	'val' : 0, 'slots' : [] },
-	'SLOT_TYPE_HEAD' : {	'val' : 1, 'slots' : ['head'] },
-	'SLOT_TYPE_BODY' : {	'val' : 4, 'slots' : ['body'] },
-	'SLOT_TYPE_OPTION' : {	'val' : 8, 'slots' : ['option'] },
+	'SLOT_TYPE_NONE' : {	'val' : 0, 'slots' : [] },			# Cannot be equipped to a slot
+	'SLOT_TYPE_HEAD' : {	'val' : 1, 'slots' : ['head'] },	# Can only be equipped to head slot
+	'SLOT_TYPE_BODY' : {	'val' : 2, 'slots' : ['body'] },	# Can only be equipped to body slot
+	'SLOT_TYPE_OPTION' : {	'val' : 3, 'slots' : ['option'] },	# Can only be equipped to option slot
 }
 
-ARMOUR_TYPES = {
+ITEM_ARMOUR_TYPES = {
+	'ARMOUR_TYPE_NONE'		: 0,
 	'ARMOUR_TYPE_LIGHT' 	: 1,
 	'ARMOUR_TYPE_MEDIUM'	: 2,
-	'ARMOUR_TYPE_HEAVY'		: 4,
+	'ARMOUR_TYPE_HEAVY'		: 3,
 }
 
 SLOT_NAMES = ["head", "body", "option"]
@@ -354,15 +354,16 @@ WEAPON_RARITY = {
 }
 
 WEAPON_DAMAGE = {
-	'PHYSICAL' 	: 0,
-	'SLASHING' 	: 1,
-	'PIERCING' 	: 2,
-	'BLUNT'	   	: 3,
-	'LIGHTNING'	: 4,
-	'ACID'		: 5,
-	'FIRE'		: 6,
-	'COLD'		: 7,
-	'POISON'	: 8,
+	'NONE'	 	: 0,
+	'PHYSICAL' 	: 1,
+	'SLASHING' 	: 2,
+	'PIERCING' 	: 3,
+	'BLUNT'	   	: 4,
+	'LIGHTNING'	: 5,
+	'ACID'		: 6,
+	'FIRE'		: 7,
+	'COLD'		: 8,
+	'POISON'	: 9,
 }
 
 WEAPON_SIZE = {

@@ -36,7 +36,8 @@ NPC = {
         'wounded_sprite'	: [],
         'death_sprite'		: [],
         'portrait_name'		: ["skull.bmp"],		# Name of bitmap file for dialogue screens
-        'class'		: "HUMAN_UNTRAINED",	# Class 
+        'class'		: "UNTRAINED",			# Class
+        'race'		: "HUMAN",
         'level'		: 0,					# Level
         'profile'	: 0xA000,				# Attack/behaviour profile, 4 bits each for how aggressive the monster is in melee, ranged, magic attack, magic support
         'str' 		: 1,					# Standard attributes - they may be modified by the level and class of the monster
@@ -65,7 +66,8 @@ NPC = {
         'wounded_sprite'	: [],
         'death_sprite'		: [],
         'portrait_name' 	: ["elder.bmp"],		# Name of bitmap file for dialogue, always sprite_class_normal
-        'class'		: "HUMAN_UNTRAINED",	# Class 
+        'class'		: "UNTRAINED",			# Class
+        'race'		: "HUMAN",
         'level'		: 1,					# Level
         'profile'	: 0xA000,				# Attack/behaviour profile, 4 bits each for how aggressive 
         									# the monster is in melee, ranged, magic attack, magic support
@@ -99,7 +101,8 @@ MONSTER = {
         'wounded_sprite'	: [],
         'death_sprite'		: [],
         'portrait_name'		: ["skull.bmp"],		# Name of bitmap file for dialogue screens
-        'class'		: "HUMAN_UNTRAINED",	# Class 
+        'class'		: "UNTRAINED",			# Class
+        'race'		: "HUMAN",
         'level'		: 0,					# Level
         'profile'	: 0xA000,				# Attack/behaviour profile, 4 bits each for how aggressive the monster is in melee, ranged, magic attack, magic support
         'str' 		: 1,					# Standard attributes - they may be modified by the level and class of the monster
@@ -128,11 +131,12 @@ MONSTER = {
         'wounded_sprite'	: [],
         'death_sprite'		: [],
         'portrait_name'		: ["thug.bmp"],		# Name of bitmap file for dialogue screens
-        'class'		: "HUMAN_UNTRAINED",	# Class 
+        'class'		: "UNTRAINED",			# Class
+        'race'		: "HUMAN",
         'level'		: 1,					# Level
         'profile'	: 0xA000,				# Attack/behaviour profile, 4 bits each for how aggressive 
         									# the monster is in melee, ranged, magic attack, magic support
-        'str' 		: 10,					# Standard attributes - they may be modified by the level and class of the monster
+        'str' 		: 14,					# Standard attributes - they may be modified by the level and class of the monster
         'dex' 		: 7,					# - as above
         'con' 		: 11,					# - as above
         'wis' 		: 3,					# - as above					
@@ -140,10 +144,10 @@ MONSTER = {
         'chr' 		: 2,					# - as above
         'hp' 		: 99,					# Starting hitpoints
         'status' 	: 0,					# Starting bitfield of status effects
-        'head'		: -1,					# Item equipped to head (e.g. helmet, hat)
-        'body'		: 2,					# Item equipped to body (e.g. bronze scale armour)
+        'head'		: 4,					# Item equipped to head (e.g. helmet, hat)
+        'body'		: 3,					# Item equipped to body (e.g. bronze scale armour)
         'option'	: -1,					# Item equipped to ring/amulet/necklace slot
-        'weapon_r' : 1,					    # ID of weapon in right hand
+        'weapon_r' : -1,					    # ID of weapon in right hand
         'weapon_l' : -1,					# ID of weapon in left hand
         'formation' : 0,					# Front / Middle / Rear alignment in combat
         'spells'	: [0,0,0,0,0],			# List of all spells that this monster has access to
@@ -158,7 +162,8 @@ MONSTER = {
         'wounded_sprite'	: [],
         'death_sprite'		: [],
         'portrait_name'		: ["wolf.bmp"],
-        'class'		: "BEAST_UNTRAINED",			 
+        'class'		: "UNTRAINED",			# Class
+        'race'		: "BEAST",			 
         'level'		: 1,					
         'profile'	: 0xD000,				 
         'str' 		: 5,					
@@ -187,7 +192,8 @@ MONSTER = {
         'wounded_sprite'	: [],
         'death_sprite'		: [],			
         'portrait_name'		: ["skull.bmp"],
-        'class'		: "BEAST_UNTRAINED",			 
+        'class'		: "GENERIC_MELEE",			# Class
+        'race'		: "ORC",			 
         'level'		: 1,					
         'profile'	: 0xD000,				 
         'str' 		: 5,					
