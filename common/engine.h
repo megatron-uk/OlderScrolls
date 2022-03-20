@@ -29,6 +29,10 @@
 // Defaults that are common to all game mechanics on all platforms
 // ===================================================================
 
+#define DIFFICULTY_CLASS_EASY		10
+#define DIFFICULTY_CLASS_MEDIUM		15
+#define DIFFICULTY_CLASS_HARD		20
+
 #define ATTACK_DICE_TYPE		20
 #define ATTACK_DICE_QTY			1
 
@@ -253,5 +257,11 @@ char pc_IsLastItem(PlayerState_t *pc, WeaponState_t *weapon, ItemState_t *item);
 
 // How many characters are in the party at present
 unsigned char party_Count(GameState_t *gamestate, unsigned char include_dead);
+
+// Generate a random number
+unsigned char random_GenerateRandom(GameState_t *gamestate);
+
+// Generate a random dice roll between dice_from and dice_to
+unsigned char random_GenerateRandomDice(GameState_t *gamestate, unsigned char dice_from, unsigned char dice_to);
 
 #endif

@@ -113,6 +113,7 @@ unsigned char input_Get(Screen_t *screen);
 void input_Set(unsigned char key);
 void input_Clear(void);
 void input_Wait(Screen_t *screen, unsigned char key);
+unsigned short input_WaitTimer(Screen_t *screen, unsigned char key);
 void input_WaitAndReturn(Screen_t *screen);
 
 #endif

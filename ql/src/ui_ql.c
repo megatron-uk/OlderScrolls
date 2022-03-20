@@ -2128,8 +2128,8 @@ void ui_DebugScreen(Screen_t *screen, GameState_t *gamestate, LevelState_t *leve
 	}
 
 	// Game progress details
-	sprintf((char *)gamestate->text_buffer, "<g>Game Progress\n<C>\n- <r>%6d<C> PC in player party\n- <r>%6d<C> NPCs met\n- <r>%6d<C> Locations discovered\n- <r>%6d<C> Primary spawns\n- <r>%6d<C> Secondary spawns\n", players, npcs, locations, primary, secondary);
-	draw_String(screen, 1, 160, 48, 6, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer, MODE_PIXEL_SET);
+	sprintf((char *)gamestate->text_buffer, "<g>Game Progress\n<C>\n- <r>%6d<C> PC in player party\n- <r>%6d<C> NPCs met\n- <r>%6d<C> Locations discovered\n- <r>%6d<C> Primary spawns\n- <r>%6d<C> Secondary spawns\n- %d\n- %d\n", players, npcs, locations, primary, secondary, gamestate->seed1, gamestate->seed2);
+	draw_String(screen, 1, 160, 48, 10, 0, screen->font_8x8, PIXEL_WHITE, (char *)gamestate->text_buffer, MODE_PIXEL_SET);
 	draw_String(screen, 1, SCREEN_HEIGHT - 10, 32, 1, 0, screen->font_8x8, PIXEL_RED, "Press [ESC] to return to game", MODE_PIXEL_SET);
 	
 	screen->dirty = 1;

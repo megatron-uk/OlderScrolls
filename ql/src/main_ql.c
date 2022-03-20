@@ -82,6 +82,8 @@ int main(void){
 	screen = (Screen_t *) calloc(sizeof(Screen_t), 1);
 	if ((gamestate == NULL) || (levelstate == NULL) || (screen == NULL)){
 		printf("- Error: Unable to allocate memory for essential data!");
+		printf("- Error: This Sinclair QL target requires 256KB in order");
+		printf("- Error: to run the OlderScrolls RPG engine!");
 		return(-1);
 	}
 	
@@ -101,13 +103,15 @@ int main(void){
 	}
 	
 	printf("\nPress return to begin full screen mode...\n");
-	input_Wait(screen, INPUT_CONFIRM);
-	
+	// The keyboard input wait also initialises random seed #1
+	gamestate->seed1 = input_WaitTimer(screen, INPUT_CONFIRM); 
+		
 	// Initialise game data and open any initial datafiles 
 	// (splash text, first level location)
 	game_Init(screen, gamestate, levelstate);
 	
 	// Show the adventure-specific splash screen
+	// ... and initialise random seed #2
 	game_Splash(screen, gamestate, levelstate);
 	
 	while(main_exit == 0){

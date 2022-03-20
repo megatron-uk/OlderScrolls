@@ -91,6 +91,21 @@ void input_Wait(Screen_t *screen, unsigned char key){
 	input_Clear();
 }
 
+unsigned short input_WaitTimer(Screen_t *screen, unsigned char key){
+	// Quickly set a single key type and wait for it
+	// Returns the number of iterations until the key is pressed
+	
+	unsigned int i = 0;
+	
+	input_Clear();
+	input_Set(key);
+	while (input_Get(screen) == 0){
+		i++;
+	}
+	input_Clear();
+	return i;
+}
+
 void input_WaitAndReturn(Screen_t *screen){
 	// Wait for any current key (or escape) to be pressed
 	

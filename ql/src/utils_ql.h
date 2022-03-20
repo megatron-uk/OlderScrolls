@@ -17,18 +17,6 @@
 
 #ifndef _UTILS_QL_H
 
-// Swap endianess of a 16bit integer
-#define swap_int16(i) ((i << 8) | ((i >> 8) & 0xFF))
-
-// swap endianness of a 32bit integer
-#define swap_int32(i) (((i >> 24) & 0xff) | ((i << 8) & 0xff0000) | ((i >> 8) & 0xff00) | ((i << 24) & 0xff000000))
-
-// Set bit 'x' of a value
-#define setbit(x,bit) ((x) |= (1<<(bit)))
-
-// Clear bit 'x' of a value
-#define clearbit(x,bit) ((x) &= ~(1<<(bit)))
-
 unsigned char check_Files(void);
 unsigned char word_length(char *c, unsigned short pos, unsigned short string_size);
 void * get_FreeBlock(unsigned int *size, unsigned int base, unsigned short increment);

@@ -45,7 +45,7 @@ unsigned char game_CheckLoot(Screen_t *screen, GameState_t *gamestate, LevelStat
 unsigned char game_CheckMovement(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
 unsigned char game_CheckMonsterSpawn(GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
 unsigned char game_CheckTalk(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate, unsigned char add_inputs, unsigned char add_text);
-
+unsigned char game_CheckWithdraw(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 void game_CheckAvailableParty(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate);
 
 #endif

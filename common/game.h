@@ -48,6 +48,7 @@
 #define MAX_PLAYER_CLASSES 16
 #define MAX_PROFICIENCIES	10
 #define MAX_PLAYER_RACES	5
+#define MAX_RANDOM_DICE_COUNT 16	// How many random dice to roll - do not change from this value
 
 // Characters can be of 3 different types
 #define CHARACTER_TYPE_MONSTER 0
@@ -226,6 +227,9 @@ typedef struct {
 	PartyState_t *players;								// partystate, which holds the list of players in party
 	EnemyState_t *enemies;								// enemystate, which holds the list of enemies in combat
 	struct NPCList *npcs;										// Pointer to a linked-list of NPC's we have met
+	unsigned char	seed1;										// Seeds used to initialise the random number generator
+	unsigned char	seed2;
+	unsigned short	seed;	
 } GameState_t;
 
 // Each level that we visit is loaded from disk into this structure

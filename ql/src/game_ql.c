@@ -129,7 +129,7 @@ void game_Splash(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelst
 	draw_Flip(screen);
 	
 	// Wait for user input
-	input_Wait(screen, INPUT_CONFIRM);
+	gamestate->seed2 = input_WaitTimer(screen, INPUT_CONFIRM); // Also initialises random seed #2
 }
 
 void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
@@ -285,6 +285,25 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 				game_CheckMovement(screen, gamestate, levelstate, 1, 0);
 				e = 1;
 				break;
+			case INPUT_WITHDRAW:
+			case INPUT_WITHDRAW_:
+				// ======================================
+				// Attempt to withdraw, upon entering combat
+				// ======================================
+				
+				// If we fail to withdraw, combat begins, with the 
+				// players at a disadvantage.
+				c = game_CheckWithdraw(screen, gamestate, levelstate);
+				
+				// If the withdraw was successful, move back to the previous map location
+				if (c){
+					gamestate->gamemode = GAME_MODE_MAP;	
+				} else {
+					gamestate->gamemode = GAME_MODE_COMBAT;
+				}
+				e = 1;
+				break;
+				
 			case INPUT_FIGHT:
 			case INPUT_FIGHT_:
 				// ======================================
@@ -295,7 +314,10 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 				// 		Redraw the ui
 				// else
 				//		show game over screen
+				gamestate->gamemode = GAME_MODE_COMBAT;
+				e = 1;
 				break;
+				
 			case INPUT_TALK:
 			case INPUT_TALK_:
 				// ======================================
@@ -371,10 +393,18 @@ void game_Map(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate
 
 void game_Combat(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
 	// Combat mode - cannot exit this until the combat is resolved
+	
+	// If combat is successful we exit out of game_Combat and return to game_Map
+	// Otherwise we show the game over screen
+	//gamestate->gamemode = GAME_MODE_MAP;
 }
 
 void game_Shop(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
 	// At a shop
+}
+
+void game_Over(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
+	// Display the 'game over' screen when all the party are dead.	
 }
 
 void game_Quit(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
@@ -678,4 +708,27 @@ void game_CheckAvailableParty(Screen_t *screen, GameState_t *gamestate, LevelSta
 	if (gamestate->players->player[2]->level != 0)	input_Set(INPUT_3);
 	if (gamestate->players->player[3]->level != 0)	input_Set(INPUT_4);
 	
+}
+
+unsigned char game_CheckWithdraw(Screen_t *screen, GameState_t *gamestate, LevelState_t *levelstate){
+	// Give the player an opportunity to attempt to withdraw to the previous location
+	// ... 
+	// If unsuccessful, combat starts with the player party at a disadvantage.
+	
+	unsigned char i;
+	unsigned char can_withdraw = 1;
+	
+	// Whether we can withdraw or not relies on a dexterity check against the 
+	
+	// For each player in the party, make a dexterity check. If any of them succeed,
+	// then we allow the player to retreat from this area, back to the previous location.
+	
+	for (i = 0; i < MAX_PLAYERS; i++){
+		if (gamestate->players->player[0]->level != 0){
+			//	
+		}
+	}
+	
+	
+	return can_withdraw;
 }
